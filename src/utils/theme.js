@@ -1,15 +1,15 @@
 // Theme configuration - Colors, Typography, Spacing
 export const colors = {
-  // Primary Colors
-  primary: '#2196F3',
-  primaryDark: '#1976D2',
-  primaryLight: '#BBDEFB',
+  // Primary Colors - Academic Green
+  primary: '#2E7D32',        // Forest Green
+  primaryDark: '#1B5E20',    // Dark Green
+  primaryLight: '#A5D6A7',   // Light Green
   
   // Status Colors
-  success: '#4CAF50',
+  success: '#66BB6A',        // Green
   error: '#F44336',
-  warning: '#FF9800',
-  info: '#2196F3',
+  warning: '#FFA726',
+  info: '#43A047',           // Green info
   
   // Text Colors
   textPrimary: '#212121',
@@ -26,15 +26,15 @@ export const colors = {
   borderLight: '#F5F5F5',
   
   // Evaluation Card Colors
-  evaluasiDosen: '#2196F3',
-  evaluasiFasilitas: '#4CAF50',
+  evaluasiDosen: '#2E7D32',  // Academic Green
+  evaluasiFasilitas: '#388E3C',  // Slightly different green
   
-  // Likert Scale Colors
-  likert1: '#FFCDD2', // Sangat Tidak Setuju
-  likert2: '#FFCC80', // Tidak Setuju
-  likert3: '#FFF59D', // Netral
-  likert4: '#C5E1A5', // Setuju
-  likert5: '#A5D6A7', // Sangat Setuju
+  // Likert Scale Colors - Green gradient theme
+  likert1: '#FFCDD2',   // Sangat Tidak Setuju (Red tint)
+  likert2: '#FFE0B2',   // Tidak Setuju (Orange tint)
+  likert3: '#FFF9C4',   // Netral (Yellow tint)
+  likert4: '#C8E6C9',   // Setuju (Light Green)
+  likert5: '#81C784',   // Sangat Setuju (Green)
 };
 
 export const typography = {
