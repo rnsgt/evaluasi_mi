@@ -11,13 +11,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { colors as staticColors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 import { formatDate, groupBy } from '../../utils/helpers';
 import { useAuth } from '../../contexts/AuthContext';
 import evaluasiService from '../../services/evaluasiService';
 
 const RiwayatScreen = () => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('semua');

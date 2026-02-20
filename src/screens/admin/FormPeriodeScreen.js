@@ -14,10 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import periodeService from '../../services/periodeService';
 
 const FormPeriodeScreen = ({ navigation, route }) => {
+  const { colors } = useTheme();
   const { mode = 'create', periode = null } = route.params || {};
   const isEdit = mode === 'edit';
 

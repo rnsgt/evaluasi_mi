@@ -9,12 +9,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import evaluasiService from '../../services/evaluasiService';
 
 const StatistikScreen = () => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({

@@ -418,6 +418,14 @@ export const validateEmail = (email) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
+/**
+ * Get all mata kuliah list
+ * @returns {Array} List of mata kuliah names
+ */
+export const getAllMataKuliah = () => {
+  return MATA_KULIAH_LIST.map(mk => mk.nama);
+};
+
 export default {
   getAllDosen,
   getDosenById,
@@ -430,5 +438,6 @@ export default {
   getDosenStats,
   validateNIP,
   validateEmail,
+  getAllMataKuliah,
   MATA_KULIAH_LIST,
 };

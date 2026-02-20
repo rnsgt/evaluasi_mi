@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import dosenService, { MATA_KULIAH_LIST } from '../../services/dosenService';
 
 const FormDosenScreen = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { mode = 'create', dosen: editData } = route.params || {};
   const isEdit = mode === 'edit';
 

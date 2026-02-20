@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 
 const SettingsScreen = ({ navigation }) => {
   const { logout } = useAuth();
+  const { colors } = useTheme();
 
   const handleLogout = () => {
     Alert.alert(

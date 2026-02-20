@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../utils/theme';
 
 const LikertScale = ({ value, onValueChange, question, required = true, error }) => {
+  const { colors } = useTheme();
   const options = [
     {
       value: 1,

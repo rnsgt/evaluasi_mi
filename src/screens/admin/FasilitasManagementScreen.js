@@ -12,10 +12,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService from '../../services/fasilitasService';
 
 const FasilitasManagementScreen = ({ navigation }) => {
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fasilitasList, setFasilitasList] = useState([]);

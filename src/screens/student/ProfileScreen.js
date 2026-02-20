@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 
 const THEME_OPTIONS = [
   { id: 'light', name: 'Mode Terang', color: '#FFFFFF', icon: 'white-balance-sunny', iconColor: '#FFA000' },
@@ -19,7 +20,7 @@ const THEME_OPTIONS = [
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
-  const [selectedTheme, setSelectedTheme] = useState('light');
+  const { theme, colors, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     Alert.alert(
@@ -41,57 +42,63 @@ const ProfileScreen = ({ navigation }) => {
     console.log('Navigate to change password');
   };
 
-  const handleThemeChange = (themeId) => {
-    setSelectedTheme(themeId);
+  const handleThemeChange = async (themeId) => {
     const themeName = themeId === 'light' ? 'Mode Terang' : 'Mode Gelap';
     Alert.alert(
-      'Perubahan Mode Tampilan',
-      `${themeName} akan diterapkan setelah aplikasi di-restart. Fitur ini masih dalam pengembangan.`,
-      [{ text: 'OK' }]
+      'Ubah Mode Tampilan?',
+      `Aplikasi akan menggunakan ${themeName}.`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Ubah',
+          onPress: async () => {
+            await toggleTheme(themeId);
+            Alert.alert('Berhasil', `${themeName} telah diterapkan!`);
+          },
+        },
+      ]
     );
-    // TODO: Save theme preference to AsyncStorage
-    // TODO: Apply theme dynamically
   };
 
   const InfoCard = ({ icon, label, value }) => (
-    <View style={styles.infoCard}>
-      <View style={styles.infoIconContainer}>
+    <View style={[styles.infoCard, { backgroundColor: colors.card }]}>
+      <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '20' }]}>
         <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
       </View>
       <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
+        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
+        <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{value}</Text>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profil Mahasiswa</Text>
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Profil Mahasiswa</Text>
         </View>
 
         {/* Profile Info */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { backgroundColor: colors.background }]}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
+            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
               <Text style={styles.avatarText}>
                 {user?.nama ? user.nama.substring(0, 2).toUpperCase() : 'MA'}
               </Text>
             </View>
-            <View style={styles.statusIndicator} />
+            <View style={[styles.statusIndicator, { backgroundColor: colors.success, borderColor: colors.background }]} />
           </View>
-          <Text style={styles.profileName}>{user?.nama || 'Mahasiswa'}</Text>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusBadgeText}>Mahasiswa Aktif</Text>
+          <Text style={[styles.profileName, { color: colors.textPrimary }]}>{user?.nama || 'Mahasiswa'}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: colors.primary + '20' }]}>
+            <Text style={[styles.statusBadgeText, { color: colors.primary }]}>Mahasiswa Aktif</Text>
           </View>
         </View>
 
         {/* Academic Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>INFORMASI AKADEMIK</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>INFORMASI AKADEMIK</Text>
           
           <InfoCard
             icon="card-account-details-outline"
@@ -117,41 +124,46 @@ const ProfileScreen = ({ navigation }) => {
 
         {/* Theme Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>MODE TAMPILAN</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MODE TAMPILAN</Text>
           
-          <View style={styles.themeContainer}>
-            {THEME_OPTIONS.map((theme) => (
+          <View style={[styles.themeContainer, { backgroundColor: colors.card }]}>
+            {THEME_OPTIONS.map((themeOption) => (
               <TouchableOpacity
-                key={theme.id}
+                key={themeOption.id}
                 style={[
                   styles.themeOption,
-                  selectedTheme === theme.id && styles.themeOptionSelected,
+                  { 
+                    backgroundColor: colors.card,
+                    borderColor: theme === themeOption.id ? colors.primary : 'transparent'
+                  },
+                  theme === themeOption.id && styles.themeOptionSelected,
                 ]}
-                onPress={() => handleThemeChange(theme.id)}
+                onPress={() => handleThemeChange(themeOption.id)}
                 activeOpacity={0.7}
               >
                 <View
                   style={[
                     styles.themeColorCircle,
-                    { backgroundColor: theme.color },
-                    theme.id === 'light' && styles.themeColorCircleLight,
+                    { backgroundColor: themeOption.color },
+                    themeOption.id === 'light' && { borderWidth: 2, borderColor: colors.border },
                   ]}
                 >
                   <MaterialCommunityIcons
-                    name={theme.icon}
+                    name={themeOption.icon}
                     size={28}
-                    color={theme.iconColor}
+                    color={themeOption.iconColor}
                   />
                 </View>
                 <Text
                   style={[
                     styles.themeName,
-                    selectedTheme === theme.id && styles.themeNameSelected,
+                    { color: colors.textPrimary },
+                    theme === themeOption.id && { fontWeight: 'bold', color: colors.primary },
                   ]}
                 >
-                  {theme.name}
+                  {themeOption.name}
                 </Text>
-                {selectedTheme === theme.id && (
+                {theme === themeOption.id && (
                   <MaterialCommunityIcons
                     name="check-circle"
                     size={20}
@@ -166,11 +178,11 @@ const ProfileScreen = ({ navigation }) => {
 
         {/* Account Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PENGATURAN AKUN</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PENGATURAN AKUN</Text>
           
           <TouchableOpacity
             onPress={handleChangePassword}
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.primary }]}
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="lock-reset" size={20} color="white" style={styles.actionButtonIcon} />
@@ -179,11 +191,11 @@ const ProfileScreen = ({ navigation }) => {
           
           <TouchableOpacity
             onPress={handleLogout}
-            style={[styles.actionButton, styles.logoutButton]}
+            style={[styles.actionButton, styles.logoutButton, { borderColor: colors.error }]}
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="logout" size={20} color={colors.error} style={styles.actionButtonIcon} />
-            <Text style={[styles.actionButtonLabel, styles.logoutButtonLabel]}>Keluar Akun</Text>
+            <Text style={[styles.actionButtonLabel, styles.logoutButtonLabel, { color: colors.error }]}>Keluar Akun</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -194,7 +206,6 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
   },
   scrollContent: {
     paddingBottom: spacing.xl,
@@ -202,18 +213,15 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.background,
   },
   headerTitle: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
     textAlign: 'center',
   },
   profileSection: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
-    backgroundColor: colors.background,
   },
   avatarContainer: {
     position: 'relative',
@@ -223,7 +231,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -239,25 +246,20 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: colors.success,
     borderWidth: 3,
-    borderColor: colors.background,
   },
   profileName: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
   statusBadge: {
-    backgroundColor: '#E3F2FD',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
   statusBadgeText: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
     fontFamily: typography.fontFamily.medium,
   },
   section: {
@@ -267,14 +269,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textSecondary,
     letterSpacing: 0.5,
     marginBottom: spacing.md,
     marginTop: spacing.base,
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: colors.background,
     borderRadius: radius.md,
     padding: spacing.base,
     marginBottom: spacing.sm,
@@ -284,7 +284,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E3F2FD',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
@@ -295,16 +294,13 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   infoValue: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
   },
   themeContainer: {
-    backgroundColor: colors.background,
     borderRadius: radius.md,
     padding: spacing.sm,
   },
@@ -314,13 +310,10 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.base,
     marginBottom: spacing.xs,
-    backgroundColor: colors.background,
     borderWidth: 2,
-    borderColor: 'transparent',
   },
   themeOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: '#F1F8F5',
+    elevation: 2,
   },
   themeColorCircle: {
     width: 48,
@@ -331,19 +324,10 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
     elevation: 2,
   },
-  themeColorCircleLight: {
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
   themeName: {
     flex: 1,
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
-  },
-  themeNameSelected: {
-    fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
   },
   themeCheckIcon: {
     marginLeft: spacing.sm,
@@ -352,7 +336,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
     paddingVertical: spacing.base,
     borderRadius: radius.md,
     marginBottom: spacing.sm,
@@ -368,11 +351,8 @@ const styles = StyleSheet.create({
   logoutButton: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: colors.error,
   },
-  logoutButtonLabel: {
-    color: colors.error,
-  },
+  logoutButtonLabel: {},
 });
 
 export default ProfileScreen;

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import LikertScale from '../../components/LikertScale';
@@ -22,6 +23,7 @@ import evaluasiService from '../../services/evaluasiService';
 const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   const { dosenId, namaDosen, mataKuliah, nip } = route.params;
   const { user } = useAuth();
+  const { colors } = useTheme();
   const scrollViewRef = useRef(null);
 
   const [answers, setAnswers] = useState({});

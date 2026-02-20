@@ -10,11 +10,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { colors as staticColors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 import { formatDate } from '../../utils/helpers';
 
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [periodeAktif, setPeriodeAktif] = useState(null);
 
@@ -58,7 +60,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={

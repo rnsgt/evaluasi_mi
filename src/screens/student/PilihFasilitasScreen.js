@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService from '../../services/fasilitasService';
 
 const PilihFasilitasScreen = ({ navigation }) => {
+  const { colors } = useTheme();
   const [fasilitas, setFasilitas] = useState([]);
   const [filteredFasilitas, setFilteredFasilitas] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');

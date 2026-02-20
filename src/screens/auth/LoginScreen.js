@@ -13,11 +13,13 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { validateNIM } from '../../utils/helpers';
 
 const LoginScreen = ({ navigation }) => {
   const { login, loading, authError } = useAuth();
+  const { colors } = useTheme();
   
   const [nim, setNim] = useState('');
   const [password, setPassword] = useState('');

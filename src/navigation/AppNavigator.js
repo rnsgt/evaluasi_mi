@@ -1,14 +1,15 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import AuthNavigator from './AuthNavigator';
 import StudentNavigator from './StudentNavigator';
 import AdminNavigator from './AdminNavigator';
 import { ActivityIndicator, View } from 'react-native';
-import { colors } from '../utils/theme';
 
 const AppNavigator = () => {
   const { isAuthenticated, isMahasiswa, isAdmin, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (

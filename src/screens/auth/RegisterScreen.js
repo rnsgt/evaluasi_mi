@@ -13,11 +13,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { validateNIM, validateEmail } from '../../utils/helpers';
 
 const RegisterScreen = ({ navigation }) => {
   const { register } = useAuth();
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nim: '',
