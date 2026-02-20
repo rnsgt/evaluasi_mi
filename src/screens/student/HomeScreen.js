@@ -45,13 +45,11 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleEvaluasiDosen = () => {
-    // TODO: Navigate to Pilih Dosen screen
-    console.log('Navigate to Evaluasi Dosen');
+    navigation.navigate('PilihDosen');
   };
 
   const handleEvaluasiFasilitas = () => {
-    // TODO: Navigate to Pilih Fasilitas screen
-    console.log('Navigate to Evaluasi Fasilitas');
+    navigation.navigate('PilihFasilitas');
   };
 
   const handleLihatJadwal = () => {
@@ -72,28 +70,11 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.headerLeft}>
             <Text style={styles.greeting}>SELAMAT DATANG</Text>
             <Text style={styles.userName}>{user?.nama || 'Mahasiswa'}</Text>
-            <View style={styles.nimContainer}>
-              <MaterialCommunityIcons name="card-account-details-outline" size={16} color={colors.textSecondary} style={styles.nimIcon} />
-              <Text style={styles.nimText}>NIM: {user?.nim}</Text>
-            </View>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
             <MaterialCommunityIcons name="bell-outline" size={24} color={colors.textPrimary} />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
-        </View>
-
-        {/* Status Cards */}
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusCard, styles.statusCardFirst, { backgroundColor: '#E3F2FD' }]}>
-            <Text style={styles.statusLabel}>STATUS AKADEMIK</Text>
-            <Text style={styles.statusValue}>{user?.status_akademik || 'Aktif'}</Text>
-          </View>
-          
-          <View style={[styles.statusCard, { backgroundColor: '#F5F5F5' }]}>
-            <Text style={styles.statusLabel}>IPK TERAKHIR</Text>
-            <Text style={styles.statusValue}>{user?.ipk?.toFixed(2) || '0.00'}</Text>
-          </View>
         </View>
 
         {/* Section Title */}
@@ -202,17 +183,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
   },
-  nimContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  nimIcon: {
-    marginRight: spacing.xs,
-  },
-  nimText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-  },
   notificationButton: {
     width: 48,
     height: 48,
@@ -230,30 +200,6 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: colors.error,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    marginBottom: spacing.lg,
-  },
-  statusCard: {
-    flex: 1,
-    padding: spacing.base,
-    borderRadius: radius.md,
-  },
-  statusCardFirst: {
-    marginRight: spacing.xs,
-  },
-  statusLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontFamily: typography.fontFamily.medium,
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  statusValue: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
   },
   sectionHeader: {
     flexDirection: 'row',

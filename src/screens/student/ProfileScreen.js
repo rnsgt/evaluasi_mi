@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { colors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 
+const THEME_OPTIONS = [
+  { id: 'light', name: 'Mode Terang', color: '#FFFFFF', icon: 'white-balance-sunny', iconColor: '#FFA000' },
+  { id: 'dark', name: 'Mode Gelap', color: '#1E1E1E', icon: 'moon-waning-crescent', iconColor: '#FFFFFF' },
+];
+
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
+  const [selectedTheme, setSelectedTheme] = useState('light');
 
   const handleLogout = () => {
     Alert.alert(
@@ -33,6 +39,18 @@ const ProfileScreen = ({ navigation }) => {
   const handleChangePassword = () => {
     // TODO: Navigate to change password screen
     console.log('Navigate to change password');
+  };
+
+  const handleThemeChange = (themeId) => {
+    setSelectedTheme(themeId);
+    const themeName = themeId === 'light' ? 'Mode Terang' : 'Mode Gelap';
+    Alert.alert(
+      'Perubahan Mode Tampilan',
+      `${themeName} akan diterapkan setelah aplikasi di-restart. Fitur ini masih dalam pengembangan.`,
+      [{ text: 'OK' }]
+    );
+    // TODO: Save theme preference to AsyncStorage
+    // TODO: Apply theme dynamically
   };
 
   const InfoCard = ({ icon, label, value }) => (
@@ -95,6 +113,55 @@ const ProfileScreen = ({ navigation }) => {
             label="ANGKATAN"
             value={user?.angkatan || '2021'}
           />
+        </View>
+
+        {/* Theme Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>MODE TAMPILAN</Text>
+          
+          <View style={styles.themeContainer}>
+            {THEME_OPTIONS.map((theme) => (
+              <TouchableOpacity
+                key={theme.id}
+                style={[
+                  styles.themeOption,
+                  selectedTheme === theme.id && styles.themeOptionSelected,
+                ]}
+                onPress={() => handleThemeChange(theme.id)}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.themeColorCircle,
+                    { backgroundColor: theme.color },
+                    theme.id === 'light' && styles.themeColorCircleLight,
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={theme.icon}
+                    size={28}
+                    color={theme.iconColor}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.themeName,
+                    selectedTheme === theme.id && styles.themeNameSelected,
+                  ]}
+                >
+                  {theme.name}
+                </Text>
+                {selectedTheme === theme.id && (
+                  <MaterialCommunityIcons
+                    name="check-circle"
+                    size={20}
+                    color={colors.primary}
+                    style={styles.themeCheckIcon}
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Account Settings */}
@@ -235,6 +302,51 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
     color: colors.textPrimary,
+  },
+  themeContainer: {
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: radius.base,
+    marginBottom: spacing.xs,
+    backgroundColor: colors.background,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  themeOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: '#F1F8F5',
+  },
+  themeColorCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+    elevation: 2,
+  },
+  themeColorCircleLight: {
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  themeName: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.textPrimary,
+  },
+  themeNameSelected: {
+    fontFamily: typography.fontFamily.bold,
+    color: colors.primary,
+  },
+  themeCheckIcon: {
+    marginLeft: spacing.sm,
   },
   actionButton: {
     flexDirection: 'row',

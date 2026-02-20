@@ -6,64 +6,93 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 import { formatDate, groupBy } from '../../utils/helpers';
+import { useAuth } from '../../contexts/AuthContext';
+import evaluasiService from '../../services/evaluasiService';
 
 const RiwayatScreen = () => {
+  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('semua');
   const [riwayatData, setRiwayatData] = useState({});
+  const [allData, setAllData] = useState([]);
 
   useEffect(() => {
     loadData();
-  }, [activeFilter]);
+  }, []);
+
+  useEffect(() => {
+    applyFilter();
+  }, [activeFilter, allData]);
 
   const loadData = async () => {
     try {
-      // TODO: Fetch from API
-      // const response = await evaluasiService.getRiwayat(activeFilter);
+      setLoading(true);
+      // Get all riwayat (both dosen and fasilitas)
+      const riwayat = await evaluasiService.getAllRiwayat(user.id);
       
-      // Dummy data for now
-      const dummyData = [
-        {
-          id: 1,
-          tanggal: '2023-11-14',
-          type: 'DOSEN',
-          subject: 'Pemrograman Web',
-          nama: 'Dr. Ir. Budi Santoso, M.Kom',
-          status: 'SELESAI',
-        },
-        {
-          id: 2,
-          tanggal: '2023-11-10',
-          type: 'FASILITAS',
-          subject: 'Perpustakaan Pusat',
-          nama: 'Kenyamanan & Kelengkapan Buku',
-          status: 'SELESAI',
-        },
-        {
-          id: 3,
-          tanggal: '2023-10-28',
-          type: 'DOSEN',
-          subject: 'Basis Data',
-          nama: 'Prof. Siti Aminah',
-          status: 'SELESAI',
-        },
-      ];
-
-      // Group by month
-      const grouped = groupBy(dummyData, (item) => {
-        const date = new Date(item.tanggal);
-        return formatDate(date, 'MMMM YYYY').toUpperCase();
+      // Transform data to display format
+      const transformedData = riwayat.map((item) => {
+        if (item.type === 'dosen') {
+          return {
+            id: item.id,
+            tanggal: item.submitted_at,
+            type: 'DOSEN',
+            subject: item.mata_kuliah && item.mata_kuliah.length > 0 
+              ? item.mata_kuliah[0] 
+              : 'Evaluasi Dosen',
+            nama: item.dosen_nama,
+            nip: item.dosen_nip,
+            status: item.status === 'submitted' ? 'SELESAI' : 'PENDING',
+            rawData: item,
+          };
+        } else {
+          return {
+            id: item.id,
+            tanggal: item.submitted_at,
+            type: 'FASILITAS',
+            subject: item.fasilitas_nama,
+            nama: item.fasilitas_kategori,
+            kode: item.fasilitas_kode,
+            lokasi: item.lokasi,
+            status: item.status === 'submitted' ? 'SELESAI' : 'PENDING',
+            rawData: item,
+          };
+        }
       });
 
-      setRiwayatData(grouped);
+      setAllData(transformedData);
     } catch (error) {
       console.error('Load riwayat error:', error);
+      Alert.alert('Error', 'Gagal memuat riwayat evaluasi');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const applyFilter = () => {
+    let filtered = [...allData];
+
+    if (activeFilter === 'dosen') {
+      filtered = filtered.filter((item) => item.type === 'DOSEN');
+    } else if (activeFilter === 'fasilitas') {
+      filtered = filtered.filter((item) => item.type === 'FASILITAS');
+    }
+
+    // Group by month
+    const grouped = groupBy(filtered, (item) => {
+      const date = new Date(item.tanggal);
+      return formatDate(date, 'MMMM YYYY').toUpperCase();
+    });
+
+    setRiwayatData(grouped);
   };
 
   const onRefresh = async () => {
@@ -72,8 +101,30 @@ const RiwayatScreen = () => {
     setRefreshing(false);
   };
 
+  const handleItemPress = (item) => {
+    // Show detail dialog
+    const detailText = item.type === 'DOSEN'
+      ? `Dosen: ${item.nama}\nNIP: ${item.nip}\nMata Kuliah: ${item.subject}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${item.rawData.jawaban.length}`
+      : `Fasilitas: ${item.subject}\nKode: ${item.kode}\nLokasi: ${item.lokasi}\nKategori: ${item.nama}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${item.rawData.jawaban.length}`;
+
+    const komentarText = item.rawData.komentar 
+      ? `\n\nKomentar:\n${item.rawData.komentar}`
+      : '';
+
+    Alert.alert(
+      'Detail Evaluasi',
+      detailText + komentarText,
+      [{ text: 'OK' }]
+    );
+  };
+
   const renderItem = (item) => (
-    <TouchableOpacity key={item.id} style={styles.itemCard} activeOpacity={0.7}>
+    <TouchableOpacity 
+      key={item.id} 
+      style={styles.itemCard} 
+      activeOpacity={0.7}
+      onPress={() => handleItemPress(item)}
+    >
       <View style={styles.itemIndicator} />
       <View style={styles.itemContent}>
         <Text style={styles.itemDate}>{formatDate(item.tanggal)}</Text>
@@ -139,10 +190,19 @@ const RiwayatScreen = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+          />
         }
       >
-        {Object.keys(riwayatData).length > 0 ? (
+        {loading ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Memuat riwayat...</Text>
+          </View>
+        ) : Object.keys(riwayatData).length > 0 ? (
           Object.keys(riwayatData).map((month) => (
             <View key={month}>
               <Text style={styles.monthLabel}>{month}</Text>
@@ -153,14 +213,36 @@ const RiwayatScreen = () => {
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="clipboard-text-outline" size={64} color={colors.textDisabled} />
             <Text style={styles.emptyStateText}>Belum ada riwayat evaluasi</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Mulai evaluasi dosen atau fasilitas dari halaman beranda
+            </Text>
           </View>
         )}
       </ScrollView>
 
-      {/* FAB - Floating Action Button */}
-      <TouchableOpacity style={styles.fab}>
-        <MaterialCommunityIcons name="pencil" size={24} color="white" />
-      </TouchableOpacity>
+      {/* Stats Summary */}
+      {!loading && allData.length > 0 && (
+        <View style={styles.statsBar}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{allData.length}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>
+              {allData.filter((item) => item.type === 'DOSEN').length}
+            </Text>
+            <Text style={styles.statLabel}>Dosen</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>
+              {allData.filter((item) => item.type === 'FASILITAS').length}
+            </Text>
+            <Text style={styles.statLabel}>Fasilitas</Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -308,6 +390,52 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     color: colors.textSecondary,
     marginTop: spacing.base,
+    fontFamily: typography.fontFamily.medium,
+  },
+  emptyStateSubtext: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textDisabled,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  loadingState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xxxl * 2,
+  },
+  loadingText: {
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
+    marginTop: spacing.base,
+  },
+  statsBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.background,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    elevation: 4,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: typography.fontSize.xl,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.primary,
+  },
+  statLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.sm,
   },
   fab: {
     position: 'absolute',

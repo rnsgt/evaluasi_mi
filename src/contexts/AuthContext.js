@@ -56,6 +56,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (userData) => {
+    try {
+      setAuthError(null);
+      setLoading(true);
+
+      const response = await authService.register(userData);
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
+
+      // Update state
+      setToken(response.token);
+      setUser(response.user);
+
+      return { success: true };
+    } catch (error) {
+      setAuthError(error.message || 'Registrasi gagal');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       // Call logout API
@@ -85,6 +109,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     authError,
     login,
+    register,
     logout,
     updateUser,
     isAuthenticated: !!token,

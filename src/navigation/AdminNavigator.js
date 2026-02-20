@@ -1,17 +1,25 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, typography } from '../utils/theme';
 
-// Screens - We'll create these next
+// Screens
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import LaporanScreen from '../screens/admin/LaporanScreen';
 import PeriodeScreen from '../screens/admin/PeriodeScreen';
+import FormPeriodeScreen from '../screens/admin/FormPeriodeScreen';
 import SettingsScreen from '../screens/admin/SettingsScreen';
+import KelolaScreen from '../screens/admin/KelolaScreen';
+import FasilitasManagementScreen from '../screens/admin/FasilitasManagementScreen';
+import FormFasilitasScreen from '../screens/admin/FormFasilitasScreen';
+import DosenManagementScreen from '../screens/admin/DosenManagementScreen';
+import FormDosenScreen from '../screens/admin/FormDosenScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
-const AdminNavigator = () => {
+const AdminTabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -49,6 +57,50 @@ const AdminNavigator = () => {
       <Tab.Screen name="Periode" component={PeriodeScreen} />
       <Tab.Screen name="Pengaturan" component={SettingsScreen} />
     </Tab.Navigator>
+  );
+};
+
+const AdminNavigator = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
+      
+      {/* Periode Management */}
+      <Stack.Screen 
+        name="FormPeriode" 
+        component={FormPeriodeScreen}
+        options={{
+          presentation: 'modal',
+        }}
+      />
+
+      {/* Master Data Management */}
+      <Stack.Screen name="KelolaHub" component={KelolaScreen} />
+      
+      {/* Fasilitas Management */}
+      <Stack.Screen name="FasilitasManagement" component={FasilitasManagementScreen} />
+      <Stack.Screen 
+        name="FormFasilitas" 
+        component={FormFasilitasScreen}
+        options={{
+          presentation: 'modal',
+        }}
+      />
+
+      {/* Dosen Management */}
+      <Stack.Screen name="DosenManagement" component={DosenManagementScreen} />
+      <Stack.Screen 
+        name="FormDosen" 
+        component={FormDosenScreen}
+        options={{
+          presentation: 'modal',
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 

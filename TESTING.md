@@ -1,8 +1,28 @@
-# Testing Login - Aplikasi Evaluasi MI
+# Testing Login & Registration - Aplikasi Evaluasi MI
 
 ## Mock User Credentials (Development Mode)
 
 > **Note:** Ini adalah mock data untuk testing. Setelah backend ready, ganti dengan API endpoint yang sebenarnya di `src/services/authService.js`
+
+### 🆕 Registrasi Mahasiswa Baru
+
+Klik **"Daftar disini"** di halaman login untuk membuat akun baru.
+
+**Form yang harus diisi:**
+- NIM (minimal 6 digit, numeric)
+- Nama Lengkap (minimal 3 karakter)
+- Email (format email valid)
+- Program Studi (contoh: Manajemen Informatika)
+- Angkatan (4 digit tahun, contoh: 2023)
+- Password (minimal 6 karakter)
+- Konfirmasi Password (harus sama dengan password)
+
+**Setelah registrasi berhasil:**
+- Akun otomatis disimpan di MOCK_USERS
+- Redirect ke halaman Login
+- Login dengan NIM dan password yang baru dibuat
+
+---
 
 ### 🎓 Login sebagai Mahasiswa
 
@@ -48,26 +68,30 @@ Password: admin123
 
 ## Cara Testing
 
-1. **Buka aplikasi** di Expo Go atau Android device
-2. **Input credentials** di halaman login
+1. **Registrasi (Opsional):** Klik "Daftar disini" dan isi form registrasi
+2. **Login:** Input credentials di halaman login
 3. **Klik tombol "MASUK"**
 4. Aplikasi akan redirect ke halaman utama sesuai role:
    - Mahasiswa → Student Navigator (4 bottom tabs)
    - Admin → Admin Navigator (4 bottom tabs)
-5. **Logout:** Buka menu Profil/Pengaturan → Klik "Keluar Akun"
+5. **Ganti Mode Tampilan:** Buka menu Profil → Pilih Mode Terang atau Mode Gelap
+6. **Logout:** Buka menu Profil/Pengaturan → Klik "Keluar Akun"
 
 ---
 
 ## Status Implementasi
 
 ### ✅ Completed
-- [x] Login screen UI
-- [x] Mock authentication service
+- [x] Login screen UI with link to registration
+- [x] Registration screen with validation
+- [x] Mock authentication service (login & register)
 - [x] Role-based navigation (mahasiswa/admin)
-- [x] Student screens (Home, Riwayat, Statistik, Profil)
+- [x] Student screens (Home without NIM/Status/IPK, Riwayat, Statistik, Profil)
 - [x] Admin screens (Dashboard, Laporan, Periode, Settings)
-- [x] Logout functionality
+- [x] Logout functionality (fixed - no API call error)
 - [x] Token & user storage (AsyncStorage)
+- [x] Light/Dark mode selector in profile
+- [x] Profile data from registration
 
 ### 🚧 Todo
 - [ ] Form Evaluasi Dosen

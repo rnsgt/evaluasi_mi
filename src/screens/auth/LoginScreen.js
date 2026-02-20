@@ -152,6 +152,14 @@ const LoginScreen = ({ navigation }) => {
               )}
             </TouchableOpacity>
 
+            {/* Register Link */}
+            <View style={styles.registerLinkContainer}>
+              <Text style={styles.registerLinkText}>Belum punya akun? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.registerLink}>Daftar disini</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Forgot Password Link - Optional */}
             {/* <TouchableOpacity 
               onPress={() => navigation.navigate('ForgotPassword')}
@@ -270,6 +278,21 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
     letterSpacing: 1,
+  },
+  registerLinkContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  registerLinkText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+  },
+  registerLink: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.primary,
   },
   forgotPassword: {
     alignSelf: 'flex-end',

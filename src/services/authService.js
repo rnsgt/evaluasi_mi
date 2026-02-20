@@ -72,7 +72,57 @@ const authService = {
    * @returns {Promise<void>}
    */
   logout: async () => {
-    return await api.post('/auth/logout');
+    // MOCK LOGOUT - Hapus setelah backend ready
+    return Promise.resolve();
+    
+    // REAL API CALL - Uncomment setelah backend ready
+    // return await api.post('/auth/logout');
+  },
+
+  /**
+   * Register new user
+   * @param {Object} userData 
+   * @returns {Promise<{token: string, user: Object}>}
+   */
+  register: async (userData) => {
+    // MOCK REGISTER - Hapus setelah backend ready
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Cek apakah NIM sudah terdaftar
+        if (MOCK_USERS[userData.nim]) {
+          reject(new Error('NIM sudah terdaftar'));
+          return;
+        }
+        
+        // Simpan user baru ke MOCK_USERS
+        const newUser = {
+          id: Object.keys(MOCK_USERS).length + 1,
+          nim: userData.nim,
+          nama: userData.nama,
+          email: userData.email,
+          prodi: userData.prodi,
+          angkatan: userData.angkatan,
+          semester: 1,
+          status_akademik: 'Aktif',
+          ipk: 0.0,
+          role: 'mahasiswa',
+        };
+        
+        MOCK_USERS[userData.nim] = {
+          password: userData.password,
+          user: newUser,
+        };
+        
+        resolve({
+          token: `mock-token-${userData.nim}-${Date.now()}`,
+          user: newUser,
+        });
+      }, 1000);
+    });
+
+    // REAL API CALL - Uncomment setelah backend ready
+    // const response = await api.post('/auth/register', userData);
+    // return response.data;
   },
 
   /**
