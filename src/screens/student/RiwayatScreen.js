@@ -224,24 +224,24 @@ const RiwayatScreen = () => {
 
       {/* Stats Summary */}
       {!loading && allData.length > 0 && (
-        <View style={styles.statsBar}>
+        <View style={[styles.statsBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{allData.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{allData.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
               {allData.filter((item) => item.type === 'DOSEN').length}
             </Text>
-            <Text style={styles.statLabel}>Dosen</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Dosen</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
               {allData.filter((item) => item.type === 'FASILITAS').length}
             </Text>
-            <Text style={styles.statLabel}>Fasilitas</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Fasilitas</Text>
           </View>
         </View>
       )}
@@ -390,13 +390,11 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
     marginTop: spacing.base,
     fontFamily: typography.fontFamily.medium,
   },
   emptyStateSubtext: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textDisabled,
     marginTop: spacing.sm,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
@@ -408,16 +406,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   statsBar: {
     flexDirection: 'row',
-    backgroundColor: staticColors.background,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.base,
     borderTopWidth: 1,
-    borderTopColor: staticColors.border,
     elevation: 4,
   },
   statItem: {
@@ -427,16 +422,13 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: staticColors.primary,
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
     marginTop: spacing.xs,
   },
   statDivider: {
     width: 1,
-    backgroundColor: staticColors.border,
     marginHorizontal: spacing.sm,
   },
   fab: {

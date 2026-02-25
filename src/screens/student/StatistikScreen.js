@@ -71,13 +71,13 @@ const StatistikScreen = () => {
   };
 
   const renderStatCard = (icon, title, value, color) => (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
+    <View style={[styles.statCard, { borderLeftColor: color, backgroundColor: colors.surface }]}>
       <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
         <MaterialCommunityIcons name={icon} size={28} color={color} />
       </View>
       <View style={styles.statContent}>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statTitle}>{title}</Text>
+        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{value}</Text>
+        <Text style={[styles.statTitle, { color: colors.textSecondary }]}>{title}</Text>
       </View>
     </View>
   );
@@ -87,12 +87,12 @@ const StatistikScreen = () => {
     return (
       <View style={styles.progressItem}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressLabel}>{label}</Text>
-          <Text style={styles.progressValue}>
+          <Text style={[styles.progressLabel, { color: colors.textPrimary }]}>{label}</Text>
+          <Text style={[styles.progressValue, { color: colors.textSecondary }]}>
             {current} / {total}
           </Text>
         </View>
-        <View style={styles.progressBarBg}>
+        <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
           <View
             style={[
               styles.progressBarFill,
@@ -106,17 +106,17 @@ const StatistikScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Memuat statistik...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Memuat statistik...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -128,9 +128,9 @@ const StatistikScreen = () => {
         }
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerSubtitle}>PARTISIPASI ANDA</Text>
-          <Text style={styles.headerTitle}>Statistik Evaluasi</Text>
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
+          <Text style={[styles.headerSubtitle, { color: colors.primary }]}>PARTISIPASI ANDA</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Statistik Evaluasi</Text>
         </View>
 
         {/* Achievement Badge */}
@@ -147,8 +147,8 @@ const StatistikScreen = () => {
               color={stats.achievement.color}
             />
             <View style={styles.achievementContent}>
-              <Text style={styles.achievementTitle}>{stats.achievement.text}</Text>
-              <Text style={styles.achievementSubtitle}>
+              <Text style={[styles.achievementTitle, { color: colors.textPrimary }]}>{stats.achievement.text}</Text>
+              <Text style={[styles.achievementSubtitle, { color: colors.textSecondary }]}>
                 Terima kasih atas partisipasi aktif Anda!
               </Text>
             </View>
@@ -184,13 +184,13 @@ const StatistikScreen = () => {
             size={20}
             color={colors.primary}
           />
-          <Text style={styles.periodeText}>Periode: {stats.periodeAktif}</Text>
+          <Text style={[styles.periodeText, { color: colors.textPrimary }]}>Periode: {stats.periodeAktif}</Text>
         </View>
 
         {/* Progress Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Progress Evaluasi</Text>
-          <View style={styles.progressContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Progress Evaluasi</Text>
+          <View style={[styles.progressContainer, { backgroundColor: colors.surface }]}>
             {renderProgressBar(
               'Evaluasi Dosen',
               stats.totalDosen,
@@ -208,8 +208,8 @@ const StatistikScreen = () => {
 
         {/* Visual Chart - Simple Bar */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Grafik Partisipasi</Text>
-          <View style={styles.chartContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Grafik Partisipasi</Text>
+          <View style={[styles.chartContainer, { backgroundColor: colors.surface }]}>
             <View style={styles.chartBars}>
               <View style={styles.barGroup}>
                 <View
@@ -222,8 +222,8 @@ const StatistikScreen = () => {
                     },
                   ]}
                 />
-                <Text style={styles.barLabel}>Dosen</Text>
-                <Text style={styles.barValue}>{stats.totalDosen}</Text>
+                <Text style={[styles.barLabel, { color: colors.textSecondary }]}>Dosen</Text>
+                <Text style={[styles.barValue, { color: colors.textPrimary }]}>{stats.totalDosen}</Text>
               </View>
               <View style={styles.barGroup}>
                 <View
@@ -236,8 +236,8 @@ const StatistikScreen = () => {
                     },
                   ]}
                 />
-                <Text style={styles.barLabel}>Fasilitas</Text>
-                <Text style={styles.barValue}>{stats.totalFasilitas}</Text>
+                <Text style={[styles.barLabel, { color: colors.textSecondary }]}>Fasilitas</Text>
+                <Text style={[styles.barValue, { color: colors.textPrimary }]}>{stats.totalFasilitas}</Text>
               </View>
             </View>
           </View>
@@ -251,7 +251,7 @@ const StatistikScreen = () => {
             color={colors.primary}
             style={styles.infoIcon}
           />
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, { color: colors.textPrimary }]}>
             Pastikan Anda menyelesaikan semua evaluasi sebelum periode berakhir.
             Partisipasi Anda sangat berarti untuk peningkatan kualitas akademik.
           </Text>
@@ -264,7 +264,6 @@ const StatistikScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
   },
   scrollContent: {
     paddingBottom: spacing.xl,
@@ -276,30 +275,25 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   header: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
-    backgroundColor: staticColors.background,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
     letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
     marginTop: spacing.xs,
   },
   achievementCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: staticColors.background,
     marginHorizontal: spacing.base,
     marginBottom: spacing.base,
     padding: spacing.base,
@@ -313,11 +307,9 @@ const styles = StyleSheet.create({
   achievementTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
   },
   achievementSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
     marginTop: spacing.xs,
   },
   statsGrid: {
@@ -327,7 +319,6 @@ const styles = StyleSheet.create({
   statCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.base,
@@ -348,11 +339,9 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
   },
   statTitle: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
     marginTop: spacing.xs,
   },
   periodeCard: {
@@ -366,7 +355,6 @@ const styles = StyleSheet.create({
   },
   periodeText: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.medium,
     marginLeft: spacing.sm,
   },
@@ -377,11 +365,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
     marginBottom: spacing.base,
   },
   progressContainer: {
-    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     elevation: 1,
@@ -397,16 +383,13 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.medium,
   },
   progressValue: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
   },
   progressBarBg: {
     height: 10,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -415,7 +398,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   chartContainer: {
-    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     elevation: 1,
@@ -439,13 +421,11 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
     marginTop: spacing.sm,
     fontFamily: typography.fontFamily.medium,
   },
   barValue: {
     fontSize: typography.fontSize.lg,
-    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.bold,
     marginTop: spacing.xs,
   },
@@ -463,7 +443,6 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: typography.fontSize.sm,
-    color: staticColors.textPrimary,
     lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
   },
 });
