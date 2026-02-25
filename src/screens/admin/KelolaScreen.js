@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 
 const KelolaScreen = ({ navigation }) => {
   const { colors } = useTheme();
@@ -92,16 +92,16 @@ const KelolaScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   backButton: {
     width: 40,
@@ -116,13 +116,13 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     letterSpacing: 1,
   },
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: 2,
   },
   content: {
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.base,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: spacing.sm,
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     lineHeight: 20,
   },
   menuCard: {
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.base,
     marginBottom: spacing.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -171,12 +171,12 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
-    marginBottom: 4,
+    color: staticColors.textPrimary,
+    marginBottom: 2,
   },
   menuDescription: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    fontSize: typography.fontSize.xs,
+    color: staticColors.textSecondary,
     lineHeight: 18,
   },
 });

@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import evaluasiService from '../../services/evaluasiService';
 
@@ -276,30 +276,30 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   header: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
     letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: spacing.xs,
   },
   achievementCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     marginHorizontal: spacing.base,
     marginBottom: spacing.base,
     padding: spacing.base,
@@ -313,11 +313,11 @@ const styles = StyleSheet.create({
   achievementTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   achievementSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.xs,
   },
   statsGrid: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   statCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.base,
@@ -348,11 +348,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   statTitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.xs,
   },
   periodeCard: {
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   periodeText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.medium,
     marginLeft: spacing.sm,
   },
@@ -377,11 +377,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.base,
   },
   progressContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     elevation: 1,
@@ -397,16 +397,16 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.medium,
   },
   progressValue: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   progressBarBg: {
     height: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   chartContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     elevation: 1,
@@ -439,13 +439,13 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.sm,
     fontFamily: typography.fontFamily.medium,
   },
   barValue: {
     fontSize: typography.fontSize.lg,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.bold,
     marginTop: spacing.xs,
   },
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
   },
 });

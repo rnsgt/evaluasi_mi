@@ -347,7 +347,7 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   keyboardView: {
     flex: 1,
@@ -363,12 +363,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: spacing.base,
   },
   subtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
@@ -381,16 +381,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.xs,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     paddingHorizontal: spacing.base,
     height: 48,
   },
@@ -400,19 +400,19 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   eyeIcon: {
     padding: spacing.xs,
   },
   errorText: {
     fontSize: typography.fontSize.xs,
-    color: colors.error,
+    color: staticColors.error,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },
   registerButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     paddingVertical: spacing.base,
     borderRadius: radius.base,
     alignItems: 'center',
@@ -435,12 +435,12 @@ const styles = StyleSheet.create({
   },
   loginLinkText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   loginLink: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
 });
 

@@ -158,7 +158,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   scrollContent: {
     padding: spacing.base,
@@ -174,14 +174,14 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
     letterSpacing: 0.5,
   },
   userName: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
   },
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.error,
+    backgroundColor: staticColors.error,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -212,11 +212,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   sectionLink: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
   },
   evaluasiCard: {
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   cardButtonLabel: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   warningCard: {
     flexDirection: 'row',

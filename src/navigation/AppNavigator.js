@@ -8,13 +8,13 @@ import AdminNavigator from './AdminNavigator';
 import { ActivityIndicator, View } from 'react-native';
 
 const AppNavigator = () => {
-  const { isAuthenticated, isMahasiswa, isAdmin, loading } = useAuth();
-  const { colors } = useTheme();
+  const { isAuthenticated, isMahasiswa, isAdmin, loading: authLoading } = useAuth();
+  const { colors, isLoading: themeLoading } = useTheme();
 
-  if (loading) {
+  if (authLoading || themeLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#2E7D32" />
       </View>
     );
   }

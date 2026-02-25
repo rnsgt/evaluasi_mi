@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import periodeService from '../../services/periodeService';
 
 const FormPeriodeScreen = ({ navigation, route }) => {
@@ -404,7 +404,7 @@ const FormPeriodeScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   header: {
     flexDirection: 'row',
@@ -412,9 +412,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   backButton: {
     width: 40,
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   content: {
     flex: 1,
@@ -437,21 +437,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.xs,
   },
   required: {
-    color: colors.danger,
+    color: staticColors.danger,
   },
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   textArea: {
     minHeight: 100,
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 4,
   },
   pickerButton: {
@@ -468,14 +468,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
   },
   pickerButtonText: {
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   dateButton: {
     flexDirection: 'row',
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
@@ -492,11 +492,11 @@ const styles = StyleSheet.create({
   dateButtonText: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.base,
@@ -505,12 +505,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: spacing.sm,
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     lineHeight: 20,
   },
   submitButton: {
     flexDirection: 'row',
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     paddingVertical: spacing.base,
     borderRadius: radius.base,
     alignItems: 'center',
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.sm,
   },
   modalOption: {
@@ -555,15 +555,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   modalOptionActive: {
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
   },
   modalOptionText: {
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   modalOptionTextActive: {
     fontFamily: typography.fontFamily.semibold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
 });
 

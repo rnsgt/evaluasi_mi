@@ -342,7 +342,7 @@ const handleEvaluasiDosen = () => {
 
 ---
 
-## 📦 Deliverable Week 1
+## 📦 Deliverable Week  1
 
 ### Code Files (Minimum)
 1. ✅ `src/screens/student/PilihDosenScreen.js`

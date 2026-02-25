@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import dosenService from '../../services/dosenService';
 
 const DosenManagementScreen = ({ navigation }) => {
@@ -332,7 +332,7 @@ const DosenManagementScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -342,16 +342,16 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: spacing.base,
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   backButton: {
     width: 40,
@@ -366,22 +366,22 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     letterSpacing: 1,
   },
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: 2,
   },
   statsContainer: {
     flexDirection: 'row',
     padding: spacing.base,
     gap: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   statCard: {
     flex: 1,
@@ -390,16 +390,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   statValue: {
     fontSize: 24,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   searchContainer: {
@@ -412,13 +412,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   searchInput: {
     flex: 1,
     marginLeft: spacing.sm,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   listContent: {
     padding: spacing.base,
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     marginBottom: spacing.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -462,11 +462,11 @@ const styles = StyleSheet.create({
   cardNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   cardNIP: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   statusBadge: {
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   infoValue: {
     flex: 1,
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginLeft: 6,
   },
   mataKuliahContainer: {
@@ -505,36 +505,36 @@ const styles = StyleSheet.create({
   },
   mataKuliahLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: 4,
   },
   mataKuliahScroll: {
     flexDirection: 'row',
   },
   mataKuliahChip: {
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     paddingVertical: 4,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.full,
     marginRight: spacing.xs,
   },
   mataKuliahChipMore: {
-    backgroundColor: colors.textDisabled + '20',
+    backgroundColor: staticColors.textDisabled + '20',
   },
   mataKuliahChipText: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   bioContainer: {
     marginTop: spacing.xs,
     padding: spacing.sm,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderRadius: radius.sm,
   },
   bioText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     fontStyle: 'italic',
     lineHeight: 18,
   },
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
   },
   actionButton: {
     flex: 1,
@@ -567,12 +567,12 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   emptyStateSubtext: {
     fontSize: typography.fontSize.sm,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: spacing.xs,
     textAlign: 'center',
   },
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,

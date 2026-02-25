@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService, { KATEGORI_FASILITAS, ICON_OPTIONS } from '../../services/fasilitasService';
 
 const FormFasilitasScreen = ({ route, navigation }) => {
@@ -471,16 +471,16 @@ const FormFasilitasScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   backButton: {
     width: 40,
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   content: {
     flex: 1,
@@ -507,24 +507,24 @@ const styles = StyleSheet.create({
   label: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.xs,
   },
   required: {
-    color: colors.danger,
+    color: staticColors.danger,
   },
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   inputError: {
-    borderColor: colors.danger,
+    borderColor: staticColors.danger,
   },
   textArea: {
     minHeight: 100,
@@ -532,12 +532,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: typography.fontSize.xs,
-    color: colors.danger,
+    color: staticColors.danger,
     marginTop: 4,
   },
   hint: {
     fontSize: typography.fontSize.xs,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: 4,
   },
   pickerButton: {
@@ -546,24 +546,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
   pickerButtonText: {
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   pickerPlaceholder: {
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
   },
   iconPickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     padding: spacing.base,
   },
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: radius.base,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -582,11 +582,11 @@ const styles = StyleSheet.create({
   iconPickerLabel: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   iconPickerHint: {
     fontSize: typography.fontSize.xs,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: 2,
   },
   kapasitasContainer: {
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.base,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -606,18 +606,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     textAlign: 'center',
   },
   kapasitasUnit: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   fasilitasInputContainer: {
     flexDirection: 'row',
@@ -627,18 +627,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   fasilitasAddButton: {
     width: 40,
     height: 40,
     borderRadius: radius.base,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -652,22 +652,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
     paddingVertical: 4,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.full,
   },
   fasilitasChipText: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   bottomActions: {
     flexDirection: 'row',
     padding: spacing.base,
     gap: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
   },
   button: {
     flex: 1,
@@ -679,15 +679,15 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   cancelButtonText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   submitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
   },
   submitButtonText: {
     fontSize: typography.fontSize.base,
@@ -711,12 +711,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   modalItem: {
     flexDirection: 'row',
@@ -724,11 +724,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   modalItemText: {
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   iconGrid: {
     gap: spacing.sm,
@@ -747,12 +747,12 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   iconOptionSelected: {
-    backgroundColor: colors.primary + '10',
-    borderColor: colors.primary,
+    backgroundColor: staticColors.primary + '10',
+    borderColor: staticColors.primary,
   },
   iconOptionLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     textAlign: 'center',
     marginTop: 4,
   },

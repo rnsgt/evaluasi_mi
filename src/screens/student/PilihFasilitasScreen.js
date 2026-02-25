@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService from '../../services/fasilitasService';
 
 const PilihFasilitasScreen = ({ navigation }) => {
@@ -266,9 +266,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
     elevation: 2,
   },
   backButton: {
@@ -280,17 +280,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     margin: spacing.base,
     paddingHorizontal: spacing.base,
     borderRadius: radius.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     elevation: 1,
   },
   searchIcon: {
@@ -300,18 +300,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.md,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   filterSection: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   filterLabel: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     paddingHorizontal: spacing.base,
     marginBottom: spacing.sm,
   },
@@ -322,19 +322,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     marginRight: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   kategoriChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: staticColors.primary,
+    borderColor: staticColors.primary,
   },
   kategoriChipText: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   kategoriChipTextActive: {
     color: '#FFFFFF',
@@ -345,13 +345,13 @@ const styles = StyleSheet.create({
   fasilitasCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.base,
     elevation: 2,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   fasilitasIconContainer: {
     width: 56,
@@ -368,12 +368,12 @@ const styles = StyleSheet.create({
   fasilitasNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: 4,
   },
   fasilitasKode: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: spacing.sm,
   },
   fasilitasDetails: {
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginLeft: 4,
     flex: 1,
   },
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   kategoriTagText: {
     fontSize: typography.fontSize.xs,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
   },
   emptyState: {
@@ -410,12 +410,12 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   emptyStateSubtext: {
     fontSize: typography.fontSize.sm,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: spacing.sm,
   },
   loadingContainer: {
@@ -426,19 +426,19 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   resultsCount: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
   },
   resultsCountText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     textAlign: 'center',
   },
 });

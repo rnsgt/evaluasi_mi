@@ -184,7 +184,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   keyboardView: {
     flex: 1,
@@ -202,13 +202,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.fontSize.xxxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
     marginBottom: spacing.sm,
   },
   subtitle: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.regular,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     textAlign: 'center',
   },
   formContainer: {
@@ -220,21 +220,21 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.sm,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     height: 56,
   },
   inputError: {
-    borderColor: colors.error,
+    borderColor: staticColors.error,
     borderWidth: 2,
   },
   inputIcon: {
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.regular,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     paddingVertical: 0,
   },
   eyeIcon: {
@@ -257,14 +257,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
   },
   errorText: {
-    color: colors.error,
+    color: staticColors.error,
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.regular,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },
   loginButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     borderRadius: radius.sm,
     paddingVertical: spacing.base,
     alignItems: 'center',
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   loginButtonDisabled: {
-    backgroundColor: colors.disabled,
+    backgroundColor: staticColors.disabled,
   },
   loginButtonLabel: {
     color: 'white',
@@ -289,19 +289,19 @@ const styles = StyleSheet.create({
   },
   registerLinkText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   registerLink: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
     marginTop: spacing.md,
   },
   forgotPasswordText: {
-    color: colors.primary,
+    color: staticColors.primary,
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
   },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
   },
 });
 

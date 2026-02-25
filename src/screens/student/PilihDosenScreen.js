@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import dosenService from '../../services/dosenService';
 
 const PilihDosenScreen = ({ navigation }) => {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: spacing.base,
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   header: {
     flexDirection: 'row',
@@ -276,9 +276,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   backButton: {
     width: 40,
@@ -289,22 +289,22 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   searchContainer: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.base,
     paddingHorizontal: spacing.base,
     height: 48,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   searchIcon: {
     marginRight: spacing.sm,
@@ -312,13 +312,13 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   filterContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   filterList: {
     paddingHorizontal: spacing.base,
@@ -327,18 +327,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     marginRight: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   filterChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: staticColors.primary,
+    borderColor: staticColors.primary,
   },
   filterChipText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.medium,
   },
   filterChipTextSelected: {
@@ -351,13 +351,13 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   listContent: {
     padding: spacing.base,
   },
   card: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderRadius: radius.md,
     marginBottom: spacing.base,
     elevation: 2,
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.base,
@@ -391,12 +391,12 @@ const styles = StyleSheet.create({
   dosenName: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.xs,
   },
   nip: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: spacing.sm,
   },
   mataKuliahContainer: {
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   },
   mataKuliahText: {
     fontSize: typography.fontSize.xs,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
   },
   emptyState: {
@@ -424,13 +424,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: spacing.base,
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     textAlign: 'center',
   },
 });

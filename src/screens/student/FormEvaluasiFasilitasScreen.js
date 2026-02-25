@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import LikertScale from '../../components/LikertScale';
 import { KATEGORI_EVALUASI_FASILITAS, getTotalPertanyaan } from '../../data/pertanyaanFasilitas';
@@ -359,9 +359,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
     elevation: 2,
   },
   backButton: {
@@ -377,19 +377,19 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   fasilitasInfoCard: {
     flexDirection: 'row',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   fasilitasIcon: {
     width: 56,
@@ -406,12 +406,12 @@ const styles = StyleSheet.create({
   fasilitasNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: 4,
   },
   fasilitasKode: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: spacing.sm,
   },
   fasilitasDetails: {
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginLeft: 4,
   },
   kategoriTag: {
@@ -437,14 +437,14 @@ const styles = StyleSheet.create({
   },
   kategoriTagText: {
     fontSize: typography.fontSize.xs,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
   },
   progressContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -454,23 +454,23 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.medium,
   },
   progressPercentage: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.bold,
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.full,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     borderRadius: radius.full,
   },
   scrollView: {
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   instructionText: {
     flex: 1,
     fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
   },
   kategoriContainer: {
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
   kategoriHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.md,
     borderRadius: radius.base,
     marginBottom: spacing.base,
@@ -520,10 +520,10 @@ const styles = StyleSheet.create({
   kategoriTitle: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   pertanyaanContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.base,
@@ -531,12 +531,12 @@ const styles = StyleSheet.create({
   },
   pertanyaanNumber: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     fontFamily: typography.fontFamily.medium,
     marginBottom: spacing.sm,
   },
   komentarContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginTop: spacing.lg,
@@ -545,33 +545,33 @@ const styles = StyleSheet.create({
   komentarLabel: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.sm,
   },
   komentarInput: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.base,
     padding: spacing.base,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     minHeight: 100,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
   },
   submitContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
     elevation: 8,
   },
   submitButton: {
     flexDirection: 'row',
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     paddingVertical: spacing.base,
     borderRadius: radius.base,
     alignItems: 'center',
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   submitButtonDisabled: {
-    backgroundColor: colors.textDisabled,
+    backgroundColor: staticColors.textDisabled,
     opacity: 0.6,
   },
   submitIcon: {

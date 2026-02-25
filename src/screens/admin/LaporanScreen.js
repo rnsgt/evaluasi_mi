@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import evaluasiService from '../../services/evaluasiService';
 import periodeService from '../../services/periodeService';
 
@@ -400,7 +400,7 @@ const LaporanScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -410,32 +410,32 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: spacing.base,
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   header: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     letterSpacing: 1,
   },
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: 2,
   },
   filterSection: {
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   filterButton: {
     flexDirection: 'row',
@@ -445,14 +445,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     borderRadius: radius.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     marginBottom: spacing.sm,
   },
   filterButtonText: {
     flex: 1,
     marginLeft: spacing.sm,
     fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   tipeFilterContainer: {
     flexDirection: 'row',
@@ -467,11 +467,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tipeChipActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
   },
   tipeChipText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     fontFamily: typography.fontFamily.medium,
   },
   tipeChipTextActive: {
@@ -481,9 +481,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: spacing.base,
     gap: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   summaryCard: {
     flex: 1,
@@ -492,16 +492,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.base,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   summaryValue: {
     fontSize: 24,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   summaryLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     marginBottom: spacing.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   reportHeader: {
     flexDirection: 'row',
@@ -536,11 +536,11 @@ const styles = StyleSheet.create({
   reportNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   reportSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   typeBadge: {
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
   },
   statItem: {
     flex: 1,
@@ -564,17 +564,17 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: 4,
   },
   statValue: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   statDivider: {
     width: 1,
-    backgroundColor: colors.border,
+    backgroundColor: staticColors.border,
     marginHorizontal: spacing.xs,
   },
   ratingBadge: {
@@ -602,12 +602,12 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   emptyStateSubtext: {
     fontSize: typography.fontSize.sm,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: spacing.xs,
   },
   modalOverlay: {
@@ -627,22 +627,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   modalItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   modalItemActive: {
-    backgroundColor: colors.primary + '10',
+    backgroundColor: staticColors.primary + '10',
   },
   modalItemContent: {
     flex: 1,
@@ -650,15 +650,15 @@ const styles = StyleSheet.create({
   modalItemText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   modalItemSubtext: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   aktiveBadge: {
-    backgroundColor: colors.success + '20',
+    backgroundColor: staticColors.success + '20',
     paddingVertical: 4,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.sm,
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   aktiveBadgeText: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.success,
+    color: staticColors.success,
   },
 });
 

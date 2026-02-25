@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 
 const SettingsScreen = ({ navigation }) => {
   const { logout } = useAuth();
@@ -113,22 +113,22 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   header: {
     padding: spacing.base,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   headerTitle: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   content: {
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderRadius: radius.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   menuIconContainer: {
     width: 48,
@@ -159,11 +159,11 @@ const styles = StyleSheet.create({
   menuItemTitle: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   menuItemDescription: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   logoutButton: {
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     borderRadius: radius.base,
     borderWidth: 1.5,
-    borderColor: colors.error,
+    borderColor: staticColors.error,
     marginTop: spacing.xl,
     backgroundColor: '#fff',
     gap: spacing.xs,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   logoutButtonLabel: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.error,
+    color: staticColors.error,
   },
 });
 

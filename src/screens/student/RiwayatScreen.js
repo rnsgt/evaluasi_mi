@@ -252,45 +252,45 @@ const RiwayatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   header: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.lg,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
     letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: spacing.xs,
   },
   filterContainer: {
     flexDirection: 'row',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   filterChip: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     minWidth: 80,
     alignItems: 'center',
     marginRight: spacing.sm,
   },
   filterChipActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
   },
   filterChipText: {
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontSize: typography.fontSize.sm,
   },
   filterChipTextActive: {
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   monthLabel: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     letterSpacing: 0.5,
     marginBottom: spacing.md,
     marginTop: spacing.base,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   itemIndicator: {
     width: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     borderRadius: 2,
     marginRight: spacing.md,
   },
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   itemDate: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: spacing.xs,
   },
   statusBadge: {
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: typography.fontSize.xs,
-    color: colors.success,
+    color: staticColors.success,
     fontFamily: typography.fontFamily.medium,
   },
   itemInfo: {
@@ -371,17 +371,17 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   itemSubject: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     flex: 1,
   },
   itemName: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   emptyState: {
     alignItems: 'center',
@@ -390,13 +390,13 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
     fontFamily: typography.fontFamily.medium,
   },
   emptyStateSubtext: {
     fontSize: typography.fontSize.sm,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: spacing.sm,
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
@@ -408,16 +408,16 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   statsBar: {
     flexDirection: 'row',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.base,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
     elevation: 4,
   },
   statItem: {
@@ -427,16 +427,16 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.xs,
   },
   statDivider: {
     width: 1,
-    backgroundColor: colors.border,
+    backgroundColor: staticColors.border,
     marginHorizontal: spacing.sm,
   },
   fab: {
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,

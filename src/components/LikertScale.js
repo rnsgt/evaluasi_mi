@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../utils/theme';
 
 const LikertScale = ({ value, onValueChange, question, required = true, error }) => {
   const { colors } = useTheme();
@@ -127,11 +127,11 @@ const styles = StyleSheet.create({
   questionText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     lineHeight: typography.lineHeight.relaxed * typography.fontSize.base,
   },
   required: {
-    color: colors.error,
+    color: staticColors.error,
     fontSize: typography.fontSize.base,
   },
   optionsContainer: {
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
     borderRadius: radius.base,
     borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
+    borderColor: staticColors.border,
+    backgroundColor: staticColors.background,
     minHeight: 120,
   },
   optionSelected: {
@@ -160,45 +160,45 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   optionError: {
-    borderColor: colors.error,
+    borderColor: staticColors.error,
     borderWidth: 1.5,
   },
   iconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
   optionLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     textAlign: 'center',
     lineHeight: typography.lineHeight.tight * typography.fontSize.xs,
     marginBottom: spacing.xs,
     flex: 1,
   },
   optionLabelSelected: {
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     fontFamily: typography.fontFamily.bold,
   },
   valueCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   valueText: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   valueTextSelected: {
-    color: colors.primary,
+    color: staticColors.primary,
   },
   errorContainer: {
     flexDirection: 'row',
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: typography.fontSize.xs,
-    color: colors.error,
+    color: staticColors.error,
     flex: 1,
   },
 });

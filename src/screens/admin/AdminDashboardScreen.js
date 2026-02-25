@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 import statsService from '../../services/statsService';
 
 const AdminDashboardScreen = () => {
@@ -276,12 +276,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   errorText: {
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
     textAlign: 'center',
   },
@@ -293,13 +293,13 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
   },
   userName: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: spacing.xs,
   },
   notificationButton: {
@@ -338,21 +338,21 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginBottom: spacing.xs,
   },
   statValue: {
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginBottom: spacing.xs,
   },
   statSubtitle: {
     fontSize: typography.fontSize.xs,
-    color: colors.success,
+    color: staticColors.success,
   },
   participationCard: {
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderRadius: radius.md,
     padding: spacing.base,
     marginBottom: spacing.lg,
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   participationTitle: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   participationStats: {
     flexDirection: 'row',
@@ -380,18 +380,18 @@ const styles = StyleSheet.create({
   participationValue: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.primary,
+    color: staticColors.primary,
   },
   participationLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.xs,
     textAlign: 'center',
   },
   participationDivider: {
     width: 1,
     height: 40,
-    backgroundColor: colors.border,
+    backgroundColor: staticColors.border,
   },
   section: {
     marginBottom: spacing.lg,
@@ -405,12 +405,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   topDosenCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.sm,
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.base,
@@ -436,11 +436,11 @@ const styles = StyleSheet.create({
   topDosenNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   topDosenNip: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   ratingContainer: {
@@ -454,13 +454,13 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginLeft: 4,
   },
   fasilitasCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.sm,
@@ -481,23 +481,23 @@ const styles = StyleSheet.create({
   fasilitasNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
   },
   fasilitasKode: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: 2,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.xl,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderRadius: radius.base,
   },
   emptyStateText: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.sm,
     textAlign: 'center',
   },

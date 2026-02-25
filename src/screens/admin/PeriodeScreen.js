@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import periodeService from '../../services/periodeService';
 
 const PeriodeScreen = ({ navigation }) => {
@@ -330,7 +330,7 @@ const PeriodeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -340,37 +340,37 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: spacing.base,
     fontSize: typography.fontSize.base,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   header: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: staticColors.border,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     letterSpacing: 1,
   },
   headerTitle: {
     fontSize: typography.fontSize.xl,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: 2,
   },
   activePeriodeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.success + '10',
+    backgroundColor: staticColors.success + '10',
     padding: spacing.base,
     marginHorizontal: spacing.base,
     marginTop: spacing.base,
     borderRadius: radius.base,
     borderWidth: 1,
-    borderColor: colors.success + '30',
+    borderColor: staticColors.success + '30',
   },
   activePeriodeInfo: {
     marginLeft: spacing.sm,
@@ -378,12 +378,12 @@ const styles = StyleSheet.create({
   },
   activePeriodeLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
   },
   activePeriodeNama: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginTop: 2,
   },
   listContent: {
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     marginBottom: spacing.base,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
   cardHeader: {
     marginBottom: spacing.sm,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginRight: spacing.sm,
   },
   statusBadge: {
@@ -439,25 +439,25 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginLeft: 6,
   },
   infoValue: {
     flex: 1,
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.medium,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     marginLeft: spacing.xs,
   },
   keteranganContainer: {
     marginTop: spacing.xs,
     padding: spacing.sm,
-    backgroundColor: colors.background,
+    backgroundColor: staticColors.background,
     borderRadius: radius.sm,
   },
   keterangan: {
     fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     fontStyle: 'italic',
   },
   cardActions: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: staticColors.border,
   },
   actionButton: {
     flex: 1,
@@ -478,19 +478,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   activateButton: {
-    backgroundColor: colors.success,
+    backgroundColor: staticColors.success,
   },
   deactivateButton: {
-    backgroundColor: colors.warning,
+    backgroundColor: staticColors.warning,
   },
   editButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
   },
   deleteButton: {
-    backgroundColor: colors.danger,
+    backgroundColor: staticColors.danger,
   },
   disabledButton: {
-    backgroundColor: colors.border,
+    backgroundColor: staticColors.border,
   },
   actionButtonText: {
     fontSize: typography.fontSize.xs,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   disabledButtonText: {
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
   },
   emptyState: {
     alignItems: 'center',
@@ -508,12 +508,12 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
-    color: colors.textSecondary,
+    color: staticColors.textSecondary,
     marginTop: spacing.base,
   },
   emptyStateSubtext: {
     fontSize: typography.fontSize.sm,
-    color: colors.textDisabled,
+    color: staticColors.textDisabled,
     marginTop: spacing.xs,
   },
   fab: {
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
