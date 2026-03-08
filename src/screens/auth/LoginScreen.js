@@ -89,7 +89,6 @@ const LoginScreen = ({ navigation }) => {
                     setErrors({ ...errors, nim: null, general: null });
                   }}
                   placeholder="Masukkan Username"
-                  keyboardType="numeric"
                   style={styles.input}
                   placeholderTextColor={colors.textSecondary}
                 />

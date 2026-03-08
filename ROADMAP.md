@@ -35,6 +35,7 @@
 - [x] Riwayat Screen - Timeline placeholder
 - [x] Statistik Screen - Placeholder
 - [x] Profile Screen - Info akademik + theme selector (Light/Dark)
+- [x] Dark Mode - Fully implemented across all screens
 
 #### Fase 4: Admin Screens - Basic UI (100%)
 - [x] Admin Dashboard - Stats cards placeholder
@@ -205,25 +206,22 @@
 
 ---
 
-### **FASE 9: Backend Development** (Minggu 5-6) - PRIORITAS TINGGI
+### **FASE 9: Backend Development** (Minggu 5-6) - ✅ IN PROGRESS
 **Estimasi: 16-20 jam kerja**
 
-**❗ KEPUTUSAN: Pilih Tech Stack Backend**
-- **Option A: Node.js + Express + PostgreSQL** (Recommended)
-  - Pro: Satu bahasa (JavaScript), modern, scalable
-  - Con: Setup database baru
-- **Option B: Laravel + MySQL** (Alternative)
-  - Pro: Mature framework, authentication built-in
-  - Con: Beda bahasa, lebih kompleks
+**✅ KEPUTUSAN: Node.js + Express + PostgreSQL** (Dipilih)
+- Satu bahasa (JavaScript), modern, scalable
+- RESTful API untuk mobile app
 
 #### Backend Core (10 jam)
-- [ ] **Setup Backend Project** (2 jam)
-  - Initialize project (Express/Laravel)
-  - Database setup (PostgreSQL/MySQL)
+- [x] **Setup Backend Project** (2 jam) ✅
+  - Initialize project (Express)
+  - Database setup (PostgreSQL)
   - Environment configuration
   - CORS setup untuk mobile
+  - Middleware & error handling
 
-- [ ] **Database Schema & Migration** (3 jam)
+- [x] **Database Schema & Migration** (3 jam) ✅
   ```sql
   Tables:
   - users (mahasiswa + admin)
@@ -238,7 +236,7 @@
   - evaluasi_detail (jawaban likert)
   ```
 
-- [ ] **Authentication API** (3 jam)
+- [x] **Authentication API** (3 jam) ✅
   - POST /api/auth/register
   - POST /api/auth/login
   - POST /api/auth/logout
@@ -247,7 +245,7 @@
   - JWT token implementation
   - Password hashing (bcrypt)
 
-- [ ] **Master Data API** (2 jam)
+- [x] **Master Data API** (2 jam) ✅
   - GET /api/dosen (list dosen)
   - GET /api/fasilitas (list fasilitas)
   - GET /api/periode/active (periode aktif)
@@ -255,7 +253,7 @@
   - GET /api/pernyataan/fasilitas (questions)
 
 #### Evaluasi API (6 jam)
-- [ ] **Evaluasi Endpoints** (4 jam)
+- [x] **Evaluasi Endpoints** (4 jam) ✅
   - POST /api/evaluasi/dosen (submit evaluasi dosen)
   - POST /api/evaluasi/fasilitas (submit evaluasi fasilitas)
   - GET /api/evaluasi/riwayat (mahasiswa history)
@@ -263,7 +261,7 @@
   - Validation & business logic
   - Prevent duplicate evaluasi (same dosen/fasilitas in periode)
 
-- [ ] **Admin API** (2 jam)
+- [x] **Admin API** (2 jam) ✅
   - GET /api/admin/dashboard (stats agregat)
   - GET /api/admin/laporan (filtered reports)
   - GET /api/admin/periode (CRUD periode)
@@ -271,16 +269,16 @@
   - PUT /api/admin/periode/:id/activate
 
 #### Testing & Documentation (4 jam)
-- [ ] **API Testing** (2 jam)
+- [ ] **API Testing** (2 jam) - NEXT STEP
   - Postman collection
   - Test semua endpoints
   - Error handling validation
 
-- [ ] **API Documentation** (2 jam)
-  - API endpoints list
+- [x] **API Documentation** (2 jam) ✅
+  - API endpoints list (README.md)
   - Request/response examples
   - Authentication flow
-  - Error codes
+  - Setup instructions
 
 **Deliverable Week 5-6:**
 - Backend API fully functional
