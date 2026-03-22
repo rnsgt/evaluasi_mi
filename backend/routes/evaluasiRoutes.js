@@ -179,6 +179,7 @@ router.get('/riwayat', authMiddleware, async (req, res) => {
         ed.submitted_at,
         ed.komentar,
         ed.status,
+        COUNT(detail.id) as jumlah_jawaban,
         d.nama as dosen_nama,
         d.nip as dosen_nip,
         mk.nama as mata_kuliah_nama,
@@ -189,7 +190,9 @@ router.get('/riwayat', authMiddleware, async (req, res) => {
       JOIN dosen d ON ed.dosen_id = d.id
       JOIN mata_kuliah mk ON ed.mata_kuliah_id = mk.id
       JOIN periode_evaluasi p ON ed.periode_id = p.id
+      LEFT JOIN evaluasi_detail detail ON ed.id = detail.evaluasi_dosen_id
       WHERE ed.user_id = $1
+      GROUP BY ed.id, ed.submitted_at, ed.komentar, ed.status, d.nama, d.nip, mk.nama, mk.kode, p.nama
       ORDER BY ed.submitted_at DESC
     `, [user_id]);
 
@@ -200,6 +203,7 @@ router.get('/riwayat', authMiddleware, async (req, res) => {
         ef.submitted_at,
         ef.komentar,
         ef.status,
+        COUNT(detail.id) as jumlah_jawaban,
         f.nama as fasilitas_nama,
         f.kode as fasilitas_kode,
         f.kategori as fasilitas_kategori,
@@ -209,7 +213,9 @@ router.get('/riwayat', authMiddleware, async (req, res) => {
       FROM evaluasi_fasilitas ef
       JOIN fasilitas f ON ef.fasilitas_id = f.id
       JOIN periode_evaluasi p ON ef.periode_id = p.id
+      LEFT JOIN evaluasi_detail detail ON ef.id = detail.evaluasi_fasilitas_id
       WHERE ef.user_id = $1
+      GROUP BY ef.id, ef.submitted_at, ef.komentar, ef.status, f.nama, f.kode, f.kategori, f.lokasi, p.nama
       ORDER BY ef.submitted_at DESC
     `, [user_id]);
 

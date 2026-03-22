@@ -36,16 +36,29 @@ const FormDosenScreen = ({ route, navigation }) => {
   const [errors, setErrors] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
 
+  const getMataKuliahName = (mk) => {
+    if (typeof mk === 'string') return mk;
+    if (mk && typeof mk === 'object') return mk.nama || mk.kode || '';
+    return '';
+  };
+
+  const normalizeMataKuliah = (list = []) =>
+    list
+      .map((mk) => getMataKuliahName(mk))
+      .filter((name) => name);
+
   useEffect(() => {
     if (isEdit && editData) {
+      const normalizedMataKuliah = normalizeMataKuliah(editData.mata_kuliah || []);
+
       setFormData({
         nip: editData.nip || '',
         nama: editData.nama || '',
         email: editData.email || '',
-        mata_kuliah: editData.mata_kuliah || [],
+        mata_kuliah: normalizedMataKuliah,
         bio: editData.bio || '',
       });
-      setSelectedMataKuliah(editData.mata_kuliah || []);
+      setSelectedMataKuliah(normalizedMataKuliah);
     }
   }, [isEdit, editData]);
 
@@ -261,8 +274,8 @@ const FormDosenScreen = ({ route, navigation }) => {
             <View style={styles.mataKuliahChips}>
               {formData.mata_kuliah.map((mk, index) => (
                 <View key={index} style={styles.mataKuliahChip}>
-                  <Text style={styles.mataKuliahChipText}>{mk}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveMataKuliah(mk)}>
+                  <Text style={styles.mataKuliahChipText}>{getMataKuliahName(mk)}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveMataKuliah(getMataKuliahName(mk))}>
                     <MaterialCommunityIcons
                       name="close-circle"
                       size={16}

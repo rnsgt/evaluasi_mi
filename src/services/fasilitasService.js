@@ -1,6 +1,7 @@
-// Fasilitas Service dengan AsyncStorage untuk CRUD operations
-// Data dapat dikelola oleh admin (Create, Read, Update, Delete)
+// Fasilitas Service
+// Connect to backend API for fasilitas data
 
+import api from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@fasilitas_data';
@@ -231,20 +232,14 @@ const initializeFasilitas = async () => {
 initializeFasilitas();
 
 /**
- * Get semua fasilitas
+ * Get semua fasilitas from backend API
  * @param {boolean} includeInactive - Include inactive fasilitas (for admin)
  * @returns {Promise<Array>} Array of fasilitas
  */
 export const getAllFasilitas = async (includeInactive = false) => {
   try {
-    const data = await AsyncStorage.getItem(STORAGE_KEY);
-    const fasilitas = data ? JSON.parse(data) : [];
-    
-    if (includeInactive) {
-      return fasilitas.sort((a, b) => b.id - a.id);
-    }
-    
-    return fasilitas.filter((f) => f.status === 'aktif').sort((a, b) => b.id - a.id);
+    const response = await api.get('/fasilitas');
+    return response.data || [];
   } catch (error) {
     console.error('Get all fasilitas error:', error);
     return [];
@@ -252,18 +247,14 @@ export const getAllFasilitas = async (includeInactive = false) => {
 };
 
 /**
- * Get fasilitas by ID
+ * Get fasilitas by ID from backend API
  * @param {number} id - Fasilitas ID
  * @returns {Promise<Object>} Fasilitas object
  */
 export const getFasilitasById = async (id) => {
   try {
-    const allFasilitas = await getAllFasilitas(true);
-    const fasilitas = allFasilitas.find((f) => f.id === id);
-    if (!fasilitas) {
-      throw new Error('Fasilitas tidak ditemukan');
-    }
-    return fasilitas;
+    const response = await api.get(`/fasilitas/${id}`);
+    return response.data;
   } catch (error) {
     console.error('Get fasilitas by ID error:', error);
     throw error;

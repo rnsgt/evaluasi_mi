@@ -1,6 +1,9 @@
 // API Configuration
+// PENTING: Untuk testing di HP, ganti 'localhost' dengan IP laptop Anda
+// Cara cek IP: Buka CMD/PowerShell, ketik 'ipconfig', cari IPv4 Address
+// Contoh: 'http://192.168.1.100:3000/api'
 export const API_BASE_URL = __DEV__
-  ? 'http://localhost:8000/api' // Development (local backend)
+  ? 'http://192.168.132.19:3000/api' // Development (gunakan IPv4 Wi-Fi laptop saat ini untuk testing di HP)
   : 'https://api-evaluasi.yourdomain.com/api'; // Production
 
 // AsyncStorage Keys

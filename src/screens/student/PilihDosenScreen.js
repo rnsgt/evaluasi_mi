@@ -40,9 +40,18 @@ const PilihDosenScreen = ({ navigation }) => {
       setDosen(data);
       setFilteredDosen(data);
       
-      // Get unique mata kuliah for filter
-      const allMataKuliah = dosenService.getAllMataKuliah();
-      setMataKuliahList(['Semua', ...allMataKuliah]);
+      // Get unique mata kuliah for filter from backend data
+      const allMK = [];
+      data.forEach((d) => {
+        if (d.mata_kuliah && Array.isArray(d.mata_kuliah)) {
+          d.mata_kuliah.forEach((mk) => {
+            if (mk && mk.nama && !allMK.includes(mk.nama)) {
+              allMK.push(mk.nama);
+            }
+          });
+        }
+      });
+      setMataKuliahList(['Semua', ...allMK.sort()]);
     } catch (error) {
       console.error('Load dosen error:', error);
     } finally {
@@ -69,7 +78,7 @@ const PilihDosenScreen = ({ navigation }) => {
     // Filter by mata kuliah
     if (selectedMataKuliah !== 'Semua') {
       filtered = filtered.filter(d =>
-        d.mata_kuliah.includes(selectedMataKuliah)
+        d.mata_kuliah && d.mata_kuliah.some(mk => mk.nama === selectedMataKuliah)
       );
     }
 
@@ -111,10 +120,10 @@ const PilihDosenScreen = ({ navigation }) => {
             </Text>
             <Text style={styles.nip}>NIP: {item.nip}</Text>
             <View style={styles.mataKuliahContainer}>
-              {item.mata_kuliah.map((mk, index) => (
+              {item.mata_kuliah && item.mata_kuliah.map((mk, index) => (
                 <View key={index} style={styles.mataKuliahBadge}>
                   <Text style={styles.mataKuliahText} numberOfLines={1}>
-                    {mk}
+                    {typeof mk === 'object' ? mk.nama : mk}
                   </Text>
                 </View>
               ))}

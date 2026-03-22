@@ -92,6 +92,24 @@ export const validateNIM = (nim) => {
 };
 
 /**
+ * Validate identifier (NIM or Email)
+ * @param {string} identifier 
+ * @returns {boolean}
+ */
+export const validateIdentifier = (identifier) => {
+  if (!identifier || identifier.trim() === '') return false;
+  
+  // Check if it's email format
+  if (identifier.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(identifier);
+  }
+  
+  // Check if it's NIM format (numbers only, at least 6 digits)
+  return identifier.length >= 6 && /^\d+$/.test(identifier);
+};
+
+/**
  * Validate email format
  * @param {string} email 
  * @returns {boolean}

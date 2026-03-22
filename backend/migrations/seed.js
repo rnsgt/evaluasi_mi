@@ -18,10 +18,6 @@ async function seed() {
       INSERT INTO users (nim, nama, email, password, role, prodi, angkatan) VALUES
       (NULL, 'Admin Evaluasi', 'admin@evaluasi.com', $1, 'admin', NULL, NULL),
       ('210101001', 'Ahmad Fauzi', '210101001@student.ac.id', $1, 'mahasiswa', 'Teknik Informatika', '2021'),
-      ('210101002', 'Siti Nurhaliza', '210101002@student.ac.id', $1, 'mahasiswa', 'Teknik Informatika', '2021'),
-      ('210102001', 'Budi Santoso', '210102001@student.ac.id', $1, 'mahasiswa', 'Sistem Informasi', '2021'),
-      ('220101001', 'Diana Putri', '220101001@student.ac.id', $1, 'mahasiswa', 'Teknik Informatika', '2022'),
-      ('220101002', 'Eko Prasetyo', '220101002@student.ac.id', $1, 'mahasiswa', 'Teknik Informatika', '2022')
     `, [hashedPassword]);
     console.log('✅ Users seeded\n');
 

@@ -37,22 +37,20 @@ const RiwayatScreen = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Get all riwayat (both dosen and fasilitas)
-      const riwayat = await evaluasiService.getAllRiwayat(user.id);
+      // Get all riwayat (both dosen and fasilitas) from backend API
+      const riwayat = await evaluasiService.getRiwayat();
       
       // Transform data to display format
       const transformedData = riwayat.map((item) => {
-        if (item.type === 'dosen') {
+        if (item.type === 'DOSEN') {
           return {
             id: item.id,
             tanggal: item.submitted_at,
             type: 'DOSEN',
-            subject: item.mata_kuliah && item.mata_kuliah.length > 0 
-              ? item.mata_kuliah[0] 
-              : 'Evaluasi Dosen',
+            subject: item.mata_kuliah_nama || 'Evaluasi Dosen',
             nama: item.dosen_nama,
             nip: item.dosen_nip,
-            status: item.status === 'submitted' ? 'SELESAI' : 'PENDING',
+            status: 'SELESAI',
             rawData: item,
           };
         } else {
@@ -63,8 +61,8 @@ const RiwayatScreen = () => {
             subject: item.fasilitas_nama,
             nama: item.fasilitas_kategori,
             kode: item.fasilitas_kode,
-            lokasi: item.lokasi,
-            status: item.status === 'submitted' ? 'SELESAI' : 'PENDING',
+            lokasi: item.fasilitas_lokasi,
+            status: 'SELESAI',
             rawData: item,
           };
         }
@@ -104,10 +102,12 @@ const RiwayatScreen = () => {
   };
 
   const handleItemPress = (item) => {
+    const jumlahJawaban = item.rawData?.jumlah_jawaban || 0;
+
     // Show detail dialog
     const detailText = item.type === 'DOSEN'
-      ? `Dosen: ${item.nama}\nNIP: ${item.nip}\nMata Kuliah: ${item.subject}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${item.rawData.jawaban.length}`
-      : `Fasilitas: ${item.subject}\nKode: ${item.kode}\nLokasi: ${item.lokasi}\nKategori: ${item.nama}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${item.rawData.jawaban.length}`;
+      ? `Dosen: ${item.nama}\nNIP: ${item.nip}\nMata Kuliah: ${item.subject}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${jumlahJawaban}`
+      : `Fasilitas: ${item.subject}\nKode: ${item.kode}\nLokasi: ${item.lokasi}\nKategori: ${item.nama}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${jumlahJawaban}`;
 
     const komentarText = item.rawData.komentar 
       ? `\n\nKomentar:\n${item.rawData.komentar}`

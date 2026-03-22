@@ -1,6 +1,7 @@
-// Mock Periode Service
-// Untuk manage periode evaluasi akademik
+// Periode Service
+// Connect to backend API for periode evaluasi data
 
+import api from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@periode_evaluasi';
@@ -59,34 +60,34 @@ const initializePeriode = async () => {
 };
 
 /**
- * Get all periode
- * @returns {Promise<Array>} List of periode
- */
-export const getAllPeriode = async () => {
-  try {
-    await initializePeriode();
-    const data = await AsyncStorage.getItem(STORAGE_KEY);
-    const periode = data ? JSON.parse(data) : [];
-    
-    // Sort by created_at desc
-    return periode.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  } catch (error) {
-    console.error('Get all periode error:', error);
-    return [];
-  }
-};
-
-/**
- * Get active periode
+ * Get active periode from backend API
  * @returns {Promise<Object|null>} Active periode or null
  */
 export const getActivePeriode = async () => {
   try {
-    const allPeriode = await getAllPeriode();
-    return allPeriode.find((p) => p.status === 'aktif') || null;
+    const response = await api.get('/periode/active');
+    return response.data || null;
   } catch (error) {
     console.error('Get active periode error:', error);
     return null;
+  }
+};
+
+/**
+ * Get all periode (for admin)
+ * @returns {Promise<Array>} List of periode
+ */
+export const getAllPeriode = async () => {
+  try {
+    const response = await api.get('/periode');
+    return response.data || [];
+  } catch (error) {
+    console.error('Get all periode error:', error);
+    // Fallback to local mock if API fails
+    await initializePeriode();
+    const data = await AsyncStorage.getItem(STORAGE_KEY);
+    const periode = data ? JSON.parse(data) : [];
+    return periode.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 };
 
@@ -112,27 +113,36 @@ export const getPeriodeById = async (id) => {
  */
 export const createPeriode = async (periodeData) => {
   try {
-    const allPeriode = await getAllPeriode();
-    
-    // Generate new ID
-    const newId = allPeriode.length > 0 
-      ? Math.max(...allPeriode.map((p) => p.id)) + 1 
-      : 1;
-    
-    const newPeriode = {
-      id: newId,
-      ...periodeData,
-      status: 'tidak_aktif', // Default status
-      created_at: new Date().toISOString(),
-    };
-    
-    allPeriode.push(newPeriode);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allPeriode));
-    
-    return newPeriode;
-  } catch (error) {
-    console.error('Create periode error:', error);
-    throw new Error('Gagal membuat periode baru');
+    // Try backend API first
+    const response = await api.post('/periode', periodeData);
+    return response.data;
+  } catch (apiError) {
+    console.error('Create periode via API error:', apiError);
+
+    try {
+      // Fallback to local storage
+      const allPeriode = await getAllPeriode();
+
+      // Generate new ID
+      const newId = allPeriode.length > 0
+        ? Math.max(...allPeriode.map((p) => p.id)) + 1
+        : 1;
+
+      const newPeriode = {
+        id: newId,
+        ...periodeData,
+        status: 'tidak_aktif', // Default status
+        created_at: new Date().toISOString(),
+      };
+
+      allPeriode.push(newPeriode);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allPeriode));
+
+      return newPeriode;
+    } catch (fallbackError) {
+      console.error('Create periode fallback error:', fallbackError);
+      throw new Error('Gagal membuat periode baru');
+    }
   }
 };
 
@@ -144,25 +154,50 @@ export const createPeriode = async (periodeData) => {
  */
 export const updatePeriode = async (id, periodeData) => {
   try {
-    const allPeriode = await getAllPeriode();
-    const index = allPeriode.findIndex((p) => p.id === id);
-    
-    if (index === -1) {
+    // Try backend API first and preserve existing values required by backend
+    const existing = await getPeriodeById(id);
+    if (!existing) {
       throw new Error('Periode tidak ditemukan');
     }
-    
-    allPeriode[index] = {
-      ...allPeriode[index],
-      ...periodeData,
-      updated_at: new Date().toISOString(),
+
+    const payload = {
+      nama: periodeData.nama ?? existing.nama,
+      tahun_ajaran: periodeData.tahun_ajaran ?? existing.tahun_ajaran,
+      semester: periodeData.semester ?? existing.semester,
+      tanggal_mulai: periodeData.tanggal_mulai ?? existing.tanggal_mulai,
+      tanggal_akhir: periodeData.tanggal_akhir ?? existing.tanggal_akhir,
+      batas_evaluasi: periodeData.batas_evaluasi ?? existing.batas_evaluasi,
+      keterangan: periodeData.keterangan ?? existing.keterangan,
+      status: periodeData.status ?? existing.status ?? 'tidak_aktif',
     };
-    
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allPeriode));
-    
-    return allPeriode[index];
-  } catch (error) {
-    console.error('Update periode error:', error);
-    throw new Error(error.message || 'Gagal mengupdate periode');
+
+    const response = await api.put(`/periode/${id}`, payload);
+    return response.data;
+  } catch (apiError) {
+    console.error('Update periode via API error:', apiError);
+
+    try {
+      // Fallback to local storage
+      const allPeriode = await getAllPeriode();
+      const index = allPeriode.findIndex((p) => p.id === id);
+
+      if (index === -1) {
+        throw new Error('Periode tidak ditemukan');
+      }
+
+      allPeriode[index] = {
+        ...allPeriode[index],
+        ...periodeData,
+        updated_at: new Date().toISOString(),
+      };
+
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allPeriode));
+
+      return allPeriode[index];
+    } catch (fallbackError) {
+      console.error('Update periode fallback error:', fallbackError);
+      throw new Error(fallbackError.message || 'Gagal mengupdate periode');
+    }
   }
 };
 
@@ -173,37 +208,49 @@ export const updatePeriode = async (id, periodeData) => {
  */
 export const deletePeriode = async (id) => {
   try {
-    const allPeriode = await getAllPeriode();
-    const periode = allPeriode.find((p) => p.id === id);
-    
-    if (!periode) {
+    // Try backend API first
+    const response = await api.delete(`/periode/${id}`);
+    return {
+      success: response.success ?? true,
+      message: response.message || 'Periode berhasil dihapus',
+    };
+  } catch (apiError) {
+    console.error('Delete periode via API error:', apiError);
+
+    try {
+      // Fallback to local storage
+      const allPeriode = await getAllPeriode();
+      const periode = allPeriode.find((p) => p.id === id);
+
+      if (!periode) {
+        return {
+          success: false,
+          message: 'Periode tidak ditemukan'
+        };
+      }
+
+      // Don't allow deleting active periode
+      if (periode.status === 'aktif') {
+        return {
+          success: false,
+          message: 'Tidak dapat menghapus periode yang sedang aktif'
+        };
+      }
+
+      const filtered = allPeriode.filter((p) => p.id !== id);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+
+      return {
+        success: true,
+        message: 'Periode berhasil dihapus'
+      };
+    } catch (fallbackError) {
+      console.error('Delete periode fallback error:', fallbackError);
       return {
         success: false,
-        message: 'Periode tidak ditemukan'
+        message: fallbackError.message || 'Gagal menghapus periode'
       };
     }
-    
-    // Don't allow deleting active periode
-    if (periode.status === 'aktif') {
-      return {
-        success: false,
-        message: 'Tidak dapat menghapus periode yang sedang aktif'
-      };
-    }
-    
-    const filtered = allPeriode.filter((p) => p.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    
-    return {
-      success: true,
-      message: 'Periode berhasil dihapus'
-    };
-  } catch (error) {
-    console.error('Delete periode error:', error);
-    return {
-      success: false,
-      message: error.message || 'Gagal menghapus periode'
-    };
   }
 };
 
@@ -214,22 +261,31 @@ export const deletePeriode = async (id) => {
  */
 export const activatePeriode = async (id) => {
   try {
-    const allPeriode = await getAllPeriode();
-    
-    // Deactivate all other periode
-    const updated = allPeriode.map((p) => ({
-      ...p,
-      status: p.id === id ? 'aktif' : (p.status === 'aktif' ? 'tidak_aktif' : p.status),
-      updated_at: new Date().toISOString(),
-    }));
-    
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    
-    const activePeriode = updated.find((p) => p.id === id);
-    return activePeriode;
-  } catch (error) {
-    console.error('Activate periode error:', error);
-    throw new Error('Gagal mengaktifkan periode');
+    // Try backend API first
+    const response = await api.put(`/periode/${id}/activate`);
+    return response.data;
+  } catch (apiError) {
+    console.error('Activate periode via API error:', apiError);
+
+    try {
+      // Fallback to local storage
+      const allPeriode = await getAllPeriode();
+
+      // Deactivate all other periode
+      const updated = allPeriode.map((p) => ({
+        ...p,
+        status: p.id === id ? 'aktif' : (p.status === 'aktif' ? 'tidak_aktif' : p.status),
+        updated_at: new Date().toISOString(),
+      }));
+
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+      const activePeriode = updated.find((p) => p.id === id);
+      return activePeriode;
+    } catch (fallbackError) {
+      console.error('Activate periode fallback error:', fallbackError);
+      throw new Error('Gagal mengaktifkan periode');
+    }
   }
 };
 

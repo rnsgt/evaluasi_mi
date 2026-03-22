@@ -171,7 +171,7 @@ const AdminDashboardScreen = () => {
           <StatCard
             title="Evaluasi Dosen"
             value={stats.evaluasiDosen.toString()}
-            subtitle={`${((stats.evaluasiDosen / stats.totalEvaluasi) * 100).toFixed(0)}% dari total`}
+            subtitle={stats.totalEvaluasi > 0 ? `${((stats.evaluasiDosen / stats.totalEvaluasi) * 100).toFixed(0)}% dari total` : '0% dari total'}
             icon="school"
             bgColor="white"
             iconColor="#4CAF50"
@@ -179,7 +179,7 @@ const AdminDashboardScreen = () => {
           <StatCard
             title="Evaluasi Fasilitas"
             value={stats.evaluasiFasilitas.toString()}
-            subtitle={`${((stats.evaluasiFasilitas / stats.totalEvaluasi) * 100).toFixed(0)}% dari total`}
+            subtitle={stats.totalEvaluasi > 0 ? `${((stats.evaluasiFasilitas / stats.totalEvaluasi) * 100).toFixed(0)}% dari total` : '0% dari total'}
             icon="office-building"
             bgColor="white"
             iconColor="#FF9800"
@@ -196,6 +196,11 @@ const AdminDashboardScreen = () => {
               color={colors.primary}
             />
           </View>
+          <Text style={styles.participationMeta}>
+            {stats.participationPeriodeNama
+              ? `Periode aktif: ${stats.participationPeriodeNama}`
+              : 'Periode: Semua data evaluasi'}
+          </Text>
           <View style={styles.participationStats}>
             <View style={styles.participationItem}>
               <Text style={styles.participationValue}>{stats.participationRate}%</Text>
@@ -212,6 +217,9 @@ const AdminDashboardScreen = () => {
               <Text style={styles.participationLabel}>Total Mahasiswa</Text>
             </View>
           </View>
+          <Text style={styles.participationFormula}>
+            {`${stats.uniqueMahasiswa} dari ${stats.totalMahasiswa} mahasiswa terdaftar`}
+          </Text>
         </View>
 
         {/* Top 5 Dosen */}
@@ -369,6 +377,11 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     color: staticColors.textPrimary,
   },
+  participationMeta: {
+    fontSize: typography.fontSize.xs,
+    color: staticColors.textSecondary,
+    marginBottom: spacing.sm,
+  },
   participationStats: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,6 +405,12 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: staticColors.border,
+  },
+  participationFormula: {
+    marginTop: spacing.sm,
+    fontSize: typography.fontSize.xs,
+    color: staticColors.textSecondary,
+    textAlign: 'center',
   },
   section: {
     marginBottom: spacing.lg,

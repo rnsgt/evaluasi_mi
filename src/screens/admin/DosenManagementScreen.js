@@ -140,6 +140,12 @@ const DosenManagementScreen = ({ navigation }) => {
       .toUpperCase();
   };
 
+  const getMataKuliahName = (mk) => {
+    if (typeof mk === 'string') return mk;
+    if (mk && typeof mk === 'object') return mk.nama || mk.kode || '-';
+    return '-';
+  };
+
   const renderDosenCard = ({ item }) => {
     const statusColor = item.status === 'aktif' ? colors.success : colors.textDisabled;
 
@@ -181,7 +187,7 @@ const DosenManagementScreen = ({ navigation }) => {
               >
                 {item.mata_kuliah.slice(0, 4).map((mk, index) => (
                   <View key={index} style={styles.mataKuliahChip}>
-                    <Text style={styles.mataKuliahChipText}>{mk}</Text>
+                    <Text style={styles.mataKuliahChipText}>{getMataKuliahName(mk)}</Text>
                   </View>
                 ))}
                 {item.mata_kuliah.length > 4 && (

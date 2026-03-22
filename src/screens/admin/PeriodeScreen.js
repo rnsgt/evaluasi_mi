@@ -157,6 +157,7 @@ const PeriodeScreen = ({ navigation }) => {
   const renderPeriodeCard = ({ item }) => {
     const statusColor = getStatusColor(item.status);
     const statusLabel = getStatusLabel(item.status);
+    const isActive = item.status === 'aktif';
 
     return (
       <View style={styles.card}>
@@ -168,6 +169,30 @@ const PeriodeScreen = ({ navigation }) => {
               <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
             </View>
           </View>
+
+          <TouchableOpacity
+            style={[
+              styles.deletePillButton,
+              isActive && styles.deletePillButtonDisabled,
+            ]}
+            onPress={() => handleDelete(item)}
+            disabled={isActive}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MaterialCommunityIcons
+              name="delete"
+              size={16}
+              color={isActive ? colors.textDisabled : '#fff'}
+            />
+            <Text
+              style={[
+                styles.deletePillText,
+                isActive && styles.deletePillTextDisabled,
+              ]}
+            >
+              Hapus
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.cardContent}>
@@ -233,29 +258,6 @@ const PeriodeScreen = ({ navigation }) => {
             <Text style={styles.actionButtonText}>Edit</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              styles.deleteButton,
-              item.status === 'aktif' && styles.disabledButton,
-            ]}
-            onPress={() => handleDelete(item)}
-            disabled={item.status === 'aktif'}
-          >
-            <MaterialCommunityIcons
-              name="delete"
-              size={18}
-              color={item.status === 'aktif' ? colors.textDisabled : '#fff'}
-            />
-            <Text
-              style={[
-                styles.actionButtonText,
-                item.status === 'aktif' && styles.disabledButtonText,
-              ]}
-            >
-              Hapus
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
     );
@@ -399,11 +401,15 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
   cardTitleContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    flex: 1,
   },
   cardTitle: {
     flex: 1,
@@ -486,8 +492,28 @@ const styles = StyleSheet.create({
   editButton: {
     backgroundColor: staticColors.primary,
   },
-  deleteButton: {
+  deletePillButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: radius.full,
     backgroundColor: staticColors.danger,
+    marginLeft: spacing.sm,
+    gap: 4,
+    minWidth: 74,
+  },
+  deletePillButtonDisabled: {
+    backgroundColor: staticColors.border,
+  },
+  deletePillText: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.semibold,
+    color: '#fff',
+  },
+  deletePillTextDisabled: {
+    color: staticColors.textDisabled,
   },
   disabledButton: {
     backgroundColor: staticColors.border,

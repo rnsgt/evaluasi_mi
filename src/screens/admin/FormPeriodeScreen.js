@@ -139,6 +139,45 @@ const FormPeriodeScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleDelete = () => {
+    if (!isEdit || !periode) return;
+
+    if (periode.status === 'aktif') {
+      Alert.alert('Tidak Dapat Dihapus', 'Periode yang sedang aktif tidak dapat dihapus');
+      return;
+    }
+
+    Alert.alert(
+      'Hapus Periode',
+      `Hapus periode "${periode.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const result = await periodeService.deletePeriode(periode.id);
+
+              if (result.success) {
+                Alert.alert('Berhasil', 'Periode berhasil dihapus', [
+                  { text: 'OK', onPress: () => navigation.goBack() },
+                ]);
+              } else {
+                Alert.alert('Error', result.message || 'Gagal menghapus periode');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Gagal menghapus periode');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderSemesterModal = () => (
     <Modal
       visible={showSemesterModal}
@@ -393,6 +432,31 @@ const FormPeriodeScreen = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
 
+        {isEdit && (
+          <TouchableOpacity
+            style={[
+              styles.deleteButton,
+              (loading || periode?.status === 'aktif') && styles.submitButtonDisabled,
+            ]}
+            onPress={handleDelete}
+            disabled={loading || periode?.status === 'aktif'}
+          >
+            <MaterialCommunityIcons
+              name="delete"
+              size={20}
+              color={periode?.status === 'aktif' ? staticColors.textDisabled : '#fff'}
+            />
+            <Text
+              style={[
+                styles.deleteButtonText,
+                periode?.status === 'aktif' && styles.deleteButtonTextDisabled,
+              ]}
+            >
+              Hapus Periode
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <View style={{ height: spacing.xl }} />
       </ScrollView>
 
@@ -524,6 +588,24 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
     color: '#fff',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    backgroundColor: staticColors.danger,
+    paddingVertical: spacing.base,
+    borderRadius: radius.base,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  deleteButtonText: {
+    fontSize: typography.fontSize.base,
+    fontFamily: typography.fontFamily.semibold,
+    color: '#fff',
+  },
+  deleteButtonTextDisabled: {
+    color: staticColors.textDisabled,
   },
   modalOverlay: {
     flex: 1,

@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 import { formatDate } from '../../utils/helpers';
+import { getActivePeriode } from '../../services/periodeService';
 
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -26,15 +27,14 @@ const HomeScreen = ({ navigation }) => {
 
   const loadData = async () => {
     try {
-      // TODO: Fetch periode aktif from API
-      // const response = await periodeService.getActivePeriode();
-      // setPeriodeAktif(response.data);
-      
-      // Dummy data for now
-      setPeriodeAktif({
-        nama: 'Semester Ganjil 2023/2024',
-        batas_akhir: '2023-12-30',
-      });
+      // Fetch periode aktif from backend API
+      const periode = await getActivePeriode();
+      if (periode) {
+        setPeriodeAktif({
+          nama: periode.nama,
+          batas_akhir: periode.batas_evaluasi,
+        });
+      }
     } catch (error) {
       console.error('Load data error:', error);
     }

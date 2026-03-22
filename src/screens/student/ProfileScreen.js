@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+import authService from '../../services/authService';
 
 const THEME_OPTIONS = [
   { id: 'light', name: 'Mode Terang', color: '#FFFFFF', icon: 'white-balance-sunny', iconColor: '#FFA000' },
@@ -19,8 +21,30 @@ const THEME_OPTIONS = [
 ];
 
 const ProfileScreen = ({ navigation }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { theme, colors, toggleTheme } = useTheme();
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const profile = await authService.getProfile();
+        if (profile) {
+          await updateUser({
+            ...user,
+            ...profile,
+          });
+        }
+      } catch (error) {
+        console.error('Load profile error:', error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const handleLogout = () => {
     Alert.alert(
@@ -72,6 +96,17 @@ const ProfileScreen = ({ navigation }) => {
     </View>
   );
 
+  if (loadingProfile && !user) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Memuat profil...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -113,12 +148,12 @@ const ProfileScreen = ({ navigation }) => {
           <InfoCard
             icon="school-outline"
             label="PROGRAM STUDI"
-            value={user?.program_studi || 'Teknik Informatika'}
+            value={user?.prodi || user?.program_studi || '-'}
           />
           <InfoCard
             icon="calendar-outline"
             label="ANGKATAN"
-            value={user?.angkatan || '2021'}
+            value={user?.angkatan || '-'}
           />
         </View>
 
@@ -218,6 +253,15 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.base,
+    fontSize: typography.fontSize.base,
   },
   profileSection: {
     alignItems: 'center',

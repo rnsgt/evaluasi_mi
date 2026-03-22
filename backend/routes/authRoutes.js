@@ -78,7 +78,7 @@ router.post('/register', [
 
 // Login
 router.post('/login', [
-  body('email').isEmail().withMessage('Email tidak valid'),
+  body('identifier').notEmpty().withMessage('NIM/Email harus diisi'),
   body('password').notEmpty().withMessage('Password harus diisi'),
 ], async (req, res) => {
   try {
@@ -90,18 +90,18 @@ router.post('/login', [
       });
     }
 
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    // Find user
+    // Find user by NIM or Email
     const result = await db.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
+      'SELECT * FROM users WHERE email = $1 OR nim = $1',
+      [identifier]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
         success: false,
-        message: 'Email atau password salah'
+        message: 'NIM/Email atau password salah'
       });
     }
 

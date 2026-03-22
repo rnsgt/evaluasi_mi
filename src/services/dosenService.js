@@ -1,6 +1,7 @@
-// Dosen Service dengan AsyncStorage untuk CRUD operations
-// Data dapat dikelola oleh admin (Create, Read, Update, Delete)
+// Dosen Service
+// Connect to backend API for dosen data
 
+import api from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@dosen_data';
@@ -170,20 +171,14 @@ const initializeDosen = async () => {
 initializeDosen();
 
 /**
- * Get semua dosen
+ * Get semua dosen with mata kuliah from backend API
  * @param {boolean} includeInactive - Include inactive dosen (for admin)
  * @returns {Promise<Array>} Array of dosen
  */
 export const getAllDosen = async (includeInactive = false) => {
   try {
-    const data = await AsyncStorage.getItem(STORAGE_KEY);
-    const dosen = data ? JSON.parse(data) : [];
-    
-    if (includeInactive) {
-      return dosen.sort((a, b) => b.id - a.id);
-    }
-    
-    return dosen.filter((d) => d.status === 'aktif').sort((a, b) => b.id - a.id);
+    const response = await api.get('/dosen');
+    return response.data || [];
   } catch (error) {
     console.error('Get all dosen error:', error);
     return [];
@@ -191,18 +186,14 @@ export const getAllDosen = async (includeInactive = false) => {
 };
 
 /**
- * Get dosen by ID
+ * Get dosen by ID from backend API
  * @param {number} id - Dosen ID
  * @returns {Promise<Object>} Dosen object
  */
 export const getDosenById = async (id) => {
   try {
-    const allDosen = await getAllDosen(true);
-    const dosen = allDosen.find((d) => d.id === id);
-    if (!dosen) {
-      throw new Error('Dosen tidak ditemukan');
-    }
-    return dosen;
+    const response = await api.get(`/dosen/${id}`);
+    return response.data;
   } catch (error) {
     console.error('Get dosen by ID error:', error);
     throw error;

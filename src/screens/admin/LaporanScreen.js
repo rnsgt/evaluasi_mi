@@ -3,18 +3,21 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
   Modal,
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
-import evaluasiService from '../../services/evaluasiService';
+import adminService from '../../services/adminService';
 import periodeService from '../../services/periodeService';
 
 const LaporanScreen = () => {
@@ -31,6 +34,8 @@ const LaporanScreen = () => {
   
   // Modal states
   const [showPeriodeModal, setShowPeriodeModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
   
   const tipeOptions = [
     { value: 'semua', label: 'Semua' },
@@ -43,8 +48,11 @@ const LaporanScreen = () => {
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [selectedPeriode, selectedTipe, reportData]);
+    // Reload data when filters change
+    if (periodeList.length > 0) {
+      loadData();
+    }
+  }, [selectedPeriode, selectedTipe]);
 
   const loadData = async () => {
     try {
@@ -60,86 +68,88 @@ const LaporanScreen = () => {
         setSelectedPeriode(activePeriode);
       }
       
-      // Load all evaluasi
-      const allEvaluasi = await evaluasiService.getAllRiwayat('all');
+      // Load laporan from backend API
+      const filters = {};
+      if (selectedPeriode) {
+        filters.periode_id = selectedPeriode.id;
+      }
+      if (selectedTipe !== 'semua') {
+        filters.tipe = selectedTipe;
+      }
       
-      // Calculate statistics per item
-      const dosenStats = {};
-      const fasilitasStats = {};
+      const laporan = await adminService.getLaporan(filters);
       
-      allEvaluasi.forEach((evaluasi) => {
-        if (evaluasi.type === 'dosen') {
-          if (!dosenStats[evaluasi.dosen_id]) {
-            dosenStats[evaluasi.dosen_id] = {
-              id: evaluasi.dosen_id,
-              nama: evaluasi.dosen_nama,
-              nip: evaluasi.dosen_nip,
-              type: 'dosen',
-              totalNilai: 0,
-              totalJawaban: 0,
-              jumlahEvaluasi: 0,
-            };
-          }
-          
-          evaluasi.jawaban.forEach((jawab) => {
-            dosenStats[evaluasi.dosen_id].totalNilai += jawab.nilai;
-            dosenStats[evaluasi.dosen_id].totalJawaban += 1;
-          });
-          dosenStats[evaluasi.dosen_id].jumlahEvaluasi += 1;
-        } else {
-          if (!fasilitasStats[evaluasi.fasilitas_id]) {
-            fasilitasStats[evaluasi.fasilitas_id] = {
-              id: evaluasi.fasilitas_id,
-              nama: evaluasi.fasilitas_nama,
-              kode: evaluasi.fasilitas_kode,
-              kategori: evaluasi.fasilitas_kategori,
-              type: 'fasilitas',
-              totalNilai: 0,
-              totalJawaban: 0,
-              jumlahEvaluasi: 0,
-            };
-          }
-          
-          evaluasi.jawaban.forEach((jawab) => {
-            fasilitasStats[evaluasi.fasilitas_id].totalNilai += jawab.nilai;
-            fasilitasStats[evaluasi.fasilitas_id].totalJawaban += 1;
-          });
-          fasilitasStats[evaluasi.fasilitas_id].jumlahEvaluasi += 1;
-        }
-      });
-      
-      // Calculate average
-      const dosenReport = Object.values(dosenStats).map((item) => ({
-        ...item,
-        rataRata: (item.totalNilai / item.totalJawaban).toFixed(2),
+      // Transform backend data to match frontend format
+      const dosenReport = (laporan.dosen || []).map((item) => ({
+        id: item.id,
+        nama: item.nama,
+        nip: item.nip,
+        type: 'dosen',
+        rataRata: parseFloat(item.rata_rata) || 0,
+        jumlahEvaluasi: parseInt(item.jumlah_evaluasi) || 0,
+        totalJawaban: parseInt(item.total_jawaban) || 0,
+        detailKategori: (item.detail_kategori || []).map((detail) => ({
+          kategori: detail.kategori,
+          rataRata: parseFloat(detail.rata_rata) || 0,
+          totalJawaban: parseInt(detail.total_jawaban) || 0,
+        })),
+        komentarList: (item.komentar_list || [])
+          .map((comment) => ({
+            komentar: comment.komentar,
+            submittedAt: comment.submitted_at,
+          }))
+          .filter((comment) => comment.komentar),
+        detailEvaluasi: (item.detail_evaluasi || []).map((detail) => ({
+          id: detail.id,
+          submittedAt: detail.submitted_at,
+          komentar: detail.komentar,
+          mahasiswaNama: detail.mahasiswa_nama,
+          mahasiswaNim: detail.mahasiswa_nim,
+          rataRata: parseFloat(detail.rata_rata) || 0,
+          jumlahJawaban: parseInt(detail.jumlah_jawaban) || 0,
+        })),
       }));
       
-      const fasilitasReport = Object.values(fasilitasStats).map((item) => ({
-        ...item,
-        rataRata: (item.totalNilai / item.totalJawaban).toFixed(2),
+      const fasilitasReport = (laporan.fasilitas || []).map((item) => ({
+        id: item.id,
+        nama: item.nama,
+        kode: item.kode,
+        kategori: item.kategori,
+        lokasi: item.lokasi,
+        type: 'fasilitas',
+        rataRata: parseFloat(item.rata_rata) || 0,
+        jumlahEvaluasi: parseInt(item.jumlah_evaluasi) || 0,
+        totalJawaban: parseInt(item.total_jawaban) || 0,
+        detailKategori: (item.detail_kategori || []).map((detail) => ({
+          kategori: detail.kategori,
+          rataRata: parseFloat(detail.rata_rata) || 0,
+          totalJawaban: parseInt(detail.total_jawaban) || 0,
+        })),
+        komentarList: (item.komentar_list || [])
+          .map((comment) => ({
+            komentar: comment.komentar,
+            submittedAt: comment.submitted_at,
+          }))
+          .filter((comment) => comment.komentar),
+        detailEvaluasi: (item.detail_evaluasi || []).map((detail) => ({
+          id: detail.id,
+          submittedAt: detail.submitted_at,
+          komentar: detail.komentar,
+          mahasiswaNama: detail.mahasiswa_nama,
+          mahasiswaNim: detail.mahasiswa_nim,
+          rataRata: parseFloat(detail.rata_rata) || 0,
+          jumlahJawaban: parseInt(detail.jumlah_jawaban) || 0,
+        })),
       }));
       
       const combined = [...dosenReport, ...fasilitasReport];
       setReportData(combined);
+      setFilteredData(combined);
     } catch (error) {
       console.error('Load laporan error:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...reportData];
-    
-    // Filter by tipe
-    if (selectedTipe !== 'semua') {
-      filtered = filtered.filter((item) => item.type === selectedTipe);
-    }
-    
-    // Sort by rating desc
-    filtered.sort((a, b) => b.rataRata - a.rataRata);
-    
-    setFilteredData(filtered);
   };
 
   const onRefresh = async () => {
@@ -164,12 +174,212 @@ const LaporanScreen = () => {
     return 'Sangat Kurang';
   };
 
+  const toDisplayText = (value) => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'string' || typeof value === 'number') return String(value);
+
+    if (typeof value === 'object') {
+      if (value.nama) return String(value.nama);
+      if (value.kode) return String(value.kode);
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  };
+
+  const getKomentarExport = (item) => {
+    const comments = (item.komentarList || [])
+      .map((entry) => String(entry.komentar || '').trim())
+      .filter((value) => value.length > 0);
+
+    return comments.length > 0 ? comments.join(' | ') : '-';
+  };
+
+  const getMappedKategori = (detailKategori = [], targetType) => {
+    const mapped = {};
+
+    if (targetType === 'dosen') {
+      mapped['PENGUASAAN MATERI'] = '';
+      mapped['METODE PENGAJARAN'] = '';
+      mapped['KOMUNIKASI'] = '';
+      mapped['PENILAIAN'] = '';
+      mapped['KEDISIPLINAN'] = '';
+
+      detailKategori.forEach((detail) => {
+        const category = String(detail.kategori || '').toUpperCase();
+        const value = detail.rataRata;
+
+        if (category.includes('PERSIAPAN') || category.includes('PENGUASAAN')) {
+          mapped['PENGUASAAN MATERI'] = value;
+        } else if (category.includes('PENYAMPAIAN') || category.includes('METODE')) {
+          mapped['METODE PENGAJARAN'] = value;
+        } else if (category.includes('INTERAKSI') || category.includes('KOMUNIKASI')) {
+          mapped['KOMUNIKASI'] = value;
+        } else if (category.includes('EVALUASI') || category.includes('PENILAIAN')) {
+          mapped['PENILAIAN'] = value;
+        } else if (category.includes('SIKAP') || category.includes('ETIKA') || category.includes('DISIPLIN')) {
+          mapped['KEDISIPLINAN'] = value;
+        }
+      });
+    }
+
+    if (targetType === 'fasilitas') {
+      mapped['AKSESIBILITAS'] = '';
+      mapped['KEBERSIHAN'] = '';
+      mapped['KELENGKAPAN'] = '';
+      mapped['KENYAMANAN'] = '';
+
+      detailKategori.forEach((detail) => {
+        const category = String(detail.kategori || '').toUpperCase();
+        const value = detail.rataRata;
+
+        if (category.includes('AKSES')) {
+          mapped['AKSESIBILITAS'] = value;
+        } else if (category.includes('BERSIH')) {
+          mapped['KEBERSIHAN'] = value;
+        } else if (category.includes('LENGKAP')) {
+          mapped['KELENGKAPAN'] = value;
+        } else if (category.includes('NYAMAN')) {
+          mapped['KENYAMANAN'] = value;
+        }
+      });
+    }
+
+    return mapped;
+  };
+
+  const handleExportReport = async () => {
+    try {
+      if (filteredData.length === 0) {
+        Alert.alert('Tidak Ada Data', 'Belum ada data laporan yang bisa diunduh.');
+        return;
+      }
+
+      const isSharingAvailable = await Sharing.isAvailableAsync();
+      if (!isSharingAvailable) {
+        Alert.alert('Tidak Didukung', 'Perangkat ini tidak mendukung berbagi file laporan.');
+        return;
+      }
+
+      // Separate dosen and fasilitas
+      const dosenData = filteredData.filter((item) => item.type === 'dosen');
+      const fasilitasData = filteredData.filter((item) => item.type === 'fasilitas');
+
+      let csvContent = '';
+
+      // TABEL DOSEN
+      if (dosenData.length > 0) {
+        csvContent += 'TABEL DOSEN\n\n';
+        const dosenHeader = [
+          'NO',
+          'TIPE',
+          'NAMA DOSEN',
+          'PENGUASAAN MATERI',
+          'METODE PENGAJARAN',
+          'KOMUNIKASI',
+          'PENILAIAN',
+          'KEDISIPLINAN',
+          'RATA-RATA',
+          'JUMLAH EVALUASI',
+          'KOMENTAR',
+        ];
+
+        const dosenRows = dosenData.map((item, index) => {
+          const kategoriMap = getMappedKategori(item.detailKategori, 'dosen');
+
+          return [
+            index + 1,
+            'DOSEN',
+            item.nama,
+            kategoriMap['PENGUASAAN MATERI'] || '',
+            kategoriMap['METODE PENGAJARAN'] || '',
+            kategoriMap['KOMUNIKASI'] || '',
+            kategoriMap['PENILAIAN'] || '',
+            kategoriMap['KEDISIPLINAN'] || '',
+            item.rataRata,
+            item.jumlahEvaluasi,
+            getKomentarExport(item),
+          ];
+        });
+
+        csvContent += dosenHeader
+          .map((value) => `"${value}"`)
+          .join(',') + '\n';
+        csvContent += dosenRows
+          .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+          .join('\n') + '\n\n';
+      }
+
+      // TABEL FASILITAS
+      if (fasilitasData.length > 0) {
+        csvContent += 'TABEL FASILITAS\n\n';
+        const fasilitasHeader = [
+          'NO',
+          'TIPE',
+          'NAMA',
+          'AKSESIBILITAS',
+          'KEBERSIHAN',
+          'KELENGKAPAN',
+          'KENYAMANAN',
+          'RATA-RATA',
+          'JUMLAH EVALUASI',
+          'KOMENTAR',
+        ];
+
+        const fasilitasRows = fasilitasData.map((item, index) => {
+          const kategoriMap = getMappedKategori(item.detailKategori, 'fasilitas');
+
+          return [
+            index + 1,
+            'FASILITAS',
+            item.nama,
+            kategoriMap['AKSESIBILITAS'] || '',
+            kategoriMap['KEBERSIHAN'] || '',
+            kategoriMap['KELENGKAPAN'] || '',
+            kategoriMap['KENYAMANAN'] || '',
+            item.rataRata,
+            item.jumlahEvaluasi,
+            getKomentarExport(item),
+          ];
+        });
+
+        csvContent += fasilitasHeader
+          .map((value) => `"${value}"`)
+          .join(',') + '\n';
+        csvContent += fasilitasRows
+          .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
+          .join('\n');
+      }
+
+      const fileName = `laporan-evaluasi-${Date.now()}.csv`;
+      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+
+      await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: 'utf8' });
+
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'text/csv',
+        dialogTitle: 'Unduh Laporan Evaluasi',
+        UTI: 'public.comma-separated-values-text',
+      });
+    } catch (error) {
+      console.error('Export laporan error:', error);
+      Alert.alert('Gagal', 'Laporan belum berhasil diunduh. Coba lagi.');
+    }
+  };
+
   const renderReportCard = ({ item }) => {
     const ratingColor = getRatingColor(parseFloat(item.rataRata));
     const ratingLabel = getRatingLabel(parseFloat(item.rataRata));
     
     return (
-      <View style={styles.reportCard}>
+      <TouchableOpacity
+        style={styles.reportCard}
+        activeOpacity={0.8}
+        onPress={() => {
+          setSelectedReport(item);
+          setShowDetailModal(true);
+        }}
+      >
         <View style={styles.reportHeader}>
           <View style={styles.reportIconContainer}>
             <MaterialCommunityIcons
@@ -180,12 +390,12 @@ const LaporanScreen = () => {
           </View>
           <View style={styles.reportInfo}>
             <Text style={styles.reportNama} numberOfLines={1}>
-              {item.nama}
+              {toDisplayText(item.nama)}
             </Text>
             {item.type === 'dosen' ? (
-              <Text style={styles.reportSubtitle}>{item.nip}</Text>
+              <Text style={styles.reportSubtitle}>{toDisplayText(item.nip)}</Text>
             ) : (
-              <Text style={styles.reportSubtitle}>{item.kode} • {item.kategori}</Text>
+              <Text style={styles.reportSubtitle}>{toDisplayText(item.kode)} • {toDisplayText(item.kategori)}</Text>
             )}
           </View>
           <View style={[styles.typeBadge, { 
@@ -227,7 +437,78 @@ const LaporanScreen = () => {
             <Text style={styles.statValue}>{item.totalJawaban}</Text>
           </View>
         </View>
-      </View>
+
+        <View style={styles.detailHintWrap}>
+          <Text style={styles.detailHintText}>Tap untuk lihat detail evaluasi dan komentar</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderDetailModal = () => {
+    if (!selectedReport) return null;
+
+    return (
+      <Modal
+        visible={showDetailModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDetailModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContentLarge}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Detail Evaluasi</Text>
+              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.detailScrollContent}>
+              <Text style={styles.detailName}>{selectedReport.nama}</Text>
+              <Text style={styles.detailSubname}>
+                {selectedReport.type === 'dosen'
+                  ? `NIP: ${toDisplayText(selectedReport.nip)}`
+                  : `${toDisplayText(selectedReport.kode)} • ${toDisplayText(selectedReport.kategori)}`}
+              </Text>
+
+              <View style={styles.detailStatsRow}>
+                <Text style={styles.detailStatsText}>Rata-rata: {selectedReport.rataRata}</Text>
+                <Text style={styles.detailStatsText}>Jumlah Evaluasi: {selectedReport.jumlahEvaluasi}</Text>
+                <Text style={styles.detailStatsText}>Total Jawaban: {selectedReport.totalJawaban}</Text>
+              </View>
+
+              <Text style={styles.detailSectionTitle}>Rata-rata Per Kategori</Text>
+              {(selectedReport.detailKategori || []).length > 0 ? (
+                (selectedReport.detailKategori || []).map((detail, index) => (
+                  <View key={`kategori-${index}`} style={styles.detailRow}>
+                    <Text style={styles.detailRowLabel}>{toDisplayText(detail.kategori)}</Text>
+                    <Text style={styles.detailRowValue}>{detail.rataRata}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.detailEmpty}>Belum ada detail kategori</Text>
+              )}
+
+              <Text style={styles.detailSectionTitle}>Komentar Mahasiswa</Text>
+              {(selectedReport.detailEvaluasi || []).length > 0 ? (
+                (selectedReport.detailEvaluasi || []).map((item, index) => (
+                  <View key={`evaluasi-${item.id}-${index}`} style={styles.commentCard}>
+                    <Text style={styles.commentMeta}>
+                      {toDisplayText(item.mahasiswaNama)} ({toDisplayText(item.mahasiswaNim)})
+                    </Text>
+                    <Text style={styles.commentMeta}>Nilai: {item.rataRata} • Jawaban: {item.jumlahJawaban}</Text>
+                    <Text style={styles.commentMeta}>Tanggal: {new Date(item.submittedAt).toLocaleDateString('id-ID')}</Text>
+                    <Text style={styles.commentText}>{toDisplayText(item.komentar)}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.detailEmpty}>Belum ada komentar</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     );
   };
 
@@ -295,8 +576,14 @@ const LaporanScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>ADMIN</Text>
-        <Text style={styles.headerTitle}>Laporan Evaluasi</Text>
+        <View>
+          <Text style={styles.headerSubtitle}>ADMIN</Text>
+          <Text style={styles.headerTitle}>Laporan Evaluasi</Text>
+        </View>
+        <TouchableOpacity style={styles.exportButton} onPress={handleExportReport}>
+          <MaterialCommunityIcons name="download" size={20} color="#FFFFFF" />
+          <Text style={styles.exportButtonText}>Unduh</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filters */}
@@ -393,6 +680,7 @@ const LaporanScreen = () => {
       />
 
       {renderPeriodeModal()}
+      {renderDetailModal()}
     </SafeAreaView>
   );
 };
@@ -413,6 +701,9 @@ const styles = StyleSheet.create({
     color: staticColors.textSecondary,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     backgroundColor: staticColors.surface,
@@ -430,6 +721,20 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     color: staticColors.textPrimary,
     marginTop: 2,
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: staticColors.primary,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.base,
+    gap: spacing.xs,
+  },
+  exportButtonText: {
+    color: '#FFFFFF',
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.semibold,
   },
   filterSection: {
     backgroundColor: staticColors.surface,
@@ -515,6 +820,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
     borderWidth: 1,
     borderColor: staticColors.border,
+  },
+  detailHintWrap: {
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: staticColors.border,
+    paddingTop: spacing.sm,
+  },
+  detailHintText: {
+    fontSize: typography.fontSize.xs,
+    color: staticColors.textSecondary,
+    fontFamily: typography.fontFamily.medium,
   },
   reportHeader: {
     flexDirection: 'row',
@@ -621,6 +937,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.lg,
     maxHeight: '80%',
   },
+  modalContentLarge: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    maxHeight: '90%',
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -667,6 +989,78 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
     color: staticColors.success,
+  },
+  detailScrollContent: {
+    padding: spacing.base,
+  },
+  detailName: {
+    fontSize: typography.fontSize.lg,
+    fontFamily: typography.fontFamily.bold,
+    color: staticColors.textPrimary,
+  },
+  detailSubname: {
+    fontSize: typography.fontSize.sm,
+    color: staticColors.textSecondary,
+    marginTop: 2,
+  },
+  detailStatsRow: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: '#f8f9fa',
+    borderRadius: radius.sm,
+    gap: 4,
+  },
+  detailStatsText: {
+    fontSize: typography.fontSize.sm,
+    color: staticColors.textPrimary,
+  },
+  detailSectionTitle: {
+    marginTop: spacing.base,
+    marginBottom: spacing.xs,
+    fontSize: typography.fontSize.base,
+    fontFamily: typography.fontFamily.semibold,
+    color: staticColors.textPrimary,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: staticColors.border,
+  },
+  detailRowLabel: {
+    flex: 1,
+    fontSize: typography.fontSize.sm,
+    color: staticColors.textSecondary,
+    marginRight: spacing.sm,
+  },
+  detailRowValue: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: staticColors.primary,
+  },
+  detailEmpty: {
+    fontSize: typography.fontSize.sm,
+    color: staticColors.textSecondary,
+    fontStyle: 'italic',
+  },
+  commentCard: {
+    borderWidth: 1,
+    borderColor: staticColors.border,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  commentMeta: {
+    fontSize: typography.fontSize.xs,
+    color: staticColors.textSecondary,
+    marginBottom: 2,
+  },
+  commentText: {
+    marginTop: spacing.xs,
+    fontSize: typography.fontSize.sm,
+    color: staticColors.textPrimary,
   },
 });
 

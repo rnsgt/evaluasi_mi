@@ -391,6 +391,48 @@
 
 ---
 
+### **FASE 13: Go-Live Mahasiswa & Operasional** (Minggu 8) - KRITIS
+**Estimasi: 8-12 jam kerja**
+
+#### Production Readiness
+- [ ] **Backend Public & Domain Tetap** (2 jam)
+  - Deploy backend ke hosting production (Railway/Render/VPS)
+  - Setup HTTPS/SSL
+  - Gunakan URL API tetap (tanpa IP lokal laptop)
+  - Update API base URL production di frontend
+
+- [ ] **Database Production & Backup** (2 jam)
+  - Siapkan database production terpisah dari local
+  - Jalankan migration + seeder data master
+  - Setup backup otomatis harian
+  - Uji proses restore backup minimal 1 kali
+
+- [ ] **Security Hardening** (2 jam)
+  - Validasi CORS hanya origin yang diizinkan
+  - Tambahkan rate limit endpoint login
+  - Pastikan JWT secret dan kredensial di environment variables
+  - Audit log agar tidak menyimpan data sensitif
+
+#### Go-Live Execution
+- [ ] **UAT Final & Pilot Test** (2 jam)
+  - Uji alur mahasiswa end-to-end di device nyata
+  - Uji alur admin: dashboard, laporan, periode, unduh
+  - Uji skenario gagal jaringan dan token expired
+  - Jalankan pilot test ke kelompok kecil mahasiswa
+
+- [ ] **Rilis & Operasional Kampus** (2 jam)
+  - Distribusi APK/AAB atau publish ke Play Store internal
+  - Buat SOP akun admin operasional dan reset password
+  - Sosialisasi jadwal periode evaluasi ke mahasiswa
+  - Monitoring partisipasi harian dan error logs saat minggu pertama rilis
+
+**Deliverable Week 8:**
+- Sistem siap dipakai mahasiswa dengan URL backend stabil
+- Operasional admin berjalan dengan SOP yang jelas
+- Monitoring dan backup aktif untuk menjaga layanan
+
+---
+
 ## 📋 Checklist Akhir Sebelum Launch
 
 ### Functionality
@@ -455,10 +497,11 @@
 | 6 | Fase 10: Integration | Connect frontend to backend | 8-12 jam |
 | 6-7 | Fase 11: Testing | Testing, Bug fixes | 6-8 jam |
 | 7 | Fase 12: Polish | UI polish, Dark mode, Deployment | 4-6 jam |
+| 8 | Fase 13: Go-Live | Launch mahasiswa, operasional, monitoring | 8-12 jam |
 
-**Total Estimasi:** 74-98 jam kerja  
-**Target dengan 3 jam/hari:** ~25-33 hari kerja  
-**Timeline:** Selesai minggu ke-7 (akhir Maret 2026) ✅
+**Total Estimasi:** 82-110 jam kerja  
+**Target dengan 3 jam/hari:** ~28-37 hari kerja  
+**Timeline:** Selesai minggu ke-8 (awal April 2026)
 
 ---
 

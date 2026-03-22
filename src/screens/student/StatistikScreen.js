@@ -34,28 +34,14 @@ const StatistikScreen = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const riwayat = await evaluasiService.getAllRiwayat(user.id);
+      const statsData = await evaluasiService.getStatistik();
       
-      const totalDosen = riwayat.filter((item) => item.type === 'dosen').length;
-      const totalFasilitas = riwayat.filter((item) => item.type === 'fasilitas').length;
-      const total = riwayat.length;
-
-      // Determine achievement
-      let achievement = null;
-      if (total >= 20) {
-        achievement = { icon: 'trophy', text: 'Super Aktif!', color: '#FFD700' };
-      } else if (total >= 10) {
-        achievement = { icon: 'star', text: 'Aktif Berpartisipasi', color: '#FFA500' };
-      } else if (total >= 5) {
-        achievement = { icon: 'medal', text: 'Partisipasi Baik', color: '#4CAF50' };
-      }
-
       setStats({
-        totalEvaluasi: total,
-        totalDosen,
-        totalFasilitas,
-        periodeAktif: 'Semester Ganjil 2023/2024',
-        achievement,
+        totalEvaluasi: statsData.totalEvaluasi || 0,
+        totalDosen: statsData.totalDosen || 0,
+        totalFasilitas: statsData.totalFasilitas || 0,
+        periodeAktif: statsData.periodeAktif || 'Tidak ada periode aktif',
+        achievement: statsData.achievement || null,
       });
     } catch (error) {
       console.error('Load stats error:', error);

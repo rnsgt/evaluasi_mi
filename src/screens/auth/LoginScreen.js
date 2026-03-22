@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
-import { validateNIM } from '../../utils/helpers';
+import { validateIdentifier } from '../../utils/helpers';
 
 const LoginScreen = ({ navigation }) => {
   const { login, loading, authError } = useAuth();
@@ -31,9 +31,9 @@ const LoginScreen = ({ navigation }) => {
     const newErrors = {};
     
     if (!nim) {
-      newErrors.nim = 'Username tidak boleh kosong';
-    } else if (!validateNIM(nim)) {
-      newErrors.nim = 'Username tidak valid';
+      newErrors.nim = 'NIM/Email tidak boleh kosong';
+    } else if (!validateIdentifier(nim)) {
+      newErrors.nim = 'NIM/Email tidak valid';
     }
     
     if (!password) {
@@ -77,9 +77,9 @@ const LoginScreen = ({ navigation }) => {
 
           {/* Form Container */}
           <View style={styles.formContainer}>
-            {/* NIM Input */}
+            {/* NIM/Email Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Username</Text>
+              <Text style={styles.inputLabel}>NIM / Email</Text>
               <View style={[styles.inputWrapper, errors.nim && styles.inputError]}>
                 <MaterialCommunityIcons name="account-outline" size={24} color={colors.textSecondary} style={styles.inputIcon} />
                 <TextInput
@@ -88,9 +88,10 @@ const LoginScreen = ({ navigation }) => {
                     setNim(text);
                     setErrors({ ...errors, nim: null, general: null });
                   }}
-                  placeholder="Masukkan Username"
+                  placeholder="NIM atau Email"
                   style={styles.input}
                   placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
                 />
               </View>
               {errors.nim && (

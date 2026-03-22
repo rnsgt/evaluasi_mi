@@ -19,6 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import LikertScale from '../../components/LikertScale';
 import { KATEGORI_EVALUASI_DOSEN, getTotalPertanyaan } from '../../data/pertanyaanDosen';
 import evaluasiService from '../../services/evaluasiService';
+import { getActivePeriode } from '../../services/periodeService';
 
 const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   const { dosenId, namaDosen, mataKuliah, nip } = route.params;
@@ -31,10 +32,33 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   const [komentar, setKomentar] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [selectedMataKuliah, setSelectedMataKuliah] = useState(null);
+  const [activePeriode, setActivePeriode] = useState(null);
 
   const totalPertanyaan = getTotalPertanyaan();
   const answeredCount = Object.keys(answers).length;
   const progress = (answeredCount / totalPertanyaan) * 100;
+
+  useEffect(() => {
+    // Load active periode
+    const loadPeriode = async () => {
+      const periode = await getActivePeriode();
+      setActivePeriode(periode);
+    };
+    loadPeriode();
+
+    // Set default selectedMataKuliah (first one)
+    if (mataKuliah && mataKuliah.length > 0) {
+      // Check if mataKuliah is array of objects or strings
+      const firstMK = mataKuliah[0];
+      if (typeof firstMK === 'object' && firstMK.id) {
+        setSelectedMataKuliah(firstMK);
+      } else {
+        // Fallback for string array (will cause error, but prevent crash)
+        setSelectedMataKuliah({ id: 1, nama: firstMK });
+      }
+    }
+  }, [mataKuliah]);
 
   useEffect(() => {
     // Set up back button listener for unsaved changes warning
@@ -123,29 +147,34 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
     try {
       setSubmitting(true);
 
-      // Prepare jawaban array
+      // Check if periode active
+      if (!activePeriode) {
+        Alert.alert('Error', 'Tidak ada periode evaluasi aktif');
+        return;
+      }
+
+      // Check if mata kuliah selected
+      if (!selectedMataKuliah) {
+        Alert.alert('Error', 'Silakan pilih mata kuliah terlebih dahulu');
+        return;
+      }
+
+      // Prepare jawaban array with correct field name
       const jawaban = Object.keys(answers).map((pertanyaanId) => ({
-        pertanyaan_id: parseInt(pertanyaanId),
+        pernyataan_id: parseInt(pertanyaanId),
         nilai: answers[pertanyaanId],
       }));
 
-      // Prepare evaluasi data
+      // Prepare evaluasi data according to backend API format
       const evaluasiData = {
         dosen_id: dosenId,
-        dosen_nama: namaDosen,
-        dosen_nip: nip,
-        mata_kuliah: mataKuliah,
-        periode_id: 1, // TODO: Get from active periode
-        periode_nama: 'Semester Ganjil 2023/2024',
-        mahasiswa_id: user.id,
-        mahasiswa_nim: user.nim,
-        mahasiswa_nama: user.nama,
-        jawaban: jawaban,
+        mata_kuliah_id: selectedMataKuliah.id,
+        periode_id: activePeriode.id,
         komentar: komentar || null,
-        submitted_at: new Date().toISOString(),
+        jawaban: jawaban,
       };
 
-      // Submit to service
+      // Submit to backend API
       const result = await evaluasiService.submitEvaluasiDosen(evaluasiData);
 
       setHasUnsavedChanges(false);
@@ -237,10 +266,10 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
             </Text>
             <Text style={styles.dosenNip}>NIP: {nip}</Text>
             <View style={styles.mataKuliahTags}>
-              {mataKuliah.slice(0, 2).map((mk, index) => (
+              {mataKuliah && mataKuliah.slice(0, 2).map((mk, index) => (
                 <View key={index} style={styles.mataKuliahTag}>
                   <Text style={styles.mataKuliahText} numberOfLines={1}>
-                    {mk}
+                    {typeof mk === 'object' ? mk.nama : mk}
                   </Text>
                 </View>
               ))}
