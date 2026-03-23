@@ -69,21 +69,16 @@ const HomeScreen = ({ navigation }) => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>SELAMAT DATANG</Text>
-            <Text style={styles.userName}>{user?.nama || 'Mahasiswa'}</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <MaterialCommunityIcons name="bell-outline" size={24} color={colors.textPrimary} />
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
+
+          <Text style={styles.greeting}>SELAMAT DATANG</Text>
+          <Text style={styles.userName}>{user?.nama || 'Mahasiswa'}</Text>
         </View>
 
         {/* Section Title */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Evaluasi Semester</Text>
           <TouchableOpacity onPress={handleLihatJadwal}>
-            <Text style={styles.sectionLink}>Lihat Jadwal</Text>
+            <Text style={styles.sectionLink}>Lihat Riwayat</Text>
           </TouchableOpacity>
         </View>
 
@@ -164,13 +159,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: spacing.lg,
-  },
-  headerLeft: {
-    flex: 1,
   },
   greeting: {
     fontSize: typography.fontSize.sm,
@@ -184,24 +173,6 @@ const styles = StyleSheet.create({
     color: staticColors.textPrimary,
     marginTop: spacing.xs,
     marginBottom: spacing.sm,
-  },
-  notificationButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: staticColors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: staticColors.error,
   },
   sectionHeader: {
     flexDirection: 'row',

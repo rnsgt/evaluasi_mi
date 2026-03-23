@@ -10,6 +10,7 @@ import HomeScreen from '../screens/student/HomeScreen';
 import RiwayatScreen from '../screens/student/RiwayatScreen';
 import StatistikScreen from '../screens/student/StatistikScreen';
 import ProfileScreen from '../screens/student/ProfileScreen';
+import ChangePasswordScreen from '../screens/student/ChangePasswordScreen';
 import PilihDosenScreen from '../screens/student/PilihDosenScreen';
 import FormEvaluasiDosenScreen from '../screens/student/FormEvaluasiDosenScreen';
 import PilihFasilitasScreen from '../screens/student/PilihFasilitasScreen';
@@ -31,6 +32,20 @@ const HomeStack = () => {
       <Stack.Screen name="FormEvaluasiDosen" component={FormEvaluasiDosenScreen} />
       <Stack.Screen name="PilihFasilitas" component={PilihFasilitasScreen} />
       <Stack.Screen name="FormEvaluasiFasilitas" component={FormEvaluasiFasilitasScreen} />
+    </Stack.Navigator>
+  );
+};
+
+// Profile Stack Navigator untuk nested screens
+const ProfileStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
 };
@@ -73,7 +88,7 @@ const StudentNavigator = () => {
       <Tab.Screen name="Beranda" component={HomeStack} />
       <Tab.Screen name="Riwayat" component={RiwayatScreen} />
       <Tab.Screen name="Statistik" component={StatistikScreen} />
-      <Tab.Screen name="Profil" component={ProfileScreen} />
+      <Tab.Screen name="Profil" component={ProfileStack} />
     </Tab.Navigator>
   );
 };

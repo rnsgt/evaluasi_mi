@@ -43,14 +43,6 @@ const SettingsScreen = ({ navigation }) => {
       onPress: () => Alert.alert('Info', 'Fitur dalam pengembangan'),
     },
     {
-      id: 'notification',
-      title: 'Notifikasi',
-      description: 'Atur preferensi notifikasi',
-      icon: 'bell',
-      color: '#FF9800',
-      onPress: () => Alert.alert('Info', 'Fitur dalam pengembangan'),
-    },
-    {
       id: 'help',
       title: 'Bantuan & Panduan',
       description: 'Panduan penggunaan aplikasi',

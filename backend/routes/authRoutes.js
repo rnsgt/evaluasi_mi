@@ -176,6 +176,7 @@ router.put('/change-password', [
   authMiddleware,
   body('oldPassword').notEmpty().withMessage('Password lama harus diisi'),
   body('newPassword').isLength({ min: 6 }).withMessage('Password baru minimal 6 karakter'),
+  body('newPasswordConfirmation').notEmpty().withMessage('Konfirmasi password harus diisi'),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -186,7 +187,15 @@ router.put('/change-password', [
       });
     }
 
-    const { oldPassword, newPassword } = req.body;
+    const { oldPassword, newPassword, newPasswordConfirmation } = req.body;
+
+    // Validate passwords match
+    if (newPassword !== newPasswordConfirmation) {
+      return res.status(400).json({
+        success: false,
+        message: 'Konfirmasi password tidak sesuai'
+      });
+    }
 
     // Get current user
     const result = await db.query(

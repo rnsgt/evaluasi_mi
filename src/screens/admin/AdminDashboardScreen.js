@@ -136,18 +136,8 @@ const AdminDashboardScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>SELAMAT DATANG,</Text>
-            <Text style={styles.userName}>Admin Akademik</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <MaterialCommunityIcons
-              name="bell-outline"
-              size={24}
-              color={colors.textPrimary}
-            />
-            {stats.todayEvaluasi > 0 && <View style={styles.notificationBadge} />}
-          </TouchableOpacity>
+          <Text style={styles.greeting}>SELAMAT DATANG,</Text>
+          <Text style={styles.userName}>Admin Akademik</Text>
         </View>
 
         {/* Main Stats Cards */}
@@ -294,9 +284,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: spacing.lg,
   },
   greeting: {
@@ -309,18 +296,6 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.bold,
     color: staticColors.textPrimary,
     marginTop: spacing.xs,
-  },
-  notificationButton: {
-    position: 'relative',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#F44336',
   },
   statsGrid: {
     flexDirection: 'row',

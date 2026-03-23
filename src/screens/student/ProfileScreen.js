@@ -15,14 +15,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import authService from '../../services/authService';
 
-const THEME_OPTIONS = [
-  { id: 'light', name: 'Mode Terang', color: '#FFFFFF', icon: 'white-balance-sunny', iconColor: '#FFA000' },
-  { id: 'dark', name: 'Mode Gelap', color: '#1E1E1E', icon: 'moon-waning-crescent', iconColor: '#FFFFFF' },
-];
-
 const ProfileScreen = ({ navigation }) => {
   const { user, logout, updateUser } = useAuth();
-  const { theme, colors, toggleTheme } = useTheme();
+  const { colors } = useTheme();
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
@@ -62,26 +57,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleChangePassword = () => {
-    // TODO: Navigate to change password screen
-    console.log('Navigate to change password');
-  };
-
-  const handleThemeChange = async (themeId) => {
-    const themeName = themeId === 'light' ? 'Mode Terang' : 'Mode Gelap';
-    Alert.alert(
-      'Ubah Mode Tampilan?',
-      `Aplikasi akan menggunakan ${themeName}.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Ubah',
-          onPress: async () => {
-            await toggleTheme(themeId);
-            Alert.alert('Berhasil', `${themeName} telah diterapkan!`);
-          },
-        },
-      ]
-    );
+    navigation.navigate('ChangePassword');
   };
 
   const InfoCard = ({ icon, label, value }) => (
@@ -126,9 +102,6 @@ const ProfileScreen = ({ navigation }) => {
             <View style={[styles.statusIndicator, { backgroundColor: colors.success, borderColor: colors.background }]} />
           </View>
           <Text style={[styles.profileName, { color: colors.textPrimary }]}>{user?.nama || 'Mahasiswa'}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: colors.primary + '20' }]}>
-            <Text style={[styles.statusBadgeText, { color: colors.primary }]}>Mahasiswa Aktif</Text>
-          </View>
         </View>
 
         {/* Academic Info */}
@@ -155,60 +128,6 @@ const ProfileScreen = ({ navigation }) => {
             label="ANGKATAN"
             value={user?.angkatan || '-'}
           />
-        </View>
-
-        {/* Theme Settings */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MODE TAMPILAN</Text>
-          
-          <View style={[styles.themeContainer, { backgroundColor: colors.card }]}>
-            {THEME_OPTIONS.map((themeOption) => (
-              <TouchableOpacity
-                key={themeOption.id}
-                style={[
-                  styles.themeOption,
-                  { 
-                    backgroundColor: colors.card,
-                    borderColor: theme === themeOption.id ? colors.primary : 'transparent'
-                  },
-                  theme === themeOption.id && styles.themeOptionSelected,
-                ]}
-                onPress={() => handleThemeChange(themeOption.id)}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={[
-                    styles.themeColorCircle,
-                    { backgroundColor: themeOption.color },
-                    themeOption.id === 'light' && { borderWidth: 2, borderColor: colors.border },
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={themeOption.icon}
-                    size={28}
-                    color={themeOption.iconColor}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.themeName,
-                    { color: colors.textPrimary },
-                    theme === themeOption.id && { fontWeight: 'bold', color: colors.primary },
-                  ]}
-                >
-                  {themeOption.name}
-                </Text>
-                {theme === themeOption.id && (
-                  <MaterialCommunityIcons
-                    name="check-circle"
-                    size={20}
-                    color={colors.primary}
-                    style={styles.themeCheckIcon}
-                  />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
         </View>
 
         {/* Account Settings */}
@@ -344,38 +263,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.medium,
   },
-  themeContainer: {
-    borderRadius: radius.md,
-    padding: spacing.sm,
-  },
-  themeOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: radius.base,
-    marginBottom: spacing.xs,
-    borderWidth: 2,
-  },
-  themeOptionSelected: {
-    elevation: 2,
-  },
-  themeColorCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-    elevation: 2,
-  },
-  themeName: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.medium,
-  },
-  themeCheckIcon: {
-    marginLeft: spacing.sm,
-  },
+
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',

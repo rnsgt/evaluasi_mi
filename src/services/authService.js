@@ -43,11 +43,12 @@ const authService = {
    * @returns {Promise<Object>}
    */
   changePassword: async (oldPassword, newPassword, newPasswordConfirmation) => {
-    return await api.put('/auth/change-password', {
-      old_password: oldPassword,
-      new_password: newPassword,
-      new_password_confirmation: newPasswordConfirmation,
+    const response = await api.put('/auth/change-password', {
+      oldPassword,
+      newPassword,
+      newPasswordConfirmation,
     });
+    return response;
   },
 
   /**
