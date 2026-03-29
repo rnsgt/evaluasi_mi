@@ -8,11 +8,7 @@ export const KATEGORI_EVALUASI_FASILITAS = [
     pertanyaan: [
       {
         id: 1,
-        text: 'Fasilitas ini selalu dalam kondisi bersih dan terawat',
-      },
-      {
-        id: 2,
-        text: 'Toilet/kamar mandi (jika ada) dalam kondisi bersih',
+        text: 'Fasilitas selalu dalam kondisi bersih dan terawat',
       },
       {
         id: 3,
@@ -48,14 +44,6 @@ export const KATEGORI_EVALUASI_FASILITAS = [
       },
       {
         id: 8,
-        text: 'Sirkulasi udara/ventilasi nyaman',
-      },
-      {
-        id: 9,
-        text: 'Tingkat kebisingan di area ini tidak mengganggu',
-      },
-      {
-        id: 10,
         text: 'Suhu ruangan nyaman untuk aktivitas',
       },
     ],

@@ -269,7 +269,7 @@ const LaporanScreen = () => {
 
       // TABEL DOSEN
       if (dosenData.length > 0) {
-        csvContent += 'TABEL DOSEN\n\n';
+        csvContent += 'LAPORAN DOSEN\n\n';
         const dosenHeader = [
           'NO',
           'TIPE',
@@ -312,7 +312,7 @@ const LaporanScreen = () => {
 
       // TABEL FASILITAS
       if (fasilitasData.length > 0) {
-        csvContent += 'TABEL FASILITAS\n\n';
+        csvContent += 'LAPORAN FASILITAS\n\n';
         const fasilitasHeader = [
           'NO',
           'TIPE',
@@ -688,7 +688,7 @@ const LaporanScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: staticColors.background,
+    backgroundColor: '#EEF1F5',
   },
   loadingContainer: {
     flex: 1,
@@ -705,10 +705,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.base,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
@@ -717,7 +715,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   headerTitle: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
     color: staticColors.textPrimary,
     marginTop: 2,
@@ -728,7 +726,7 @@ const styles = StyleSheet.create({
     backgroundColor: staticColors.primary,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    borderRadius: radius.base,
+    borderRadius: radius.full,
     gap: spacing.xs,
   },
   exportButtonText: {
@@ -737,10 +735,8 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.semibold,
   },
   filterSection: {
-    backgroundColor: staticColors.surface,
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.base,
   },
   filterButton: {
     flexDirection: 'row',
@@ -748,9 +744,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.base,
-    borderRadius: radius.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
+    borderRadius: 18,
     marginBottom: spacing.sm,
   },
   filterButtonText: {
@@ -767,8 +761,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 14,
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
   },
   tipeChipActive: {
@@ -784,20 +778,16 @@ const styles = StyleSheet.create({
   },
   summarySection: {
     flexDirection: 'row',
-    padding: spacing.base,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.base,
     gap: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
   },
   summaryCard: {
     flex: 1,
     backgroundColor: '#fff',
     padding: spacing.base,
-    borderRadius: radius.base,
+    borderRadius: 18,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: staticColors.border,
   },
   summaryValue: {
     fontSize: 24,
@@ -815,11 +805,9 @@ const styles = StyleSheet.create({
   },
   reportCard: {
     backgroundColor: '#fff',
-    borderRadius: radius.base,
+    borderRadius: 18,
     padding: spacing.base,
     marginBottom: spacing.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
   },
   detailHintWrap: {
     marginTop: spacing.sm,
@@ -933,14 +921,14 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '80%',
   },
   modalContentLarge: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '90%',
   },
   modalHeader: {

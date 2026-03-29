@@ -105,13 +105,12 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: staticColors.background,
+    backgroundColor: '#EEF1F5',
   },
   header: {
-    padding: spacing.base,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.base,
   },
   headerTitle: {
     fontSize: typography.fontSize.xxl,
@@ -120,7 +119,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
+    color: staticColors.primary,
     marginTop: 2,
   },
   content: {
@@ -133,14 +132,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: spacing.base,
     marginBottom: spacing.sm,
-    borderRadius: radius.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
+    borderRadius: 18,
   },
   menuIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: radius.base,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -164,7 +161,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.base,
     paddingHorizontal: spacing.xl,
-    borderRadius: radius.base,
+    borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: staticColors.error,
     marginTop: spacing.xl,

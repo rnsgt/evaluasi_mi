@@ -67,151 +67,20 @@ const INITIAL_FASILITAS = [
     created_at: '2024-01-15T08:00:00.000Z',
     updated_at: '2024-01-15T08:00:00.000Z',
   },
-  {
-    id: 5,
-    kode: 'PERPUS-01',
-    nama: 'Perpustakaan Pusat',
-    kategori: 'Perpustakaan',
-    kapasitas: 100,
-    lokasi: 'Gedung B Lantai 1-3',
-    deskripsi: 'Perpustakaan dengan koleksi lengkap dan area baca yang nyaman',
-    fasilitas: ['AC', 'WiFi', 'Ruang Baca', 'Komputer', 'Printer'],
-    status: 'aktif',
-    icon: 'book-open-page-variant',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 6,
-    kode: 'LAB-MULTI-01',
-    nama: 'Laboratorium Multimedia',
-    kategori: 'Laboratorium',
-    kapasitas: 30,
-    lokasi: 'Gedung A Lantai 4',
-    deskripsi: 'Laboratorium untuk praktikum desain grafis dan multimedia',
-    fasilitas: ['AC', 'Komputer Spek Tinggi', 'Proyektor', 'Tablet Grafis'],
-    status: 'aktif',
-    icon: 'palette',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 7,
-    kode: 'MUSHOLA-01',
-    nama: 'Mushola Kampus',
-    kategori: 'Fasilitas Umum',
-    kapasitas: 80,
-    lokasi: 'Gedung C Lantai 1',
-    deskripsi: 'Tempat ibadah dengan fasilitas wudhu terpisah',
-    fasilitas: ['AC', 'Tempat Wudhu', 'Sajadah', 'Mukena', 'Al-Quran'],
-    status: 'aktif',
-    icon: 'mosque',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 8,
-    kode: 'KANTIN-01',
-    nama: 'Kantin Kampus',
-    kategori: 'Fasilitas Umum',
-    kapasitas: 120,
-    lokasi: 'Area Belakang Kampus',
-    deskripsi: 'Kantin dengan berbagai pilihan menu makanan dan minuman',
-    fasilitas: ['Meja Makan', 'Musala Kecil', 'WiFi', 'Toilet'],
-    status: 'aktif',
-    icon: 'food-fork-drink',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 9,
-    kode: 'TOILET-A',
-    nama: 'Toilet Gedung A',
-    kategori: 'Fasilitas Umum',
-    kapasitas: 10,
-    lokasi: 'Gedung A (Setiap Lantai)',
-    deskripsi: 'Toilet umum dengan fasilitas pria dan wanita terpisah',
-    fasilitas: ['Air Bersih', 'Sabun', 'Tisu', 'Cermin'],
-    status: 'aktif',
-    icon: 'toilet',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 10,
-    kode: 'AULA-01',
-    nama: 'Aula Serbaguna',
-    kategori: 'Ruang Pertemuan',
-    kapasitas: 300,
-    lokasi: 'Gedung D Lantai 1',
-    deskripsi: 'Aula untuk seminar, wisuda, dan acara besar lainnya',
-    fasilitas: ['AC', 'Sound System', 'Proyektor', 'Panggung', 'Kursi Lipat'],
-    status: 'aktif',
-    icon: 'office-building',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 11,
-    kode: 'RK-B-101',
-    nama: 'Ruang Kelas B.101',
-    kategori: 'Ruang Kelas',
-    kapasitas: 40,
-    lokasi: 'Gedung B Lantai 1',
-    deskripsi: 'Ruang kelas standar dengan fasilitas dasar',
-    fasilitas: ['AC', 'Proyektor', 'Whiteboard'],
-    status: 'aktif',
-    icon: 'google-classroom',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
-  {
-    id: 12,
-    kode: 'LAB-JAR-01',
-    nama: 'Laboratorium Jaringan',
-    kategori: 'Laboratorium',
-    kapasitas: 30,
-    lokasi: 'Gedung A Lantai 3',
-    deskripsi: 'Laboratorium khusus untuk praktikum jaringan komputer',
-    fasilitas: ['AC', 'Router', 'Switch', 'Komputer', 'Server', 'Kabel Jaringan'],
-    status: 'aktif',
-    icon: 'lan',
-    foto_url: null,
-    created_at: '2024-01-15T08:00:00.000Z',
-    updated_at: '2024-01-15T08:00:00.000Z',
-  },
 ];
 
 // Daftar kategori fasilitas
 export const KATEGORI_FASILITAS = [
   'Laboratorium',
   'Ruang Kelas',
-  'Perpustakaan',
-  'Ruang Pertemuan',
-  'Fasilitas Umum',
 ];
 
 // Daftar icon yang bisa dipilih
 export const ICON_OPTIONS = [
-  { name: 'laptop', label: 'Laptop' },
+  { name: 'laptop', label: 'computer' },
   { name: 'google-classroom', label: 'Classroom' },
-  { name: 'book-open-page-variant', label: 'Book' },
-  { name: 'mosque', label: 'Mosque' },
-  { name: 'food-fork-drink', label: 'Food' },
-  { name: 'toilet', label: 'Toilet' },
   { name: 'office-building', label: 'Building' },
-  { name: 'palette', label: 'Palette' },
   { name: 'lan', label: 'Network' },
-  { name: 'wifi', label: 'WiFi' },
-  { name: 'projector', label: 'Projector' },
-  { name: 'desk', label: 'Desk' },
 ];
 
 /**
@@ -220,8 +89,12 @@ export const ICON_OPTIONS = [
 const initializeFasilitas = async () => {
   try {
     const existing = await AsyncStorage.getItem(STORAGE_KEY);
+    console.log('initializeFasilitas - existing data:', existing ? 'YES' : 'NO');
     if (!existing) {
+      console.log('initializeFasilitas - initializing with INITIAL_FASILITAS');
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_FASILITAS));
+    } else {
+      console.log('initializeFasilitas - data already exists, skipping initialization');
     }
   } catch (error) {
     console.error('Initialize fasilitas error:', error);
@@ -231,6 +104,34 @@ const initializeFasilitas = async () => {
 // Initialize on module load
 initializeFasilitas();
 
+const unwrapApiData = (payload) => {
+  if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+    return payload.data;
+  }
+  return payload;
+};
+
+const getStoredFasilitas = async () => {
+  const stored = await AsyncStorage.getItem(STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+const setStoredFasilitas = async (data) => {
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+};
+
+const isNetworkError = (error) => error?.status === 0 || error?.status === -1;
+
+const normalizeFasilitasItem = (item = {}) => ({
+  ...item,
+  status: item.status || 'aktif',
+  icon: item.icon || 'office-building',
+  deskripsi: item.deskripsi || '',
+  fasilitas: Array.isArray(item.fasilitas) ? item.fasilitas : [],
+});
+
+const normalizeFasilitasList = (list = []) => list.map((item) => normalizeFasilitasItem(item));
+
 /**
  * Get semua fasilitas from backend API
  * @param {boolean} includeInactive - Include inactive fasilitas (for admin)
@@ -238,10 +139,32 @@ initializeFasilitas();
  */
 export const getAllFasilitas = async (includeInactive = false) => {
   try {
+    console.log('getAllFasilitas - trying API...');
     const response = await api.get('/fasilitas');
-    return response.data || [];
+    const raw = unwrapApiData(response);
+    const apiData = normalizeFasilitasList(Array.isArray(raw) ? raw : []);
+    if (apiData.length > 0) {
+      await setStoredFasilitas(apiData);
+    }
+    console.log('getAllFasilitas - API SUCCESS, count:', apiData.length);
+    if (includeInactive) {
+      return apiData;
+    }
+    return apiData.filter((item) => item.status === 'aktif');
   } catch (error) {
     console.error('Get all fasilitas error:', error);
+    console.log('getAllFasilitas - API failed, falling back to AsyncStorage...');
+    try {
+      const data = await getStoredFasilitas();
+      const normalizedData = normalizeFasilitasList(data);
+      console.log('getAllFasilitas - AsyncStorage fallback SUCCESS, count:', normalizedData.length);
+      if (includeInactive) {
+        return normalizedData;
+      }
+      return normalizedData.filter((item) => item.status === 'aktif');
+    } catch (e) {
+      console.error('AsyncStorage fallback error:', e);
+    }
     return [];
   }
 };
@@ -254,7 +177,8 @@ export const getAllFasilitas = async (includeInactive = false) => {
 export const getFasilitasById = async (id) => {
   try {
     const response = await api.get(`/fasilitas/${id}`);
-    return response.data;
+    const data = unwrapApiData(response) || response;
+    return normalizeFasilitasItem(data);
   } catch (error) {
     console.error('Get fasilitas by ID error:', error);
     throw error;
@@ -268,34 +192,45 @@ export const getFasilitasById = async (id) => {
  */
 export const createFasilitas = async (data) => {
   try {
-    const allFasilitas = await getAllFasilitas(true);
-    
-    // Check if kode already exists
-    const exists = allFasilitas.find((f) => f.kode.toUpperCase() === data.kode.toUpperCase());
-    if (exists) {
-      throw new Error('Kode fasilitas sudah digunakan');
-    }
-    
-    const newId = allFasilitas.length > 0 
-      ? Math.max(...allFasilitas.map((f) => f.id)) + 1 
-      : 1;
-    
-    const newFasilitas = {
-      id: newId,
-      ...data,
-      kode: data.kode.toUpperCase(),
-      status: data.status || 'aktif',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    allFasilitas.push(newFasilitas);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allFasilitas));
-    
-    return newFasilitas;
+    console.log('createFasilitas - trying API...');
+    const response = await api.post('/fasilitas', data);
+    const created = unwrapApiData(response) || response;
+    console.log('createFasilitas - API SUCCESS');
+    return created;
   } catch (error) {
-    console.error('Create fasilitas error:', error);
-    throw error;
+    console.error('Create fasilitas API error, fallback to AsyncStorage:', error);
+    if (!isNetworkError(error)) {
+      throw new Error(error.message || 'Gagal membuat fasilitas di server');
+    }
+    try {
+      const allFasilitas = await getStoredFasilitas();
+
+      const exists = allFasilitas.find((f) => f.kode.toUpperCase() === data.kode.toUpperCase());
+      if (exists) {
+        throw new Error('Kode fasilitas sudah digunakan');
+      }
+
+      const newId = allFasilitas.length > 0
+        ? Math.max(...allFasilitas.map((f) => f.id)) + 1
+        : 1;
+
+      const newFasilitas = {
+        id: newId,
+        ...data,
+        kode: data.kode.toUpperCase(),
+        status: data.status || 'aktif',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      allFasilitas.push(newFasilitas);
+      await setStoredFasilitas(allFasilitas);
+
+      return newFasilitas;
+    } catch (fallbackError) {
+      console.error('Create fasilitas fallback error:', fallbackError);
+      throw fallbackError;
+    }
   }
 };
 
@@ -307,36 +242,47 @@ export const createFasilitas = async (data) => {
  */
 export const updateFasilitas = async (id, data) => {
   try {
-    const allFasilitas = await getAllFasilitas(true);
-    const index = allFasilitas.findIndex((f) => f.id === id);
-    
-    if (index === -1) {
-      throw new Error('Fasilitas tidak ditemukan');
-    }
-    
-    // Check if new kode conflicts with other fasilitas
-    if (data.kode) {
-      const kodeExists = allFasilitas.find(
-        (f) => f.id !== id && f.kode.toUpperCase() === data.kode.toUpperCase()
-      );
-      if (kodeExists) {
-        throw new Error('Kode fasilitas sudah digunakan');
-      }
-    }
-    
-    allFasilitas[index] = {
-      ...allFasilitas[index],
-      ...data,
-      id, // Ensure ID doesn't change
-      kode: data.kode ? data.kode.toUpperCase() : allFasilitas[index].kode,
-      updated_at: new Date().toISOString(),
-    };
-    
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allFasilitas));
-    return allFasilitas[index];
+    console.log('updateFasilitas - trying API for id:', id);
+    const response = await api.put(`/fasilitas/${id}`, data);
+    const updated = unwrapApiData(response) || response;
+    console.log('updateFasilitas - API SUCCESS');
+    return updated;
   } catch (error) {
-    console.error('Update fasilitas error:', error);
-    throw error;
+    console.error('Update fasilitas API error, fallback to AsyncStorage:', error);
+    if (!isNetworkError(error)) {
+      throw new Error(error.message || 'Gagal memperbarui fasilitas di server');
+    }
+    try {
+      const allFasilitas = await getStoredFasilitas();
+      const index = allFasilitas.findIndex((f) => f.id === id);
+
+      if (index === -1) {
+        throw new Error('Fasilitas tidak ditemukan');
+      }
+
+      if (data.kode) {
+        const kodeExists = allFasilitas.find(
+          (f) => f.id !== id && f.kode.toUpperCase() === data.kode.toUpperCase()
+        );
+        if (kodeExists) {
+          throw new Error('Kode fasilitas sudah digunakan');
+        }
+      }
+
+      allFasilitas[index] = {
+        ...allFasilitas[index],
+        ...data,
+        id,
+        kode: data.kode ? data.kode.toUpperCase() : allFasilitas[index].kode,
+        updated_at: new Date().toISOString(),
+      };
+
+      await setStoredFasilitas(allFasilitas);
+      return allFasilitas[index];
+    } catch (fallbackError) {
+      console.error('Update fasilitas fallback error:', fallbackError);
+      throw fallbackError;
+    }
   }
 };
 
@@ -347,28 +293,48 @@ export const updateFasilitas = async (id, data) => {
  */
 export const deleteFasilitas = async (id) => {
   try {
-    const allFasilitas = await getAllFasilitas(true);
-    const filtered = allFasilitas.filter((f) => f.id !== id);
-    
-    if (filtered.length === allFasilitas.length) {
-      return {
-        success: false,
-        message: 'Fasilitas tidak ditemukan'
-      };
-    }
-    
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    
+    console.log('deleteFasilitas - trying API for id:', id);
+    await api.delete(`/fasilitas/${id}`);
+    console.log('deleteFasilitas - API SUCCESS');
+    const cached = await getStoredFasilitas();
+    const filteredCache = cached.filter((f) => f.id !== id);
+    await setStoredFasilitas(filteredCache);
     return {
       success: true,
       message: 'Fasilitas berhasil dihapus'
     };
   } catch (error) {
-    console.error('Delete fasilitas error:', error);
-    return {
-      success: false,
-      message: error.message || 'Gagal menghapus fasilitas'
-    };
+    console.error('Delete fasilitas API error, fallback to AsyncStorage:', error);
+    if (!isNetworkError(error)) {
+      return {
+        success: false,
+        message: error.message || 'Gagal menghapus fasilitas di server'
+      };
+    }
+    try {
+      const allFasilitas = await getStoredFasilitas();
+      const filtered = allFasilitas.filter((f) => f.id !== id);
+
+      if (filtered.length === allFasilitas.length) {
+        return {
+          success: false,
+          message: 'Fasilitas tidak ditemukan'
+        };
+      }
+
+      await setStoredFasilitas(filtered);
+
+      return {
+        success: true,
+        message: 'Fasilitas berhasil dihapus (mode lokal)'
+      };
+    } catch (fallbackError) {
+      console.error('Delete fasilitas fallback error:', fallbackError);
+      return {
+        success: false,
+        message: fallbackError.message || 'Gagal menghapus fasilitas'
+      };
+    }
   }
 };
 
@@ -450,9 +416,11 @@ export const getAllKategori = () => {
  */
 export const getFasilitasStats = async () => {
   try {
+    console.log('getFasilitasStats - fetching all fasilitas...');
     const allFasilitas = await getAllFasilitas(true);
+    console.log('getFasilitasStats - got', allFasilitas.length, 'items');
     
-    return {
+    const stats = {
       total: allFasilitas.length,
       aktif: allFasilitas.filter((f) => f.status === 'aktif').length,
       tidak_aktif: allFasilitas.filter((f) => f.status === 'tidak_aktif').length,
@@ -464,6 +432,8 @@ export const getFasilitasStats = async () => {
         'Fasilitas Umum': allFasilitas.filter((f) => f.kategori === 'Fasilitas Umum').length,
       },
     };
+    console.log('getFasilitasStats - stats:', stats);
+    return stats;
   } catch (error) {
     console.error('Get fasilitas stats error:', error);
     return {

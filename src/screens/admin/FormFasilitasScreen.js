@@ -41,7 +41,11 @@ const FormFasilitasScreen = ({ route, navigation }) => {
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
+    console.log('FormFasilitasScreen mounted - route.params:', route.params);
+    console.log('Mode:', mode, 'EditData:', editData, 'isEdit:', isEdit);
+    
     if (isEdit && editData) {
+      console.log('Setting form data with editData');
       setFormData({
         kode: editData.kode || '',
         nama: editData.nama || '',
@@ -53,7 +57,7 @@ const FormFasilitasScreen = ({ route, navigation }) => {
         fasilitas: editData.fasilitas || [],
       });
     }
-  }, [isEdit, editData]);
+  }, [isEdit, editData, mode]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({

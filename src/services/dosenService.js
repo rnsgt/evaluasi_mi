@@ -159,8 +159,12 @@ const INITIAL_DOSEN = [
 const initializeDosen = async () => {
   try {
     const existing = await AsyncStorage.getItem(STORAGE_KEY);
+    console.log('initializeDosen - existing data:', existing ? 'YES' : 'NO');
     if (!existing) {
+      console.log('initializeDosen - initializing with INITIAL_DOSEN');
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DOSEN));
+    } else {
+      console.log('initializeDosen - data already exists, skipping initialization');
     }
   } catch (error) {
     console.error('Initialize dosen error:', error);
@@ -170,6 +174,24 @@ const initializeDosen = async () => {
 // Initialize on module load
 initializeDosen();
 
+const unwrapApiData = (payload) => {
+  if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+    return payload.data;
+  }
+  return payload;
+};
+
+const getStoredDosen = async () => {
+  const stored = await AsyncStorage.getItem(STORAGE_KEY);
+  return stored ? JSON.parse(stored) : [];
+};
+
+const setStoredDosen = async (data) => {
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+};
+
+const isNetworkError = (error) => error?.status === 0 || error?.status === -1;
+
 /**
  * Get semua dosen with mata kuliah from backend API
  * @param {boolean} includeInactive - Include inactive dosen (for admin)
@@ -177,10 +199,31 @@ initializeDosen();
  */
 export const getAllDosen = async (includeInactive = false) => {
   try {
+    console.log('getAllDosen - trying API...');
     const response = await api.get('/dosen');
-    return response.data || [];
+    const raw = unwrapApiData(response);
+    const apiData = Array.isArray(raw) ? raw : [];
+    if (apiData.length > 0) {
+      await setStoredDosen(apiData);
+    }
+    console.log('getAllDosen - API SUCCESS, count:', apiData.length);
+    if (includeInactive) {
+      return apiData;
+    }
+    return apiData.filter((item) => item.status === 'aktif');
   } catch (error) {
     console.error('Get all dosen error:', error);
+    console.log('getAllDosen - API failed, falling back to AsyncStorage...');
+    try {
+      const data = await getStoredDosen();
+      console.log('getAllDosen - AsyncStorage fallback SUCCESS, count:', data.length);
+      if (includeInactive) {
+        return data;
+      }
+      return data.filter((item) => item.status === 'aktif');
+    } catch (e) {
+      console.error('AsyncStorage fallback error:', e);
+    }
     return [];
   }
 };
@@ -207,34 +250,45 @@ export const getDosenById = async (id) => {
  */
 export const createDosen = async (data) => {
   try {
-    const allDosen = await getAllDosen(true);
-    
-    // Check if NIP already exists
-    const exists = allDosen.find((d) => d.nip === data.nip);
-    if (exists) {
-      throw new Error('NIP sudah terdaftar');
-    }
-    
-    const newId = allDosen.length > 0 
-      ? Math.max(...allDosen.map((d) => d.id)) + 1 
-      : 1;
-    
-    const newDosen = {
-      id: newId,
-      ...data,
-      status: data.status || 'aktif',
-      foto_url: data.foto_url || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    allDosen.push(newDosen);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allDosen));
-    
-    return newDosen;
+    console.log('createDosen - trying API...');
+    const response = await api.post('/dosen', data);
+    const created = unwrapApiData(response) || response;
+    console.log('createDosen - API SUCCESS');
+    return created;
   } catch (error) {
-    console.error('Create dosen error:', error);
-    throw error;
+    console.error('Create dosen API error, fallback to AsyncStorage:', error);
+    if (!isNetworkError(error)) {
+      throw new Error(error.message || 'Gagal membuat dosen di server');
+    }
+    try {
+      const allDosen = await getStoredDosen();
+
+      const exists = allDosen.find((d) => d.nip === data.nip);
+      if (exists) {
+        throw new Error('NIP sudah terdaftar');
+      }
+
+      const newId = allDosen.length > 0
+        ? Math.max(...allDosen.map((d) => d.id)) + 1
+        : 1;
+
+      const newDosen = {
+        id: newId,
+        ...data,
+        status: data.status || 'aktif',
+        foto_url: data.foto_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      allDosen.push(newDosen);
+      await setStoredDosen(allDosen);
+
+      return newDosen;
+    } catch (fallbackError) {
+      console.error('Create dosen fallback error:', fallbackError);
+      throw fallbackError;
+    }
   }
 };
 
@@ -246,35 +300,46 @@ export const createDosen = async (data) => {
  */
 export const updateDosen = async (id, data) => {
   try {
-    const allDosen = await getAllDosen(true);
-    const index = allDosen.findIndex((d) => d.id === id);
-    
-    if (index === -1) {
-      throw new Error('Dosen tidak ditemukan');
-    }
-    
-    // Check if new NIP conflicts with other dosen
-    if (data.nip) {
-      const nipExists = allDosen.find(
-        (d) => d.id !== id && d.nip === data.nip
-      );
-      if (nipExists) {
-        throw new Error('NIP sudah terdaftar');
-      }
-    }
-    
-    allDosen[index] = {
-      ...allDosen[index],
-      ...data,
-      id, // Ensure ID doesn't change
-      updated_at: new Date().toISOString(),
-    };
-    
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allDosen));
-    return allDosen[index];
+    console.log('updateDosen - trying API for id:', id);
+    const response = await api.put(`/dosen/${id}`, data);
+    const updated = unwrapApiData(response) || response;
+    console.log('updateDosen - API SUCCESS');
+    return updated;
   } catch (error) {
-    console.error('Update dosen error:', error);
-    throw error;
+    console.error('Update dosen API error, fallback to AsyncStorage:', error);
+    if (!isNetworkError(error)) {
+      throw new Error(error.message || 'Gagal memperbarui dosen di server');
+    }
+    try {
+      const allDosen = await getStoredDosen();
+      const index = allDosen.findIndex((d) => d.id === id);
+
+      if (index === -1) {
+        throw new Error('Dosen tidak ditemukan');
+      }
+
+      if (data.nip) {
+        const nipExists = allDosen.find(
+          (d) => d.id !== id && d.nip === data.nip
+        );
+        if (nipExists) {
+          throw new Error('NIP sudah terdaftar');
+        }
+      }
+
+      allDosen[index] = {
+        ...allDosen[index],
+        ...data,
+        id,
+        updated_at: new Date().toISOString(),
+      };
+
+      await setStoredDosen(allDosen);
+      return allDosen[index];
+    } catch (fallbackError) {
+      console.error('Update dosen fallback error:', fallbackError);
+      throw fallbackError;
+    }
   }
 };
 
@@ -285,28 +350,48 @@ export const updateDosen = async (id, data) => {
  */
 export const deleteDosen = async (id) => {
   try {
-    const allDosen = await getAllDosen(true);
-    const filtered = allDosen.filter((d) => d.id !== id);
-    
-    if (filtered.length === allDosen.length) {
-      return {
-        success: false,
-        message: 'Dosen tidak ditemukan'
-      };
-    }
-    
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    
+    console.log('deleteDosen - trying API for id:', id);
+    await api.delete(`/dosen/${id}`);
+    console.log('deleteDosen - API SUCCESS');
+    const cached = await getStoredDosen();
+    const filteredCache = cached.filter((d) => d.id !== id);
+    await setStoredDosen(filteredCache);
     return {
       success: true,
       message: 'Dosen berhasil dihapus'
     };
   } catch (error) {
-    console.error('Delete dosen error:', error);
-    return {
-      success: false,
-      message: error.message || 'Gagal menghapus dosen'
-    };
+    console.error('Delete dosen API error, fallback to AsyncStorage:', error);
+    if (!isNetworkError(error)) {
+      return {
+        success: false,
+        message: error.message || 'Gagal menghapus dosen di server'
+      };
+    }
+    try {
+      const allDosen = await getStoredDosen();
+      const filtered = allDosen.filter((d) => d.id !== id);
+
+      if (filtered.length === allDosen.length) {
+        return {
+          success: false,
+          message: 'Dosen tidak ditemukan'
+        };
+      }
+
+      await setStoredDosen(filtered);
+
+      return {
+        success: true,
+        message: 'Dosen berhasil dihapus (mode lokal)'
+      };
+    } catch (fallbackError) {
+      console.error('Delete dosen fallback error:', fallbackError);
+      return {
+        success: false,
+        message: fallbackError.message || 'Gagal menghapus dosen'
+      };
+    }
   }
 };
 
@@ -374,13 +459,17 @@ export const getDosenByMataKuliah = async (mataKuliah) => {
  */
 export const getDosenStats = async () => {
   try {
+    console.log('getDosenStats - fetching all dosen...');
     const allDosen = await getAllDosen(true);
+    console.log('getDosenStats - got', allDosen.length, 'items');
     
-    return {
+    const stats = {
       total: allDosen.length,
       aktif: allDosen.filter((d) => d.status === 'aktif').length,
       tidak_aktif: allDosen.filter((d) => d.status === 'tidak_aktif').length,
     };
+    console.log('getDosenStats - stats:', stats);
+    return stats;
   } catch (error) {
     console.error('Get dosen stats error:', error);
     return {

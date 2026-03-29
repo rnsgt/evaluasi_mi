@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { authMiddleware } = require('../middleware/authMiddleware');
+const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 // Get all dosen with mata kuliah
 router.get('/', authMiddleware, async (req, res) => {
@@ -77,6 +77,37 @@ router.get('/:id', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Get dosen by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan pada server'
+    });
+  }
+});
+
+// Delete dosen (Admin only)
+router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.query(
+      'DELETE FROM dosen WHERE id = $1 RETURNING id, nama',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dosen tidak ditemukan'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Dosen "${result.rows[0].nama}" berhasil dihapus`,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Delete dosen error:', error);
     res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan pada server'

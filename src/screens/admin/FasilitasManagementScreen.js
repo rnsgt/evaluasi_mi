@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -30,19 +31,33 @@ const FasilitasManagementScreen = ({ navigation }) => {
     loadData();
   }, []);
 
+  // Reload data setiap kali screen mendapat focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('FasilitasManagementScreen focused - reloading data');
+      loadData();
+    }, [])
+  );
+
   useEffect(() => {
     applyFilters();
   }, [searchQuery, selectedKategori, fasilitasList]);
 
   const loadData = async () => {
     try {
+      console.log('=== loadData START ===');
       setLoading(true);
       const [data, statsData] = await Promise.all([
         fasilitasService.getAllFasilitas(true),
         fasilitasService.getFasilitasStats(),
       ]);
+      console.log('loadData - fetched data count:', data?.length || 0);
+      console.log('loadData - fetched data:', data);
+      console.log('loadData - fetched stats:', statsData);
       setFasilitasList(data);
+      console.log('loadData - setFasilitasList called with', data?.length || 0, 'items');
       setStats(statsData);
+      console.log('=== loadData END - SUCCESS ===');
     } catch (error) {
       console.error('Load fasilitas error:', error);
       Alert.alert('Error', 'Gagal memuat data fasilitas');
@@ -59,15 +74,22 @@ const FasilitasManagementScreen = ({ navigation }) => {
 
   const applyFilters = async () => {
     try {
+      console.log('=== applyFilters START ===');
+      console.log('Current fasilitasList length:', fasilitasList?.length || 0);
+      console.log('searchQuery:', searchQuery, 'selectedKategori:', selectedKategori);
+      
       let filtered = [...fasilitasList];
 
       // Apply kategori filter
       if (selectedKategori !== 'Semua') {
+        const before = filtered.length;
         filtered = filtered.filter((f) => f.kategori === selectedKategori);
+        console.log('After kategori filter:', before, '->', filtered.length);
       }
 
       // Apply search filter
       if (searchQuery.trim()) {
+        const before = filtered.length;
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(
           (f) =>
@@ -75,9 +97,12 @@ const FasilitasManagementScreen = ({ navigation }) => {
             f.kode.toLowerCase().includes(query) ||
             f.lokasi.toLowerCase().includes(query)
         );
+        console.log('After search filter:', before, '->', filtered.length);
       }
 
+      console.log('Final filtered count:', filtered.length);
       setFilteredList(filtered);
+      console.log('=== applyFilters END ===');
     } catch (error) {
       console.error('Apply filters error:', error);
     }
@@ -88,7 +113,17 @@ const FasilitasManagementScreen = ({ navigation }) => {
   };
 
   const handleEdit = (fasilitas) => {
-    navigation.navigate('FormFasilitas', { mode: 'edit', fasilitas });
+    console.log('handleEdit called with:', fasilitas);
+    if (!navigation) {
+      Alert.alert('Error', 'Navigation tidak tersedia');
+      return;
+    }
+    try {
+      navigation.navigate('FormFasilitas', { mode: 'edit', fasilitas });
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Gagal membuka form: ' + error.message);
+    }
   };
 
   const handleToggleStatus = async (fasilitas) => {
@@ -115,6 +150,11 @@ const FasilitasManagementScreen = ({ navigation }) => {
   };
 
   const handleDelete = (fasilitas) => {
+    console.log('handleDelete called with:', fasilitas);
+    if (!fasilitas?.id) {
+      Alert.alert('Error', 'ID fasilitas tidak valid');
+      return;
+    }
     Alert.alert(
       'Hapus Fasilitas',
       `Hapus fasilitas "${fasilitas.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`,
@@ -125,15 +165,26 @@ const FasilitasManagementScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Deleting fasilitas with id:', fasilitas.id);
               const result = await fasilitasService.deleteFasilitas(fasilitas.id);
+              console.log('Delete result:', result);
               if (result.success) {
-                Alert.alert('Berhasil', 'Fasilitas berhasil dihapus');
-                loadData();
+                Alert.alert('Berhasil', 'Fasilitas berhasil dihapus', [
+                  {
+                    text: 'OK',
+                    onPress: async () => {
+                      console.log('Calling loadData() after delete success dialog close');
+                      await loadData();
+                      console.log('loadData() completed, should trigger applyFilters');
+                    },
+                  },
+                ]);
               } else {
                 Alert.alert('Error', result.message);
               }
             } catch (error) {
-              Alert.alert('Error', 'Gagal menghapus fasilitas');
+              console.error('Delete error:', error);
+              Alert.alert('Error', 'Gagal menghapus fasilitas: ' + error.message);
             }
           },
         },
@@ -142,7 +193,13 @@ const FasilitasManagementScreen = ({ navigation }) => {
   };
 
   const renderFasilitasCard = ({ item }) => {
-    const statusColor = item.status === 'aktif' ? colors.success : colors.textDisabled;
+    const primaryColor = colors?.primary || staticColors.primary;
+    const dangerColor = colors?.danger || staticColors.danger;
+    const successColor = colors?.success || staticColors.success;
+    const disabledColor = colors?.textDisabled || staticColors.textDisabled;
+    const secondaryColor = colors?.textSecondary || staticColors.textSecondary;
+    
+    const statusColor = item.status === 'aktif' ? successColor : disabledColor;
 
     return (
       <View style={styles.card}>
@@ -152,7 +209,7 @@ const FasilitasManagementScreen = ({ navigation }) => {
               <MaterialCommunityIcons
                 name={item.icon || 'office-building'}
                 size={28}
-                color={colors.primary}
+                color={primaryColor}
               />
             </View>
             <View style={styles.cardHeaderInfo}>
@@ -172,7 +229,7 @@ const FasilitasManagementScreen = ({ navigation }) => {
 
         <View style={styles.cardContent}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="tag" size={16} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="tag" size={16} color={secondaryColor} />
             <Text style={styles.infoLabel}>Kategori:</Text>
             <View style={styles.kategoriBadge}>
               <Text style={styles.kategoriText}>{item.kategori}</Text>
@@ -180,13 +237,13 @@ const FasilitasManagementScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="map-marker" size={16} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="map-marker" size={16} color={secondaryColor} />
             <Text style={styles.infoLabel}>Lokasi:</Text>
             <Text style={styles.infoValue}>{item.lokasi}</Text>
           </View>
 
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="account-group" size={16} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="account-group" size={16} color={secondaryColor} />
             <Text style={styles.infoLabel}>Kapasitas:</Text>
             <Text style={styles.infoValue}>{item.kapasitas} orang</Text>
           </View>
@@ -210,33 +267,27 @@ const FasilitasManagementScreen = ({ navigation }) => {
 
         <View style={styles.cardActions}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.warning + '20' }]}
-            onPress={() => handleToggleStatus(item)}
+            activeOpacity={0.7}
+            style={[styles.actionButton, { backgroundColor: primaryColor + '20' }]}
+            onPress={() => {
+              console.log('EDIT button pressed for item:', item);
+              handleEdit(item);
+            }}
           >
-            <MaterialCommunityIcons
-              name={item.status === 'aktif' ? 'toggle-switch' : 'toggle-switch-off'}
-              size={18}
-              color={colors.warning}
-            />
-            <Text style={[styles.actionButtonText, { color: colors.warning }]}>
-              {item.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}
-            </Text>
+            <MaterialCommunityIcons name="pencil" size={18} color={primaryColor} />
+            <Text style={[styles.actionButtonText, { color: primaryColor }]}>Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
-            onPress={() => handleEdit(item)}
+            activeOpacity={0.7}
+            style={[styles.actionButton, { backgroundColor: dangerColor + '20' }]}
+            onPress={() => {
+              console.log('DELETE button pressed for item:', item);
+              handleDelete(item);
+            }}
           >
-            <MaterialCommunityIcons name="pencil" size={18} color={colors.primary} />
-            <Text style={[styles.actionButtonText, { color: colors.primary }]}>Edit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.danger + '20' }]}
-            onPress={() => handleDelete(item)}
-          >
-            <MaterialCommunityIcons name="delete" size={18} color={colors.danger} />
-            <Text style={[styles.actionButtonText, { color: colors.danger }]}>Hapus</Text>
+            <MaterialCommunityIcons name="delete" size={18} color={dangerColor} />
+            <Text style={[styles.actionButtonText, { color: dangerColor }]}>Hapus</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -244,22 +295,30 @@ const FasilitasManagementScreen = ({ navigation }) => {
   };
 
   if (loading) {
+    const primaryColor = colors?.primary || staticColors.primary;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={primaryColor} />
           <Text style={styles.loadingText}>Memuat data fasilitas...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Defensive color fallbacks
+  const primaryColor = colors?.primary || staticColors.primary;
+  const successColor = colors?.success || staticColors.success;
+  const disabledColor = colors?.textDisabled || staticColors.textDisabled;
+  const secondaryColor = colors?.textSecondary || staticColors.textSecondary;
+  const textPrimary = colors?.textPrimary || staticColors.textPrimary;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerSubtitle}>KELOLA DATA</Text>
@@ -274,11 +333,11 @@ const FasilitasManagementScreen = ({ navigation }) => {
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.success }]}>{stats.aktif}</Text>
+          <Text style={[styles.statValue, { color: successColor }]}>{stats.aktif}</Text>
           <Text style={styles.statLabel}>Aktif</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.textDisabled }]}>
+          <Text style={[styles.statValue, { color: disabledColor }]}>
             {stats.tidak_aktif}
           </Text>
           <Text style={styles.statLabel}>Tidak Aktif</Text>
@@ -287,7 +346,7 @@ const FasilitasManagementScreen = ({ navigation }) => {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <MaterialCommunityIcons name="magnify" size={20} color={colors.textSecondary} />
+        <MaterialCommunityIcons name="magnify" size={20} color={secondaryColor} />
         <TextInput
           style={styles.searchInput}
           placeholder="Cari nama, kode, atau lokasi..."
@@ -296,7 +355,7 @@ const FasilitasManagementScreen = ({ navigation }) => {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialCommunityIcons name="close-circle" size={20} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="close-circle" size={20} color={secondaryColor} />
           </TouchableOpacity>
         )}
       </View>
@@ -340,7 +399,7 @@ const FasilitasManagementScreen = ({ navigation }) => {
             <MaterialCommunityIcons
               name="office-building-outline"
               size={64}
-              color={colors.textDisabled}
+              color={disabledColor}
             />
             <Text style={styles.emptyStateText}>Tidak ada fasilitas ditemukan</Text>
             <Text style={styles.emptyStateSubtext}>
@@ -351,12 +410,19 @@ const FasilitasManagementScreen = ({ navigation }) => {
           </View>
         }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[primaryColor]} />
         }
       />
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={handleCreate}>
+      <TouchableOpacity 
+        style={styles.fab} 
+        activeOpacity={0.7}
+        onPress={() => {
+          console.log('CREATE/Tambah button pressed');
+          handleCreate();
+        }}
+      >
         <MaterialCommunityIcons name="plus" size={28} color="#fff" />
       </TouchableOpacity>
     </SafeAreaView>

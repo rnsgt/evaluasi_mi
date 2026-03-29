@@ -56,10 +56,6 @@ export const KATEGORI_EVALUASI_DOSEN = [
       },
       {
         id: 10,
-        text: "Dosen mudah dihubungi di luar jam kuliah",
-      },
-      {
-        id: 11,
         text: "Dosen responsif terhadap pertanyaan mahasiswa",
       },
     ],
@@ -69,15 +65,15 @@ export const KATEGORI_EVALUASI_DOSEN = [
     nama: "Penilaian",
     pertanyaan: [
       {
-        id: 12,
+        id: 11,
         text: "Sistem penilaian yang diterapkan jelas dan transparan",
       },
       {
-        id: 13,
+        id: 12,
         text: "Dosen memberikan feedback terhadap tugas/ujian",
       },
       {
-        id: 14,
+        id: 13,
         text: "Penilaian yang diberikan objektif dan adil",
       },
     ],
@@ -87,11 +83,11 @@ export const KATEGORI_EVALUASI_DOSEN = [
     nama: "Kedisiplinan",
     pertanyaan: [
       {
-        id: 15,
+        id: 14,
         text: "Dosen hadir tepat waktu",
       },
       {
-        id: 16,
+        id: 15,
         text: "Dosen memanfaatkan waktu perkuliahan dengan efektif",
       },
     ],

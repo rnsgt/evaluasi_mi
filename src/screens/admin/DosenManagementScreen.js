@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -29,6 +30,14 @@ const DosenManagementScreen = ({ navigation }) => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Reload data setiap kali screen mendapat focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('DosenManagementScreen focused - reloading data');
+      loadData();
+    }, [])
+  );
 
   useEffect(() => {
     applySearch();
@@ -78,7 +87,17 @@ const DosenManagementScreen = ({ navigation }) => {
   };
 
   const handleEdit = (dosen) => {
-    navigation.navigate('FormDosen', { mode: 'edit', dosen });
+    console.log('handleEdit called with:', dosen);
+    if (!navigation) {
+      Alert.alert('Error', 'Navigation tidak tersedia');
+      return;
+    }
+    try {
+      navigation.navigate('FormDosen', { mode: 'edit', dosen });
+    } catch (error) {
+      console.error('Navigation error:', error);
+      Alert.alert('Error', 'Gagal membuka form: ' + error.message);
+    }
   };
 
   const handleToggleStatus = async (dosen) => {
@@ -105,6 +124,11 @@ const DosenManagementScreen = ({ navigation }) => {
   };
 
   const handleDelete = (dosen) => {
+    console.log('handleDelete called with:', dosen);
+    if (!dosen?.id) {
+      Alert.alert('Error', 'ID dosen tidak valid');
+      return;
+    }
     Alert.alert(
       'Hapus Dosen',
       `Hapus dosen "${dosen.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`,
@@ -115,15 +139,26 @@ const DosenManagementScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Deleting dosen with id:', dosen.id);
               const result = await dosenService.deleteDosen(dosen.id);
+              console.log('Delete result:', result);
               if (result.success) {
-                Alert.alert('Berhasil', 'Dosen berhasil dihapus');
-                loadData();
+                Alert.alert('Berhasil', 'Dosen berhasil dihapus', [
+                  {
+                    text: 'OK',
+                    onPress: async () => {
+                      console.log('Calling loadData() after delete success dialog close');
+                      await loadData();
+                      console.log('loadData() completed');
+                    },
+                  },
+                ]);
               } else {
                 Alert.alert('Error', result.message);
               }
             } catch (error) {
-              Alert.alert('Error', 'Gagal menghapus dosen');
+              console.error('Delete error:', error);
+              Alert.alert('Error', 'Gagal menghapus dosen: ' + error.message);
             }
           },
         },
@@ -147,7 +182,13 @@ const DosenManagementScreen = ({ navigation }) => {
   };
 
   const renderDosenCard = ({ item }) => {
-    const statusColor = item.status === 'aktif' ? colors.success : colors.textDisabled;
+    const primaryColor = colors?.primary || staticColors.primary;
+    const dangerColor = colors?.danger || staticColors.danger;
+    const successColor = colors?.success || staticColors.success;
+    const disabledColor = colors?.textDisabled || staticColors.textDisabled;
+    const secondaryColor = colors?.textSecondary || staticColors.textSecondary;
+    
+    const statusColor = item.status === 'aktif' ? successColor : disabledColor;
 
     return (
       <View style={styles.card}>
@@ -173,7 +214,7 @@ const DosenManagementScreen = ({ navigation }) => {
 
         <View style={styles.cardContent}>
           <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="email" size={16} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="email" size={16} color={secondaryColor} />
             <Text style={styles.infoValue}>{item.email}</Text>
           </View>
 
@@ -210,33 +251,27 @@ const DosenManagementScreen = ({ navigation }) => {
 
         <View style={styles.cardActions}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.warning + '20' }]}
-            onPress={() => handleToggleStatus(item)}
+            activeOpacity={0.7}
+            style={[styles.actionButton, { backgroundColor: primaryColor + '20' }]}
+            onPress={() => {
+              console.log('EDIT button pressed for item:', item);
+              handleEdit(item);
+            }}
           >
-            <MaterialCommunityIcons
-              name={item.status === 'aktif' ? 'toggle-switch' : 'toggle-switch-off'}
-              size={18}
-              color={colors.warning}
-            />
-            <Text style={[styles.actionButtonText, { color: colors.warning }]}>
-              {item.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}
-            </Text>
+            <MaterialCommunityIcons name="pencil" size={18} color={primaryColor} />
+            <Text style={[styles.actionButtonText, { color: primaryColor }]}>Edit</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.primary + '20' }]}
-            onPress={() => handleEdit(item)}
+            activeOpacity={0.7}
+            style={[styles.actionButton, { backgroundColor: dangerColor + '20' }]}
+            onPress={() => {
+              console.log('DELETE button pressed for item:', item);
+              handleDelete(item);
+            }}
           >
-            <MaterialCommunityIcons name="pencil" size={18} color={colors.primary} />
-            <Text style={[styles.actionButtonText, { color: colors.primary }]}>Edit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.danger + '20' }]}
-            onPress={() => handleDelete(item)}
-          >
-            <MaterialCommunityIcons name="delete" size={18} color={colors.danger} />
-            <Text style={[styles.actionButtonText, { color: colors.danger }]}>Hapus</Text>
+            <MaterialCommunityIcons name="delete" size={18} color={dangerColor} />
+            <Text style={[styles.actionButtonText, { color: dangerColor }]}>Hapus</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -244,22 +279,30 @@ const DosenManagementScreen = ({ navigation }) => {
   };
 
   if (loading) {
+    const primaryColor = colors?.primary || staticColors.primary;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={primaryColor} />
           <Text style={styles.loadingText}>Memuat data dosen...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Defensive color fallbacks
+  const primaryColor = colors?.primary || staticColors.primary;
+  const successColor = colors?.success || staticColors.success;
+  const disabledColor = colors?.textDisabled || staticColors.textDisabled;
+  const secondaryColor = colors?.textSecondary || staticColors.textSecondary;
+  const textPrimary = colors?.textPrimary || staticColors.textPrimary;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerSubtitle}>KELOLA DATA</Text>
@@ -274,11 +317,11 @@ const DosenManagementScreen = ({ navigation }) => {
           <Text style={styles.statLabel}>Total</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.success }]}>{stats.aktif}</Text>
+          <Text style={[styles.statValue, { color: successColor }]}>{stats.aktif}</Text>
           <Text style={styles.statLabel}>Aktif</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: colors.textDisabled }]}>
+          <Text style={[styles.statValue, { color: disabledColor }]}>
             {stats.tidak_aktif}
           </Text>
           <Text style={styles.statLabel}>Tidak Aktif</Text>
@@ -287,7 +330,7 @@ const DosenManagementScreen = ({ navigation }) => {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <MaterialCommunityIcons name="magnify" size={20} color={colors.textSecondary} />
+        <MaterialCommunityIcons name="magnify" size={20} color={secondaryColor} />
         <TextInput
           style={styles.searchInput}
           placeholder="Cari nama, NIP, atau email..."
@@ -296,7 +339,7 @@ const DosenManagementScreen = ({ navigation }) => {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialCommunityIcons name="close-circle" size={20} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="close-circle" size={20} color={secondaryColor} />
           </TouchableOpacity>
         )}
       </View>
@@ -312,7 +355,7 @@ const DosenManagementScreen = ({ navigation }) => {
             <MaterialCommunityIcons
               name="account-tie-outline"
               size={64}
-              color={colors.textDisabled}
+              color={disabledColor}
             />
             <Text style={styles.emptyStateText}>Tidak ada dosen ditemukan</Text>
             <Text style={styles.emptyStateSubtext}>
@@ -323,12 +366,19 @@ const DosenManagementScreen = ({ navigation }) => {
           </View>
         }
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[primaryColor]} />
         }
       />
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={handleCreate}>
+      <TouchableOpacity 
+        style={styles.fab} 
+        activeOpacity={0.7}
+        onPress={() => {
+          console.log('CREATE/Tambah button pressed');
+          handleCreate();
+        }}
+      >
         <MaterialCommunityIcons name="plus" size={28} color="#fff" />
       </TouchableOpacity>
     </SafeAreaView>

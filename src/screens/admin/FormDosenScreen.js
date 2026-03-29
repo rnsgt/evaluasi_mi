@@ -48,19 +48,21 @@ const FormDosenScreen = ({ route, navigation }) => {
       .filter((name) => name);
 
   useEffect(() => {
+    console.log('FormDosenScreen mounted - route.params:', route.params);
+    console.log('Mode:', mode, 'EditData:', editData, 'isEdit:', isEdit);
+    
     if (isEdit && editData) {
-      const normalizedMataKuliah = normalizeMataKuliah(editData.mata_kuliah || []);
-
+      console.log('Setting form data with editData');
       setFormData({
         nip: editData.nip || '',
         nama: editData.nama || '',
         email: editData.email || '',
-        mata_kuliah: normalizedMataKuliah,
+        mata_kuliah: editData.mata_kuliah || [],
         bio: editData.bio || '',
       });
-      setSelectedMataKuliah(normalizedMataKuliah);
+      setSelectedMataKuliah(normalizeMataKuliah(editData.mata_kuliah));
     }
-  }, [isEdit, editData]);
+  }, [isEdit, editData, mode]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({

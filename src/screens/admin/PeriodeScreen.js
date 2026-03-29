@@ -332,7 +332,7 @@ const PeriodeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: staticColors.background,
+    backgroundColor: '#EEF1F5',
   },
   loadingContainer: {
     flex: 1,
@@ -346,10 +346,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.base,
   },
   headerSubtitle: {
     fontSize: typography.fontSize.xs,
@@ -358,7 +356,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   headerTitle: {
-    fontSize: typography.fontSize.xl,
+    fontSize: typography.fontSize.xxl,
     fontFamily: typography.fontFamily.bold,
     color: staticColors.textPrimary,
     marginTop: 2,
@@ -370,7 +368,7 @@ const styles = StyleSheet.create({
     padding: spacing.base,
     marginHorizontal: spacing.base,
     marginTop: spacing.base,
-    borderRadius: radius.base,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: staticColors.success + '30',
   },
@@ -393,11 +391,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: radius.base,
+    borderRadius: 18,
     padding: spacing.base,
     marginBottom: spacing.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
   },
   cardHeader: {
     marginBottom: spacing.sm,
@@ -458,7 +454,7 @@ const styles = StyleSheet.create({
   keteranganContainer: {
     marginTop: spacing.xs,
     padding: spacing.sm,
-    backgroundColor: staticColors.background,
+    backgroundColor: '#F2F6FC',
     borderRadius: radius.sm,
   },
   keterangan: {
@@ -546,9 +542,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: spacing.base,
     bottom: spacing.base,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: staticColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
