@@ -1,9 +1,33 @@
+import Constants from 'expo-constants';
+
 // API Configuration
 // PENTING: Untuk testing di HP, ganti 'localhost' dengan IP laptop Anda
 // Cara cek IP: Buka CMD/PowerShell, ketik 'ipconfig', cari IPv4 Address
-// Contoh: 'http://192.168.1.100:3000/api'
+// Contoh: 'http://192.168.1.100:3002/api'
+const hostUri =
+  Constants?.expoConfig?.hostUri ||
+  Constants?.expoGoConfig?.debuggerHost ||
+  Constants?.manifest?.debuggerHost ||
+  '';
+
+const rawHost = hostUri ? hostUri.split(':')[0] : '';
+const lanHost = rawHost && rawHost !== '127.0.0.1' && rawHost !== 'localhost'
+  ? rawHost
+  : '';
+const DEV_API_HOST = `http://${lanHost}:3002`;
+
+const ENV_API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || '';
+
+export const API_BASE_URL_CANDIDATES = [
+  ENV_API_BASE_URL,
+  lanHost ? `${DEV_API_HOST}/api` : '',
+  'http://10.0.2.2:3002/api',
+  'http://127.0.0.1:3002/api',
+  'http://localhost:3002/api',
+].filter(Boolean);
+
 export const API_BASE_URL = __DEV__
-  ? 'http://192.168.132.19:3000/api' // Development (gunakan IPv4 Wi-Fi laptop saat ini untuk testing di HP)
+  ? API_BASE_URL_CANDIDATES[0] // Development (otomatis fallback untuk emulator/device)
   : 'https://api-evaluasi.yourdomain.com/api'; // Production
 
 // AsyncStorage Keys

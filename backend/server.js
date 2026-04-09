@@ -1,10 +1,12 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const { testConnection } = require('./config/database');
+const os = require('os');
+const { testConnection, isDatabaseConnected } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 // Test database connection
 testConnection();
@@ -22,7 +24,8 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Evaluasi MI API Server',
     version: '1.0.0',
-    status: 'running'
+    status: 'running',
+    database: isDatabaseConnected() ? 'connected' : 'disconnected'
   });
 });
 
@@ -53,10 +56,17 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
+  const lanIp = Object.values(os.networkInterfaces())
+    .flat()
+    .find((iface) => iface && iface.family === 'IPv4' && !iface.internal)?.address;
+
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 API URL: http://localhost:${PORT}`);
+  console.log(`🔗 API URL (local): http://localhost:${PORT}`);
+  if (lanIp) {
+    console.log(`🔗 API URL (LAN): http://${lanIp}:${PORT}`);
+  }
 });
 
 module.exports = app;

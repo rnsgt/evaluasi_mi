@@ -6,6 +6,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@dosen_data';
 
+const normalizeDosenItem = (item = {}) => ({
+  id: item.id,
+  nip: item.nip || '',
+  nama: item.nama || '',
+  email: item.email || '',
+  bio: item.bio || '',
+  status: item.status || 'aktif',
+  foto_url: item.foto_url || item.foto || null,
+  mata_kuliah: Array.isArray(item.mata_kuliah)
+    ? item.mata_kuliah.map((mk) => (typeof mk === 'string' ? mk : mk?.nama || mk?.kode || '')).filter(Boolean)
+    : [],
+  created_at: item.created_at || item.createdAt || null,
+  updated_at: item.updated_at || item.updatedAt || null,
+});
+
 // Daftar Mata Kuliah yang tersedia
 export const MATA_KULIAH_LIST = [
   { id: 1, kode: 'MK001', nama: 'Pemrograman Web' },
@@ -183,7 +198,8 @@ const unwrapApiData = (payload) => {
 
 const getStoredDosen = async () => {
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+  const data = stored ? JSON.parse(stored) : [];
+  return data.map(normalizeDosenItem);
 };
 
 const setStoredDosen = async (data) => {
@@ -202,7 +218,7 @@ export const getAllDosen = async (includeInactive = false) => {
     console.log('getAllDosen - trying API...');
     const response = await api.get('/dosen');
     const raw = unwrapApiData(response);
-    const apiData = Array.isArray(raw) ? raw : [];
+    const apiData = (Array.isArray(raw) ? raw : []).map(normalizeDosenItem);
     if (apiData.length > 0) {
       await setStoredDosen(apiData);
     }
@@ -236,7 +252,7 @@ export const getAllDosen = async (includeInactive = false) => {
 export const getDosenById = async (id) => {
   try {
     const response = await api.get(`/dosen/${id}`);
-    return response.data;
+    return normalizeDosenItem(unwrapApiData(response));
   } catch (error) {
     console.error('Get dosen by ID error:', error);
     throw error;
@@ -273,8 +289,8 @@ export const createDosen = async (data) => {
         : 1;
 
       const newDosen = {
+        ...normalizeDosenItem(data),
         id: newId,
-        ...data,
         status: data.status || 'aktif',
         foto_url: data.foto_url || null,
         created_at: new Date().toISOString(),
@@ -329,7 +345,7 @@ export const updateDosen = async (id, data) => {
 
       allDosen[index] = {
         ...allDosen[index],
-        ...data,
+        ...normalizeDosenItem(data),
         id,
         updated_at: new Date().toISOString(),
       };

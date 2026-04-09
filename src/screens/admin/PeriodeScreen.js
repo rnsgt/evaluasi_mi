@@ -169,30 +169,6 @@ const PeriodeScreen = ({ navigation }) => {
               <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
             </View>
           </View>
-
-          <TouchableOpacity
-            style={[
-              styles.deletePillButton,
-              isActive && styles.deletePillButtonDisabled,
-            ]}
-            onPress={() => handleDelete(item)}
-            disabled={isActive}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <MaterialCommunityIcons
-              name="delete"
-              size={16}
-              color={isActive ? colors.textDisabled : '#fff'}
-            />
-            <Text
-              style={[
-                styles.deletePillText,
-                isActive && styles.deletePillTextDisabled,
-              ]}
-            >
-              Hapus
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.cardContent}>

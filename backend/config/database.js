@@ -1,33 +1,36 @@
-const { Pool } = require('pg');
+const { PrismaClient } = require('@prisma/client');
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
+// Instantiate Prisma Client
+const prisma = new PrismaClient();
+
+let dbConnected = false;
 
 // Test connection function
 const testConnection = async () => {
   try {
-    const client = await pool.connect();
+    // Test connection to database
+    await prisma.$queryRaw`SELECT NOW()`;
+    dbConnected = true;
     console.log('✅ Database connected successfully');
-    console.log(`📊 Database: ${process.env.DB_NAME}`);
-    client.release();
+    console.log(`📊 Database: ${process.env.DB_NAME || 'evaluasi_mi'}`);
   } catch (error) {
+    dbConnected = false;
     console.error('❌ Database connection failed:', error.message);
-    process.exit(1);
+    console.error('⚠️ Backend tetap berjalan (degraded mode), namun endpoint yang butuh database akan gagal sampai DB aktif.');
+    console.error(`🔎 Cek konfigurasi: DB_HOST=${process.env.DB_HOST || 'localhost'}, DB_PORT=${process.env.DB_PORT || '5432'}, DB_NAME=${process.env.DB_NAME || 'evaluasi_mi'}`);
   }
 };
 
-pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
-  process.exit(-1);
+const isDatabaseConnected = () => dbConnected;
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
 module.exports = {
-  query: (text, params) => pool.query(text, params),
-  pool,
+  prisma,
   testConnection,
+  isDatabaseConnected,
 };

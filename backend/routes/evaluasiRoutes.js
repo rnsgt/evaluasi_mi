@@ -1,19 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { prisma } = require('../config/database');
 const { authMiddleware } = require('../middleware/authMiddleware');
+
+const toInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const validateJawaban = (jawaban) => {
+  if (!Array.isArray(jawaban) || jawaban.length === 0) {
+    return 'Jawaban wajib diisi';
+  }
+
+  for (const item of jawaban) {
+    if (!item || item.pernyataan_id === undefined || item.nilai === undefined) {
+      return 'Setiap jawaban harus memiliki pernyataan_id dan nilai';
+    }
+
+    const pernyataanId = toInt(item.pernyataan_id);
+    const nilai = toInt(item.nilai);
+
+    if (pernyataanId === null || nilai === null) {
+      return 'pernyataan_id dan nilai harus berupa angka';
+    }
+
+    if (nilai < 1 || nilai > 5) {
+      return 'Nilai harus antara 1 sampai 5';
+    }
+  }
+
+  return null;
+};
 
 // Get pernyataan dosen
 router.get('/pernyataan/dosen', authMiddleware, async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT * FROM pernyataan_dosen ORDER BY urutan ASC'
-    );
-
-    res.json({
-      success: true,
-      data: result.rows
+    const data = await prisma.pernyataan_dosen.findMany({
+      orderBy: { urutan: 'asc' }
     });
+
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get pernyataan dosen error:', error);
     res.status(500).json({
@@ -26,14 +53,11 @@ router.get('/pernyataan/dosen', authMiddleware, async (req, res) => {
 // Get pernyataan fasilitas
 router.get('/pernyataan/fasilitas', authMiddleware, async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT * FROM pernyataan_fasilitas ORDER BY urutan ASC'
-    );
-
-    res.json({
-      success: true,
-      data: result.rows
+    const data = await prisma.pernyataan_fasilitas.findMany({
+      orderBy: { urutan: 'asc' }
     });
+
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Get pernyataan fasilitas error:', error);
     res.status(500).json({
@@ -45,125 +69,265 @@ router.get('/pernyataan/fasilitas', authMiddleware, async (req, res) => {
 
 // Submit evaluasi dosen
 router.post('/dosen', authMiddleware, async (req, res) => {
-  const client = await db.pool.connect();
-  
   try {
-    await client.query('BEGIN');
-
-    const { dosen_id, mata_kuliah_id, periode_id, komentar, jawaban } = req.body;
     const user_id = req.user.id;
+    const dosen_id = toInt(req.body.dosen_id);
+    const mata_kuliah_id = toInt(req.body.mata_kuliah_id);
+    const mata_kuliah_nama = req.body.mata_kuliah_nama ? String(req.body.mata_kuliah_nama).trim() : '';
+    const periode_id = toInt(req.body.periode_id);
+    const komentar = req.body.komentar ? String(req.body.komentar).trim() : null;
+    const jawaban = req.body.jawaban;
 
-    // Check if already evaluated
-    const checkDuplicate = await client.query(
-      'SELECT id FROM evaluasi_dosen WHERE user_id = $1 AND dosen_id = $2 AND mata_kuliah_id = $3 AND periode_id = $4',
-      [user_id, dosen_id, mata_kuliah_id, periode_id]
-    );
+    if (!dosen_id || !periode_id || (!mata_kuliah_id && !mata_kuliah_nama)) {
+      return res.status(400).json({
+        success: false,
+        message: 'dosen_id, mata_kuliah, dan periode_id wajib diisi'
+      });
+    }
 
-    if (checkDuplicate.rows.length > 0) {
-      await client.query('ROLLBACK');
+    const jawabanError = validateJawaban(jawaban);
+    if (jawabanError) {
+      return res.status(400).json({ success: false, message: jawabanError });
+    }
+
+    const [dosen, periode] = await Promise.all([
+      prisma.dosen.findUnique({ where: { id: dosen_id }, select: { id: true } }),
+      prisma.periode_evaluasi.findUnique({ where: { id: periode_id }, select: { id: true, nama: true, status: true } })
+    ]);
+
+    if (!dosen) {
+      return res.status(404).json({ success: false, message: `Dosen dengan ID ${dosen_id} tidak ditemukan` });
+    }
+
+    if (!periode) {
+      return res.status(404).json({ success: false, message: `Periode dengan ID ${periode_id} tidak ditemukan` });
+    }
+
+    if (periode.status !== 'aktif') {
+      return res.status(400).json({ success: false, message: `Periode ${periode.nama} tidak dalam status aktif` });
+    }
+
+    const pernyataanIds = jawaban.map((item) => toInt(item.pernyataan_id));
+    const pernyataanCount = await prisma.pernyataan_dosen.count({
+      where: { id: { in: pernyataanIds } }
+    });
+
+    if (pernyataanCount !== pernyataanIds.length) {
+      return res.status(404).json({ success: false, message: 'Beberapa pernyataan dosen tidak ditemukan' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      let resolvedMataKuliah = null;
+
+      if (mata_kuliah_id) {
+        resolvedMataKuliah = await tx.mata_kuliah.findUnique({
+          where: { id: mata_kuliah_id },
+          select: { id: true, dosen_id: true, nama: true }
+        });
+      }
+
+      if (!resolvedMataKuliah && mata_kuliah_nama) {
+        resolvedMataKuliah = await tx.mata_kuliah.findFirst({
+          where: {
+            dosen_id,
+            nama: {
+              equals: mata_kuliah_nama,
+              mode: 'insensitive'
+            }
+          },
+          select: { id: true, dosen_id: true, nama: true }
+        });
+      }
+
+      if (!resolvedMataKuliah && mata_kuliah_nama) {
+        resolvedMataKuliah = await tx.mata_kuliah.create({
+          data: {
+            kode: `MK-${dosen_id}-${Date.now()}`,
+            nama: mata_kuliah_nama,
+            sks: 3,
+            semester: null,
+            dosen_id,
+          },
+          select: { id: true, dosen_id: true, nama: true }
+        });
+      }
+
+      if (!resolvedMataKuliah) {
+        return {
+          error: 'MATA_KULIAH_TIDAK_VALID'
+        };
+      }
+
+      const existing = await tx.evaluasi_dosen.findUnique({
+        where: {
+          user_id_dosen_id_mata_kuliah_id_periode_id: {
+            user_id,
+            dosen_id,
+            mata_kuliah_id: resolvedMataKuliah.id,
+            periode_id
+          }
+        }
+      });
+
+      if (existing) {
+        throw new Error('DUPLICATE_DOSEN_EVALUATION');
+      }
+
+      const evaluasi = await tx.evaluasi_dosen.create({
+        data: {
+          user_id,
+          dosen_id,
+          mata_kuliah_id: resolvedMataKuliah.id,
+          periode_id,
+          komentar,
+          status: 'submitted'
+        }
+      });
+
+      await tx.evaluasi_detail.createMany({
+        data: jawaban.map((item) => ({
+          evaluasi_dosen_id: evaluasi.id,
+          pernyataan_dosen_id: toInt(item.pernyataan_id),
+          nilai: toInt(item.nilai)
+        }))
+      });
+
+      return evaluasi;
+    });
+
+    if (result?.error === 'MATA_KULIAH_TIDAK_VALID') {
+      return res.status(404).json({
+        success: false,
+        message: mata_kuliah_id
+          ? `Mata kuliah dengan ID ${mata_kuliah_id} tidak ditemukan`
+          : 'Mata kuliah tidak valid'
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Evaluasi dosen berhasil disimpan',
+      data: { evaluasi_id: result.id }
+    });
+  } catch (error) {
+    console.error('Submit evaluasi dosen error:', error);
+
+    if (error.message === 'DUPLICATE_DOSEN_EVALUATION') {
       return res.status(400).json({
         success: false,
         message: 'Anda sudah mengevaluasi dosen ini untuk mata kuliah yang sama'
       });
     }
 
-    // Insert evaluasi dosen
-    const evaluasiResult = await client.query(
-      `INSERT INTO evaluasi_dosen (user_id, dosen_id, mata_kuliah_id, periode_id, komentar, status) 
-       VALUES ($1, $2, $3, $4, $5, 'submitted') 
-       RETURNING id`,
-      [user_id, dosen_id, mata_kuliah_id, periode_id, komentar || null]
-    );
-
-    const evaluasi_id = evaluasiResult.rows[0].id;
-
-    // Insert jawaban (evaluasi_detail)
-    for (const item of jawaban) {
-      await client.query(
-        `INSERT INTO evaluasi_detail (evaluasi_dosen_id, pernyataan_dosen_id, nilai) 
-         VALUES ($1, $2, $3)`,
-        [evaluasi_id, item.pernyataan_id, item.nilai]
-      );
-    }
-
-    await client.query('COMMIT');
-
-    res.status(201).json({
-      success: true,
-      message: 'Evaluasi dosen berhasil disimpan',
-      data: { evaluasi_id }
-    });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Submit evaluasi dosen error:', error);
     res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan pada server'
     });
-  } finally {
-    client.release();
   }
 });
 
 // Submit evaluasi fasilitas
 router.post('/fasilitas', authMiddleware, async (req, res) => {
-  const client = await db.pool.connect();
-  
   try {
-    await client.query('BEGIN');
-
-    const { fasilitas_id, periode_id, komentar, jawaban } = req.body;
     const user_id = req.user.id;
+    const fasilitas_id = toInt(req.body.fasilitas_id);
+    const periode_id = toInt(req.body.periode_id);
+    const komentar = req.body.komentar ? String(req.body.komentar).trim() : null;
+    const jawaban = req.body.jawaban;
 
-    // Check if already evaluated
-    const checkDuplicate = await client.query(
-      'SELECT id FROM evaluasi_fasilitas WHERE user_id = $1 AND fasilitas_id = $2 AND periode_id = $3',
-      [user_id, fasilitas_id, periode_id]
-    );
+    if (!fasilitas_id || !periode_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'fasilitas_id dan periode_id wajib diisi'
+      });
+    }
 
-    if (checkDuplicate.rows.length > 0) {
-      await client.query('ROLLBACK');
+    const jawabanError = validateJawaban(jawaban);
+    if (jawabanError) {
+      return res.status(400).json({ success: false, message: jawabanError });
+    }
+
+    const [fasilitas, periode] = await Promise.all([
+      prisma.fasilitas.findUnique({ where: { id: fasilitas_id }, select: { id: true } }),
+      prisma.periode_evaluasi.findUnique({ where: { id: periode_id }, select: { id: true, nama: true, status: true } })
+    ]);
+
+    if (!fasilitas) {
+      return res.status(404).json({ success: false, message: `Fasilitas dengan ID ${fasilitas_id} tidak ditemukan` });
+    }
+
+    if (!periode) {
+      return res.status(404).json({ success: false, message: `Periode dengan ID ${periode_id} tidak ditemukan` });
+    }
+
+    if (periode.status !== 'aktif') {
+      return res.status(400).json({ success: false, message: `Periode ${periode.nama} tidak dalam status aktif` });
+    }
+
+    const pernyataanIds = jawaban.map((item) => toInt(item.pernyataan_id));
+    const pernyataanCount = await prisma.pernyataan_fasilitas.count({
+      where: { id: { in: pernyataanIds } }
+    });
+
+    if (pernyataanCount !== pernyataanIds.length) {
+      return res.status(404).json({ success: false, message: 'Beberapa pernyataan fasilitas tidak ditemukan' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.evaluasi_fasilitas.findUnique({
+        where: {
+          user_id_fasilitas_id_periode_id: {
+            user_id,
+            fasilitas_id,
+            periode_id
+          }
+        }
+      });
+
+      if (existing) {
+        throw new Error('DUPLICATE_FASILITAS_EVALUATION');
+      }
+
+      const evaluasi = await tx.evaluasi_fasilitas.create({
+        data: {
+          user_id,
+          fasilitas_id,
+          periode_id,
+          komentar,
+          status: 'submitted'
+        }
+      });
+
+      await tx.evaluasi_detail.createMany({
+        data: jawaban.map((item) => ({
+          evaluasi_fasilitas_id: evaluasi.id,
+          pernyataan_fasilitas_id: toInt(item.pernyataan_id),
+          nilai: toInt(item.nilai)
+        }))
+      });
+
+      return evaluasi;
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Evaluasi fasilitas berhasil disimpan',
+      data: { evaluasi_id: result.id }
+    });
+  } catch (error) {
+    console.error('Submit evaluasi fasilitas error:', error);
+
+    if (error.message === 'DUPLICATE_FASILITAS_EVALUATION') {
       return res.status(400).json({
         success: false,
         message: 'Anda sudah mengevaluasi fasilitas ini'
       });
     }
 
-    // Insert evaluasi fasilitas
-    const evaluasiResult = await client.query(
-      `INSERT INTO evaluasi_fasilitas (user_id, fasilitas_id, periode_id, komentar, status) 
-       VALUES ($1, $2, $3, $4, 'submitted') 
-       RETURNING id`,
-      [user_id, fasilitas_id, periode_id, komentar || null]
-    );
-
-    const evaluasi_id = evaluasiResult.rows[0].id;
-
-    // Insert jawaban (evaluasi_detail)
-    for (const item of jawaban) {
-      await client.query(
-        `INSERT INTO evaluasi_detail (evaluasi_fasilitas_id, pernyataan_fasilitas_id, nilai) 
-         VALUES ($1, $2, $3)`,
-        [evaluasi_id, item.pernyataan_id, item.nilai]
-      );
-    }
-
-    await client.query('COMMIT');
-
-    res.status(201).json({
-      success: true,
-      message: 'Evaluasi fasilitas berhasil disimpan',
-      data: { evaluasi_id }
-    });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Submit evaluasi fasilitas error:', error);
     res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan pada server'
     });
-  } finally {
-    client.release();
   }
 });
 
@@ -172,61 +336,61 @@ router.get('/riwayat', authMiddleware, async (req, res) => {
   try {
     const user_id = req.user.id;
 
-    // Get evaluasi dosen
-    const dosenResult = await db.query(`
-      SELECT 
-        ed.id,
-        ed.submitted_at,
-        ed.komentar,
-        ed.status,
-        COUNT(detail.id) as jumlah_jawaban,
-        d.nama as dosen_nama,
-        d.nip as dosen_nip,
-        mk.nama as mata_kuliah_nama,
-        mk.kode as mata_kuliah_kode,
-        p.nama as periode_nama,
-        'DOSEN' as type
-      FROM evaluasi_dosen ed
-      JOIN dosen d ON ed.dosen_id = d.id
-      JOIN mata_kuliah mk ON ed.mata_kuliah_id = mk.id
-      JOIN periode_evaluasi p ON ed.periode_id = p.id
-      LEFT JOIN evaluasi_detail detail ON ed.id = detail.evaluasi_dosen_id
-      WHERE ed.user_id = $1
-      GROUP BY ed.id, ed.submitted_at, ed.komentar, ed.status, d.nama, d.nip, mk.nama, mk.kode, p.nama
-      ORDER BY ed.submitted_at DESC
-    `, [user_id]);
+    const [dosenEvaluations, fasilitasEvaluations] = await Promise.all([
+      prisma.evaluasi_dosen.findMany({
+        where: { user_id },
+        include: {
+          dosen: { select: { nama: true, nip: true } },
+          mata_kuliah: { select: { nama: true, kode: true } },
+          periode_evaluasi: { select: { nama: true } },
+          evaluasi_detail: true
+        },
+        orderBy: { submitted_at: 'desc' }
+      }),
+      prisma.evaluasi_fasilitas.findMany({
+        where: { user_id },
+        include: {
+          fasilitas: { select: { nama: true, kode: true, kategori: true, lokasi: true } },
+          periode_evaluasi: { select: { nama: true } },
+          evaluasi_detail: true
+        },
+        orderBy: { submitted_at: 'desc' }
+      })
+    ]);
 
-    // Get evaluasi fasilitas
-    const fasilitasResult = await db.query(`
-      SELECT 
-        ef.id,
-        ef.submitted_at,
-        ef.komentar,
-        ef.status,
-        COUNT(detail.id) as jumlah_jawaban,
-        f.nama as fasilitas_nama,
-        f.kode as fasilitas_kode,
-        f.kategori as fasilitas_kategori,
-        f.lokasi as fasilitas_lokasi,
-        p.nama as periode_nama,
-        'FASILITAS' as type
-      FROM evaluasi_fasilitas ef
-      JOIN fasilitas f ON ef.fasilitas_id = f.id
-      JOIN periode_evaluasi p ON ef.periode_id = p.id
-      LEFT JOIN evaluasi_detail detail ON ef.id = detail.evaluasi_fasilitas_id
-      WHERE ef.user_id = $1
-      GROUP BY ef.id, ef.submitted_at, ef.komentar, ef.status, f.nama, f.kode, f.kategori, f.lokasi, p.nama
-      ORDER BY ef.submitted_at DESC
-    `, [user_id]);
+    const dosenData = dosenEvaluations.map((ed) => ({
+      id: ed.id,
+      submitted_at: ed.submitted_at,
+      komentar: ed.komentar,
+      status: ed.status,
+      jumlah_jawaban: ed.evaluasi_detail.length,
+      dosen_nama: ed.dosen.nama,
+      dosen_nip: ed.dosen.nip,
+      mata_kuliah_nama: ed.mata_kuliah.nama,
+      mata_kuliah_kode: ed.mata_kuliah.kode,
+      periode_nama: ed.periode_evaluasi.nama,
+      type: 'DOSEN'
+    }));
 
-    // Combine and sort by date
-    const allEvaluasi = [...dosenResult.rows, ...fasilitasResult.rows]
-      .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+    const fasilitasData = fasilitasEvaluations.map((ef) => ({
+      id: ef.id,
+      submitted_at: ef.submitted_at,
+      komentar: ef.komentar,
+      status: ef.status,
+      jumlah_jawaban: ef.evaluasi_detail.length,
+      fasilitas_nama: ef.fasilitas.nama,
+      fasilitas_kode: ef.fasilitas.kode,
+      fasilitas_kategori: ef.fasilitas.kategori,
+      fasilitas_lokasi: ef.fasilitas.lokasi,
+      periode_nama: ef.periode_evaluasi.nama,
+      type: 'FASILITAS'
+    }));
 
-    res.json({
-      success: true,
-      data: allEvaluasi
-    });
+    const allEvaluasi = [...dosenData, ...fasilitasData].sort(
+      (a, b) => new Date(b.submitted_at) - new Date(a.submitted_at)
+    );
+
+    res.json({ success: true, data: allEvaluasi });
   } catch (error) {
     console.error('Get riwayat error:', error);
     res.status(500).json({
@@ -241,47 +405,23 @@ router.get('/statistik', authMiddleware, async (req, res) => {
   try {
     const user_id = req.user.id;
 
-    // Count evaluasi dosen
-    const dosenCount = await db.query(
-      'SELECT COUNT(*) as total FROM evaluasi_dosen WHERE user_id = $1',
-      [user_id]
-    );
+    const [dosenCount, fasilitasCount, activePeriode] = await Promise.all([
+      prisma.evaluasi_dosen.count({ where: { user_id } }),
+      prisma.evaluasi_fasilitas.count({ where: { user_id } }),
+      prisma.periode_evaluasi.findFirst({ where: { status: 'aktif' }, select: { nama: true } })
+    ]);
 
-    // Count evaluasi fasilitas
-    const fasilitasCount = await db.query(
-      'SELECT COUNT(*) as total FROM evaluasi_fasilitas WHERE user_id = $1',
-      [user_id]
-    );
-
-    // Get active periode
-    const periodeResult = await db.query(
-      "SELECT nama FROM periode_evaluasi WHERE status = 'aktif' LIMIT 1"
-    );
-
-    const totalDosen = parseInt(dosenCount.rows[0].total);
-    const totalFasilitas = parseInt(fasilitasCount.rows[0].total);
+    const totalDosen = dosenCount;
+    const totalFasilitas = fasilitasCount;
     const totalEvaluasi = totalDosen + totalFasilitas;
 
-    // Achievement
     let achievement = null;
     if (totalEvaluasi >= 10) {
-      achievement = {
-        text: 'Super Aktif! 🌟',
-        icon: 'trophy',
-        color: '#FFD700'
-      };
+      achievement = { text: 'Super Aktif! 🌟', icon: 'trophy', color: '#FFD700' };
     } else if (totalEvaluasi >= 5) {
-      achievement = {
-        text: 'Partisipasi Baik 👍',
-        icon: 'medal',
-        color: '#4CAF50'
-      };
+      achievement = { text: 'Partisipasi Baik 👍', icon: 'medal', color: '#4CAF50' };
     } else if (totalEvaluasi > 0) {
-      achievement = {
-        text: 'Terus Tingkatkan! 💪',
-        icon: 'star',
-        color: '#2196F3'
-      };
+      achievement = { text: 'Terus Tingkatkan! 💪', icon: 'star', color: '#2196F3' };
     }
 
     res.json({
@@ -290,7 +430,7 @@ router.get('/statistik', authMiddleware, async (req, res) => {
         totalEvaluasi,
         totalDosen,
         totalFasilitas,
-        periodeAktif: periodeResult.rows[0]?.nama || 'Tidak ada periode aktif',
+        periodeAktif: activePeriode?.nama || 'Tidak ada periode aktif',
         achievement
       }
     });

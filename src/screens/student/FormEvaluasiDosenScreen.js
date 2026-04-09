@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,6 +32,7 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   const [komentar, setKomentar] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [mataKuliahOptions, setMataKuliahOptions] = useState([]);
   const [selectedMataKuliah, setSelectedMataKuliah] = useState(null);
   const [activePeriode, setActivePeriode] = useState(null);
 
@@ -47,16 +48,22 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
     };
     loadPeriode();
 
-    // Set default selectedMataKuliah (first one)
-    if (mataKuliah && mataKuliah.length > 0) {
-      // Check if mataKuliah is array of objects or strings
-      const firstMK = mataKuliah[0];
-      if (typeof firstMK === 'object' && firstMK.id) {
-        setSelectedMataKuliah(firstMK);
-      } else {
-        // Fallback for string array (will cause error, but prevent crash)
-        setSelectedMataKuliah({ id: 1, nama: firstMK });
-      }
+    const options = Array.isArray(mataKuliah)
+      ? mataKuliah
+          .map((item) => {
+            if (typeof item === 'string') {
+              return { id: null, nama: item };
+            }
+
+            const nama = item?.nama || item?.kode || '';
+            return nama ? { id: item?.id || null, nama } : null;
+          })
+          .filter(Boolean)
+      : [];
+
+    setMataKuliahOptions(options);
+    if (options.length > 0) {
+      setSelectedMataKuliah(options[0]);
     }
   }, [mataKuliah]);
 
@@ -92,6 +99,11 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
     setHasUnsavedChanges(true);
   };
 
+  const handleMataKuliahSelect = (item) => {
+    setSelectedMataKuliah(item);
+    setHasUnsavedChanges(true);
+  };
+
   const validateForm = () => {
     const newErrors = {};
     let isValid = true;
@@ -121,6 +133,11 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   };
 
   const handleSubmit = () => {
+    if (!selectedMataKuliah) {
+      Alert.alert('Mata Kuliah Wajib Dipilih', 'Silakan pilih mata kuliah terlebih dahulu.');
+      return;
+    }
+
     if (!validateForm()) {
       Alert.alert(
         'Form Belum Lengkap',
@@ -153,7 +170,6 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Check if mata kuliah selected
       if (!selectedMataKuliah) {
         Alert.alert('Error', 'Silakan pilih mata kuliah terlebih dahulu');
         return;
@@ -168,10 +184,12 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
       // Prepare evaluasi data according to backend API format
       const evaluasiData = {
         dosen_id: dosenId,
-        mata_kuliah_id: selectedMataKuliah.id,
         periode_id: activePeriode.id,
         komentar: komentar || null,
         jawaban: jawaban,
+        ...(selectedMataKuliah.id
+          ? { mata_kuliah_id: selectedMataKuliah.id }
+          : { mata_kuliah_nama: selectedMataKuliah.nama }),
       };
 
       // Submit to backend API
@@ -277,6 +295,32 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
           </View>
         </View>
 
+        <View style={styles.mataKuliahFormCard}>
+          <Text style={styles.mataKuliahFormLabel}>Mata Kuliah</Text>
+
+
+          <View style={styles.mataKuliahSuggestions}>
+            {mataKuliahOptions.map((item) => {
+              const isActive = selectedMataKuliah?.id
+                ? selectedMataKuliah.id === item.id
+                : selectedMataKuliah?.nama === item.nama;
+
+              return (
+                <TouchableOpacity
+                  key={`${item.id || item.nama}`}
+                  style={[styles.mataKuliahChip, isActive && styles.mataKuliahChipActive]}
+                  onPress={() => handleMataKuliahSelect(item)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.mataKuliahChipText, isActive && styles.mataKuliahChipTextActive]}>
+                    {item.nama}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Progress Bar */}
         <View style={styles.progressContainer}>
           <View style={styles.progressHeader}>
@@ -372,7 +416,7 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#EEF1F5',
   },
   keyboardView: {
     flex: 1,
@@ -419,7 +463,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.base,
@@ -443,7 +487,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   mataKuliahTag: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DBECFF',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -453,6 +497,61 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: staticColors.primary,
     fontFamily: typography.fontFamily.medium,
+  },
+  mataKuliahFormCard: {
+    backgroundColor: staticColors.background,
+    padding: spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: staticColors.border,
+  },
+  mataKuliahFormLabel: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.bold,
+    color: staticColors.textPrimary,
+    marginBottom: 4,
+  },
+  mataKuliahFormHelper: {
+    fontSize: typography.fontSize.xs,
+    color: staticColors.textSecondary,
+    marginBottom: spacing.sm,
+    lineHeight: 18,
+  },
+  mataKuliahFormInput: {
+    backgroundColor: staticColors.surface,
+    borderWidth: 1,
+    borderColor: staticColors.border,
+    borderRadius: radius.base,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    fontSize: typography.fontSize.base,
+    color: staticColors.textPrimary,
+  },
+  mataKuliahSuggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  mataKuliahChip: {
+    backgroundColor: '#DBECFF',
+    borderWidth: 1,
+    borderColor: '#BBDEFB',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  mataKuliahChipActive: {
+    backgroundColor: staticColors.primary,
+    borderColor: staticColors.primary,
+  },
+  mataKuliahChipText: {
+    fontSize: typography.fontSize.xs,
+    color: staticColors.primary,
+    fontFamily: typography.fontFamily.medium,
+  },
+  mataKuliahChipTextActive: {
+    color: '#FFFFFF',
+    fontFamily: typography.fontFamily.semibold,
   },
   progressContainer: {
     backgroundColor: staticColors.background,
@@ -495,7 +594,7 @@ const styles = StyleSheet.create({
   },
   instructionCard: {
     flexDirection: 'row',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DBECFF',
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.lg,
@@ -526,7 +625,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
@@ -607,3 +706,4 @@ const styles = StyleSheet.create({
 });
 
 export default FormEvaluasiDosenScreen;
+

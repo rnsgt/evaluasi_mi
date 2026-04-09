@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -139,7 +139,7 @@ const RiwayatScreen = () => {
             style={[
               styles.chip,
               styles.itemInfoIcon,
-              { backgroundColor: item.type === 'DOSEN' ? '#E3F2FD' : '#E8F5E9' },
+              { backgroundColor: item.type === 'DOSEN' ? '#DBECFF' : '#DBECFF' },
             ]}
           >
             <Text style={styles.chipText}>{item.type}</Text>
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
@@ -446,3 +446,4 @@ const styles = StyleSheet.create({
 });
 
 export default RiwayatScreen;
+

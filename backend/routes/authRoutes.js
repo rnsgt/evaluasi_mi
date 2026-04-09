@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const db = require('../config/database');
+const { prisma } = require('../config/database');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Register - Mahasiswa
@@ -27,12 +27,13 @@ router.post('/register', [
     const { nim, nama, email, password, prodi, angkatan } = req.body;
 
     // Check if user already exists
-    const existingUser = await db.query(
-      'SELECT * FROM users WHERE email = $1 OR nim = $2',
-      [email, nim]
-    );
+    const existingUser = await prisma.users.findFirst({
+      where: {
+        OR: [{ email }, { nim }]
+      }
+    });
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser) {
       return res.status(400).json({
         success: false,
         message: 'Email atau NIM sudah terdaftar'
@@ -42,15 +43,27 @@ router.post('/register', [
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user
-    const result = await db.query(
-      `INSERT INTO users (nim, nama, email, password, prodi, angkatan, role) 
-       VALUES ($1, $2, $3, $4, $5, $6, 'mahasiswa') 
-       RETURNING id, nim, nama, email, prodi, angkatan, role`,
-      [nim, nama, email, hashedPassword, prodi, angkatan]
-    );
-
-    const user = result.rows[0];
+    // Create user
+    const user = await prisma.users.create({
+      data: {
+        nim,
+        nama,
+        email,
+        password: hashedPassword,
+        prodi,
+        angkatan,
+        role: 'mahasiswa'
+      },
+      select: {
+        id: true,
+        nim: true,
+        nama: true,
+        email: true,
+        prodi: true,
+        angkatan: true,
+        role: true
+      }
+    });
 
     // Generate token
     const token = jwt.sign(
@@ -78,7 +91,18 @@ router.post('/register', [
 
 // Login
 router.post('/login', [
-  body('identifier').notEmpty().withMessage('NIM/Email harus diisi'),
+  body('identifier')
+    .optional()
+    .isString()
+    .withMessage('Identifier tidak valid'),
+  body('nim')
+    .optional()
+    .isString()
+    .withMessage('NIM tidak valid'),
+  body('email')
+    .optional()
+    .isString()
+    .withMessage('Email tidak valid'),
   body('password').notEmpty().withMessage('Password harus diisi'),
 ], async (req, res) => {
   try {
@@ -90,29 +114,46 @@ router.post('/login', [
       });
     }
 
-    const { identifier, password } = req.body;
+    const { password } = req.body;
+    const rawIdentifier = req.body.identifier ?? req.body.nim ?? req.body.email;
+    const normalizedIdentifier = String(rawIdentifier || '').trim();
+
+    if (!normalizedIdentifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'NIM/Email harus diisi'
+      });
+    }
+
+    const isEmail = normalizedIdentifier.includes('@');
 
     // Find user by NIM or Email
-    const result = await db.query(
-      'SELECT * FROM users WHERE email = $1 OR nim = $1',
-      [identifier]
-    );
+    const user = await prisma.users.findFirst({
+      where: isEmail
+        ? {
+            email: {
+              equals: normalizedIdentifier.toLowerCase(),
+              mode: 'insensitive'
+            }
+          }
+        : {
+            nim: normalizedIdentifier
+          }
+    });
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'NIM/Email atau password salah'
       });
     }
 
-    const user = result.rows[0];
-
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Email atau password salah'
+        message: 'NIM/Email atau password salah'
       });
     }
 
@@ -146,12 +187,21 @@ router.post('/login', [
 // Get Profile
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT id, nim, nama, email, prodi, angkatan, role, created_at FROM users WHERE id = $1',
-      [req.user.id]
-    );
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        nim: true,
+        nama: true,
+        email: true,
+        prodi: true,
+        angkatan: true,
+        role: true,
+        created_at: true
+      }
+    });
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User tidak ditemukan'
@@ -160,7 +210,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: user
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -198,12 +248,16 @@ router.put('/change-password', [
     }
 
     // Get current user
-    const result = await db.query(
-      'SELECT * FROM users WHERE id = $1',
-      [req.user.id]
-    );
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.id }
+    });
 
-    const user = result.rows[0];
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User tidak ditemukan'
+      });
+    }
 
     // Verify old password
     const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
@@ -218,10 +272,12 @@ router.put('/change-password', [
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await db.query(
-      'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      [hashedPassword, req.user.id]
-    );
+    await prisma.users.update({
+      where: { id: req.user.id },
+      data: {
+        password: hashedPassword
+      }
+    });
 
     res.json({
       success: true,

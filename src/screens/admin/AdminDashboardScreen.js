@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import statsService from '../../services/statsService';
 
@@ -18,9 +19,11 @@ const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 const AdminDashboardScreen = () => {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadStats();
@@ -29,10 +32,12 @@ const AdminDashboardScreen = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await statsService.getAdminDashboardStats();
       setStats(data);
     } catch (error) {
       console.error('Load admin stats error:', error);
+      setError(error?.message || 'Gagal memuat data dashboard');
     } finally {
       setLoading(false);
     }
@@ -182,10 +187,6 @@ const AdminDashboardScreen = () => {
             <Text style={styles.headerGreeting}>SELAMAT DATANG,</Text>
             <Text style={styles.headerTitle}>Admin Akademik</Text>
           </View>
-          <TouchableOpacity style={styles.bellButton}>
-            <MaterialCommunityIcons name="bell-outline" size={24} color={colors.primary} />
-            <View style={styles.dotBadge} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.cardsGrid}>

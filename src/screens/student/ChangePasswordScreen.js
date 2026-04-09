@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -239,7 +239,7 @@ const ChangePasswordScreen = ({ navigation }) => {
             <MaterialCommunityIcons
               name={newPassword.trim().length >= 6 ? 'check-circle' : 'circle-outline'}
               size={16}
-              color={newPassword.trim().length >= 6 ? (colors?.success || '#4CAF50') : (colors?.textSecondary || staticColors.textSecondary)}
+              color={newPassword.trim().length >= 6 ? (colors?.success || '#16A34A') : (colors?.textSecondary || staticColors.textSecondary)}
             />
             <Text style={[styles.requirementText, { color: colors?.textSecondary || staticColors.textSecondary }]}>
               Minimal 6 karakter
@@ -249,7 +249,7 @@ const ChangePasswordScreen = ({ navigation }) => {
             <MaterialCommunityIcons
               name={newPassword.trim() && newPassword.trim() !== oldPassword.trim() ? 'check-circle' : 'circle-outline'}
               size={16}
-              color={newPassword.trim() && newPassword.trim() !== oldPassword.trim() ? (colors?.success || '#4CAF50') : (colors?.textSecondary || staticColors.textSecondary)}
+              color={newPassword.trim() && newPassword.trim() !== oldPassword.trim() ? (colors?.success || '#16A34A') : (colors?.textSecondary || staticColors.textSecondary)}
             />
             <Text style={[styles.requirementText, { color: colors?.textSecondary || staticColors.textSecondary }]}>
               Berbeda dengan password lama
@@ -259,7 +259,7 @@ const ChangePasswordScreen = ({ navigation }) => {
             <MaterialCommunityIcons
               name={newPassword.trim() && newPassword.trim() === confirmPassword.trim() ? 'check-circle' : 'circle-outline'}
               size={16}
-              color={newPassword.trim() && newPassword.trim() === confirmPassword.trim() ? (colors?.success || '#4CAF50') : (colors?.textSecondary || staticColors.textSecondary)}
+              color={newPassword.trim() && newPassword.trim() === confirmPassword.trim() ? (colors?.success || '#16A34A') : (colors?.textSecondary || staticColors.textSecondary)}
             />
             <Text style={[styles.requirementText, { color: colors?.textSecondary || staticColors.textSecondary }]}>
               Konfirmasi password cocok
@@ -444,3 +444,4 @@ const styles = StyleSheet.create({
 });
 
 export default ChangePasswordScreen;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -258,7 +258,7 @@ const PilihFasilitasScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#EEF1F5',
   },
   header: {
     flexDirection: 'row',
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.base,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   },
   kategoriTag: {
     alignSelf: 'flex-start',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DBECFF',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -444,3 +444,4 @@ const styles = StyleSheet.create({
 });
 
 export default PilihFasilitasScreen;
+

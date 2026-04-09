@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ const KelolaScreen = ({ navigation }) => {
       title: 'Kelola Fasilitas',
       description: 'Tambah, edit, dan hapus data fasilitas kampus',
       icon: 'office-building',
-      color: '#4CAF50',
+      color: '#16A34A',
       route: 'FasilitasManagement',
     },
     {
@@ -21,7 +21,7 @@ const KelolaScreen = ({ navigation }) => {
       title: 'Kelola Dosen',
       description: 'Tambah, edit, dan hapus data dosen pengampu',
       icon: 'account-tie',
-      color: '#2196F3',
+      color: '#228BE6',
       route: 'DosenManagement',
     },
   ];
@@ -182,3 +182,4 @@ const styles = StyleSheet.create({
 });
 
 export default KelolaScreen;
+

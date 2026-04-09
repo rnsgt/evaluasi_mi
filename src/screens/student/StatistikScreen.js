@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -153,13 +153,13 @@ const StatistikScreen = () => {
             'school',
             'Evaluasi Dosen',
             stats.totalDosen,
-            '#2196F3'
+            '#228BE6'
           )}
           {renderStatCard(
             'office-building',
             'Evaluasi Fasilitas',
             stats.totalFasilitas,
-            '#4CAF50'
+            '#16A34A'
           )}
         </View>
 
@@ -181,13 +181,13 @@ const StatistikScreen = () => {
               'Evaluasi Dosen',
               stats.totalDosen,
               stats.totalDosen > 0 ? stats.totalDosen : 10,
-              '#2196F3'
+              '#228BE6'
             )}
             {renderProgressBar(
               'Evaluasi Fasilitas',
               stats.totalFasilitas,
               stats.totalFasilitas > 0 ? stats.totalFasilitas : 10,
-              '#4CAF50'
+              '#16A34A'
             )}
           </View>
         </View>
@@ -204,7 +204,7 @@ const StatistikScreen = () => {
                     {
                       height: stats.totalDosen * 20 + 40,
                       maxHeight: 200,
-                      backgroundColor: '#2196F3',
+                      backgroundColor: '#228BE6',
                     },
                   ]}
                 />
@@ -218,7 +218,7 @@ const StatistikScreen = () => {
                     {
                       height: stats.totalFasilitas * 20 + 40,
                       maxHeight: 200,
-                      backgroundColor: '#4CAF50',
+                      backgroundColor: '#16A34A',
                     },
                   ]}
                 />
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   periodeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DBECFF',
     marginHorizontal: spacing.base,
     marginBottom: spacing.base,
     padding: spacing.md,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#FCE9CC',
     marginHorizontal: spacing.base,
     padding: spacing.base,
     borderRadius: radius.base,
@@ -434,3 +434,4 @@ const styles = StyleSheet.create({
 });
 
 export default StatistikScreen;
+

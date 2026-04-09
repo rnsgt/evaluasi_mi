@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -39,7 +39,7 @@ const SettingsScreen = ({ navigation }) => {
       title: 'Profil Admin',
       description: 'Kelola informasi profil Anda',
       icon: 'account-circle',
-      color: '#2196F3',
+      color: '#228BE6',
       onPress: () => Alert.alert('Info', 'Fitur dalam pengembangan'),
     },
     {
@@ -47,7 +47,7 @@ const SettingsScreen = ({ navigation }) => {
       title: 'Bantuan & Panduan',
       description: 'Panduan penggunaan aplikasi',
       icon: 'help-circle',
-      color: '#9C27B0',
+      color: '#0B78F0',
       onPress: () => Alert.alert('Info', 'Fitur dalam pengembangan'),
     },
     {
@@ -55,7 +55,7 @@ const SettingsScreen = ({ navigation }) => {
       title: 'Tentang Aplikasi',
       description: 'Informasi versi dan lisensi',
       icon: 'information',
-      color: '#607D8B',
+      color: '#486080',
       onPress: () => Alert.alert('Info', 'Evaluasi MI v1.0.0'),
     },
   ];
@@ -176,3 +176,4 @@ const styles = StyleSheet.create({
 });
 
 export default SettingsScreen;
+

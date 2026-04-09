@@ -436,7 +436,7 @@ const FormPeriodeScreen = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               styles.deleteButton,
-              (loading || periode?.status === 'aktif') && styles.submitButtonDisabled,
+              (loading || periode?.status === 'aktif') && styles.deleteButtonDisabled,
             ]}
             onPress={handleDelete}
             disabled={loading || periode?.status === 'aktif'}
@@ -591,18 +591,32 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     flexDirection: 'row',
-    backgroundColor: staticColors.danger,
+    backgroundColor: '#D32F2F',
     paddingVertical: spacing.base,
     borderRadius: radius.base,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
     marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#B71C1C',
+    shadowColor: '#B71C1C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  deleteButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+    borderColor: '#BDBDBD',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   deleteButtonText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
     color: '#fff',
+    letterSpacing: 0.2,
   },
   deleteButtonTextDisabled: {
     color: staticColors.textDisabled,

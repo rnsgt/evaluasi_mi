@@ -7,8 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  Modal,
-  FlatList,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,8 +29,10 @@ const FormDosenScreen = ({ route, navigation }) => {
     bio: '',
   });
 
-  const [showMataKuliahPicker, setShowMataKuliahPicker] = useState(false);
-  const [selectedMataKuliah, setSelectedMataKuliah] = useState([]);
+  const [mataKuliahInput, setMataKuliahInput] = useState('');
+  const [mataKuliahSuggestions, setMataKuliahSuggestions] = useState(
+    MATA_KULIAH_LIST.slice(0, 8)
+  );
   const [errors, setErrors] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -60,7 +60,6 @@ const FormDosenScreen = ({ route, navigation }) => {
         mata_kuliah: editData.mata_kuliah || [],
         bio: editData.bio || '',
       });
-      setSelectedMataKuliah(normalizeMataKuliah(editData.mata_kuliah));
     }
   }, [isEdit, editData, mode]);
 
@@ -76,23 +75,43 @@ const FormDosenScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleMataKuliahToggle = (mataKuliah) => {
-    setSelectedMataKuliah((prev) => {
-      if (prev.includes(mataKuliah)) {
-        return prev.filter((mk) => mk !== mataKuliah);
-      } else {
-        return [...prev, mataKuliah];
-      }
-    });
+  const handleMataKuliahInputChange = (value) => {
+    setMataKuliahInput(value);
+    setHasChanges(true);
+
+    const query = value.trim().toLowerCase();
+    if (!query) {
+      setMataKuliahSuggestions(MATA_KULIAH_LIST.slice(0, 8));
+      return;
+    }
+
+    const filtered = MATA_KULIAH_LIST.filter((item) =>
+      item.nama.toLowerCase().includes(query) || item.kode.toLowerCase().includes(query)
+    );
+    setMataKuliahSuggestions(filtered.length > 0 ? filtered : MATA_KULIAH_LIST.slice(0, 8));
   };
 
-  const handleMataKuliahConfirm = () => {
-    setFormData((prev) => ({
-      ...prev,
-      mata_kuliah: selectedMataKuliah,
-    }));
-    setShowMataKuliahPicker(false);
+  const handleAddMataKuliah = (mataKuliahValue) => {
+    const normalized = mataKuliahValue.trim();
+    if (!normalized) {
+      return;
+    }
+
+    setFormData((prev) => {
+      if (prev.mata_kuliah.includes(normalized)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        mata_kuliah: [...prev.mata_kuliah, normalized],
+      };
+    });
+
+    setMataKuliahInput('');
+    setMataKuliahSuggestions(MATA_KULIAH_LIST.slice(0, 8));
     setHasChanges(true);
+
     if (errors.mata_kuliah) {
       setErrors((prev) => ({ ...prev, mata_kuliah: null }));
     }
@@ -103,7 +122,6 @@ const FormDosenScreen = ({ route, navigation }) => {
       ...prev,
       mata_kuliah: prev.mata_kuliah.filter((mk) => mk !== mataKuliah),
     }));
-    setSelectedMataKuliah((prev) => prev.filter((mk) => mk !== mataKuliah));
     setHasChanges(true);
   };
 
@@ -251,26 +269,38 @@ const FormDosenScreen = ({ route, navigation }) => {
           <Text style={styles.label}>
             Mata Kuliah <Text style={styles.required}>*</Text>
           </Text>
-          <TouchableOpacity
-            style={[styles.pickerButton, errors.mata_kuliah && styles.inputError]}
-            onPress={() => {
-              setSelectedMataKuliah(formData.mata_kuliah);
-              setShowMataKuliahPicker(true);
-            }}
-          >
-            <Text
-              style={[
-                styles.pickerButtonText,
-                formData.mata_kuliah.length === 0 && styles.pickerPlaceholder,
-              ]}
+          <View style={[styles.mataKuliahInputRow, errors.mata_kuliah && styles.inputError]}>
+            <TextInput
+              style={styles.mataKuliahInput}
+              placeholder="Ketik nama mata kuliah"
+              value={mataKuliahInput}
+              onChangeText={handleMataKuliahInputChange}
+              onSubmitEditing={() => handleAddMataKuliah(mataKuliahInput)}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              style={styles.mataKuliahAddButton}
+              onPress={() => handleAddMataKuliah(mataKuliahInput)}
             >
-              {formData.mata_kuliah.length > 0
-                ? `${formData.mata_kuliah.length} mata kuliah dipilih`
-                : 'Pilih Mata Kuliah'}
-            </Text>
-            <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+              <MaterialCommunityIcons name="plus" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
           {errors.mata_kuliah && <Text style={styles.errorText}>{errors.mata_kuliah}</Text>}
+
+          <View style={styles.suggestionSection}>
+            <Text style={styles.hint}>Saran cepat</Text>
+            <View style={styles.mataKuliahSuggestions}>
+              {mataKuliahSuggestions.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.suggestionChip}
+                  onPress={() => handleAddMataKuliah(item.nama)}
+                >
+                  <Text style={styles.suggestionChipText}>{item.nama}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
           {formData.mata_kuliah.length > 0 && (
             <View style={styles.mataKuliahChips}>
@@ -333,68 +363,6 @@ const FormDosenScreen = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Mata Kuliah Picker Modal */}
-      <Modal
-        visible={showMataKuliahPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMataKuliahPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Pilih Mata Kuliah ({selectedMataKuliah.length})
-              </Text>
-              <TouchableOpacity onPress={() => setShowMataKuliahPicker(false)}>
-                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={MATA_KULIAH_LIST}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => {
-                const isSelected = selectedMataKuliah.includes(item.nama);
-                return (
-                  <TouchableOpacity
-                    style={styles.modalItem}
-                    onPress={() => handleMataKuliahToggle(item.nama)}
-                  >
-                    <View style={styles.modalItemLeft}>
-                      <View
-                        style={[
-                          styles.checkbox,
-                          isSelected && styles.checkboxSelected,
-                        ]}
-                      >
-                        {isSelected && (
-                          <MaterialCommunityIcons name="check" size={16} color="#fff" />
-                        )}
-                      </View>
-                      <View style={styles.modalItemInfo}>
-                        <Text style={styles.modalItemTitle}>{item.nama}</Text>
-                        <Text style={styles.modalItemSubtitle}>{item.kode}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.button, styles.modalConfirmButton]}
-                onPress={handleMataKuliahConfirm}
-              >
-                <Text style={styles.modalConfirmButtonText}>
-                  Konfirmasi ({selectedMataKuliah.length})
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -471,29 +439,49 @@ const styles = StyleSheet.create({
     color: staticColors.textDisabled,
     marginTop: 4,
   },
-  pickerButton: {
+  mataKuliahInputRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    borderRadius: radius.base,
+    overflow: 'hidden',
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: staticColors.border,
-    borderRadius: radius.base,
+  },
+  mataKuliahInput: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    color: staticColors.textPrimary,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  pickerButtonText: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
+  mataKuliahAddButton: {
+    width: 46,
+    height: 46,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: staticColors.primary,
   },
-  pickerPlaceholder: {
-    color: staticColors.textDisabled,
+  suggestionSection: {
+    marginTop: spacing.sm,
   },
   mataKuliahChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
     marginTop: spacing.xs,
+  },
+  suggestionChip: {
+    backgroundColor: '#F3F7FB',
+    borderWidth: 1,
+    borderColor: staticColors.border,
+    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.full,
+  },
+  suggestionChipText: {
+    fontSize: typography.fontSize.sm,
+    color: staticColors.textSecondary,
   },
   mataKuliahChip: {
     flexDirection: 'row',
@@ -537,82 +525,6 @@ const styles = StyleSheet.create({
     backgroundColor: staticColors.primary,
   },
   submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: '#fff',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  modalItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  modalItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: staticColors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxSelected: {
-    backgroundColor: staticColors.primary,
-    borderColor: staticColors.primary,
-  },
-  modalItemInfo: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  modalItemTitle: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  modalItemSubtitle: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginTop: 2,
-  },
-  modalFooter: {
-    padding: spacing.base,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  modalConfirmButton: {
-    backgroundColor: staticColors.primary,
-  },
-  modalConfirmButtonText: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.semibold,
     color: '#fff',

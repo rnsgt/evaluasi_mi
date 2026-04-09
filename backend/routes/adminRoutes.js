@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { prisma } = require('../config/database');
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 // All routes require admin access
@@ -13,81 +13,83 @@ router.get('/dashboard', async (req, res) => {
     const today = now.toISOString().split('T')[0];
     
     // Total evaluasi hari ini
-    const todayResult = await db.query(`
+    const todayResult = await prisma.$queryRaw`
       SELECT 
-        (SELECT COUNT(*) FROM evaluasi_dosen WHERE DATE(submitted_at) = $1) +
-        (SELECT COUNT(*) FROM evaluasi_fasilitas WHERE DATE(submitted_at) = $1) as total
-    `, [today]);
+        (SELECT COUNT(*) FROM evaluasi_dosen WHERE DATE(submitted_at) = ${today}::date) +
+        (SELECT COUNT(*) FROM evaluasi_fasilitas WHERE DATE(submitted_at) = ${today}::date) as total
+    `;
 
     // Total evaluasi minggu ini
-    const weekAgo = new Date(now.setDate(now.getDate() - 7)).toISOString().split('T')[0];
-    const weekResult = await db.query(`
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const weekResult = await prisma.$queryRaw`
       SELECT 
-        (SELECT COUNT(*) FROM evaluasi_dosen WHERE DATE(submitted_at) >= $1) +
-        (SELECT COUNT(*) FROM evaluasi_fasilitas WHERE DATE(submitted_at) >= $1) as total
-    `, [weekAgo]);
+        (SELECT COUNT(*) FROM evaluasi_dosen WHERE DATE(submitted_at) >= ${weekAgo}::date) +
+        (SELECT COUNT(*) FROM evaluasi_fasilitas WHERE DATE(submitted_at) >= ${weekAgo}::date) as total
+    `;
 
     // Total evaluasi bulan ini
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const monthResult = await db.query(`
+    const monthResult = await prisma.$queryRaw`
       SELECT 
-        (SELECT COUNT(*) FROM evaluasi_dosen WHERE DATE(submitted_at) >= $1) +
-        (SELECT COUNT(*) FROM evaluasi_fasilitas WHERE DATE(submitted_at) >= $1) as total
-    `, [monthStart]);
+        (SELECT COUNT(*) FROM evaluasi_dosen WHERE DATE(submitted_at) >= ${monthStart}::date) +
+        (SELECT COUNT(*) FROM evaluasi_fasilitas WHERE DATE(submitted_at) >= ${monthStart}::date) as total
+    `;
 
     // Total semua evaluasi
-    const totalResult = await db.query(`
+    const totalResult = await prisma.$queryRaw`
       SELECT 
         (SELECT COUNT(*) FROM evaluasi_dosen) +
         (SELECT COUNT(*) FROM evaluasi_fasilitas) as total
-    `);
+    `;
 
     // Evaluasi per type
-    const evaluasiDosenCount = await db.query('SELECT COUNT(*) as total FROM evaluasi_dosen');
-    const evaluasiFasilitasCount = await db.query('SELECT COUNT(*) as total FROM evaluasi_fasilitas');
+    const evaluasiDosenCount = await prisma.evaluasi_dosen.count();
+    const evaluasiFasilitasCount = await prisma.evaluasi_fasilitas.count();
 
-    // Get active periode (if any) to calculate participation more realistically
-    const activePeriodeResult = await db.query(
-      "SELECT id, nama FROM periode_evaluasi WHERE status = 'aktif' LIMIT 1"
-    );
+    // Get active periode (if any)
+    const activePeriode = await prisma.periode_evaluasi.findFirst({
+      where: { status: 'aktif' },
+      select: { id: true, nama: true }
+    });
 
-    let uniqueMahasiswaResult;
+    let uniqueMahasiswaCount = 0;
     let activePeriodeId = null;
     let activePeriodeNama = null;
 
-    if (activePeriodeResult.rows.length > 0) {
-      activePeriodeId = activePeriodeResult.rows[0].id;
-      activePeriodeNama = activePeriodeResult.rows[0].nama;
+    if (activePeriode) {
+      activePeriodeId = activePeriode.id;
+      activePeriodeNama = activePeriode.nama;
 
-      uniqueMahasiswaResult = await db.query(
-        `SELECT COUNT(DISTINCT user_id) as total FROM (
-           SELECT user_id FROM evaluasi_dosen WHERE periode_id = $1
-           UNION
-           SELECT user_id FROM evaluasi_fasilitas WHERE periode_id = $1
-         ) as combined`,
-        [activePeriodeId]
-      );
+      // Get unique mahasiswa who participated in active periode
+      const uniqueResult = await prisma.$queryRaw`
+        SELECT COUNT(DISTINCT user_id) as total FROM (
+          SELECT user_id FROM evaluasi_dosen WHERE periode_id = ${activePeriodeId}
+          UNION
+          SELECT user_id FROM evaluasi_fasilitas WHERE periode_id = ${activePeriodeId}
+        ) as combined
+      `;
+      uniqueMahasiswaCount = Number(uniqueResult[0].total);
     } else {
-      uniqueMahasiswaResult = await db.query(`
+      // Get all unique mahasiswa who participated
+      const uniqueResult = await prisma.$queryRaw`
         SELECT COUNT(DISTINCT user_id) as total FROM (
           SELECT user_id FROM evaluasi_dosen
           UNION
           SELECT user_id FROM evaluasi_fasilitas
         ) as combined
-      `);
+      `;
+      uniqueMahasiswaCount = Number(uniqueResult[0].total);
     }
 
     // Total mahasiswa
-    const totalMahasiswaResult = await db.query(
-      "SELECT COUNT(*) as total FROM users WHERE role = 'mahasiswa'"
-    );
+    const totalMahasiswa = await prisma.users.count({
+      where: { role: 'mahasiswa' }
+    });
 
-    const uniqueMahasiswa = parseInt(uniqueMahasiswaResult.rows[0].total);
-    const totalMahasiswa = parseInt(totalMahasiswaResult.rows[0].total);
-    const partisipasiPersen = totalMahasiswa > 0 ? ((uniqueMahasiswa / totalMahasiswa) * 100).toFixed(1) : 0;
+    const partisipasiPersen = totalMahasiswa > 0 ? ((uniqueMahasiswaCount / totalMahasiswa) * 100).toFixed(1) : 0;
 
     // Top 5 dosen dengan rating tertinggi
-    const topDosenResult = await db.query(`
+    const topDosenResult = await prisma.$queryRaw`
       SELECT 
         d.id,
         d.nama,
@@ -101,10 +103,10 @@ router.get('/dashboard', async (req, res) => {
       HAVING COUNT(DISTINCT ed.id) >= 1
       ORDER BY rata_rata DESC
       LIMIT 5
-    `);
+    `;
 
     // Fasilitas yang perlu perbaikan (rating < 3.5)
-    const fasilitasPerluPerbaikanResult = await db.query(`
+    const fasilitasPerluPerbaikanResult = await prisma.$queryRaw`
       SELECT 
         f.id,
         f.nama,
@@ -119,26 +121,36 @@ router.get('/dashboard', async (req, res) => {
       HAVING AVG(detail.nilai) < 3.5
       ORDER BY rata_rata ASC
       LIMIT 5
-    `);
+    `;
+
+    const serializeDashboardRows = (rows) => rows.map((row) => ({
+      ...row,
+      jumlah_evaluasi: row.jumlah_evaluasi !== undefined && row.jumlah_evaluasi !== null
+        ? Number(row.jumlah_evaluasi)
+        : 0,
+      rata_rata: row.rata_rata !== undefined && row.rata_rata !== null
+        ? Number(row.rata_rata)
+        : null
+    }));
 
     res.json({
       success: true,
       data: {
-        evaluasiHariIni: parseInt(todayResult.rows[0].total),
-        evaluasiMingguIni: parseInt(weekResult.rows[0].total),
-        evaluasiBulanIni: parseInt(monthResult.rows[0].total),
-        totalEvaluasi: parseInt(totalResult.rows[0].total),
-        evaluasiDosen: parseInt(evaluasiDosenCount.rows[0].total),
-        evaluasiFasilitas: parseInt(evaluasiFasilitasCount.rows[0].total),
+        evaluasiHariIni: Number(todayResult[0].total),
+        evaluasiMingguIni: Number(weekResult[0].total),
+        evaluasiBulanIni: Number(monthResult[0].total),
+        totalEvaluasi: Number(totalResult[0].total),
+        evaluasiDosen: evaluasiDosenCount,
+        evaluasiFasilitas: evaluasiFasilitasCount,
         partisipasi: {
-          uniqueMahasiswa,
+          uniqueMahasiswa: uniqueMahasiswaCount,
           totalMahasiswa,
           persentase: parseFloat(partisipasiPersen),
           periodeId: activePeriodeId,
           periodeNama: activePeriodeNama
         },
-        topDosen: topDosenResult.rows,
-        fasilitasPerluPerbaikan: fasilitasPerluPerbaikanResult.rows
+        topDosen: serializeDashboardRows(topDosenResult),
+        fasilitasPerluPerbaikan: serializeDashboardRows(fasilitasPerluPerbaikanResult)
       }
     });
   } catch (error) {
@@ -154,175 +166,263 @@ router.get('/dashboard', async (req, res) => {
 router.get('/laporan', async (req, res) => {
   try {
     const { periode_id, tipe } = req.query;
+    
+    // Validate periode_id if provided
+    const validPeriodeId = periode_id ? parseInt(periode_id) : null;
+    if (periode_id && isNaN(validPeriodeId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid periode_id parameter'
+      });
+    }
 
     let laporanDosen = [];
     let laporanFasilitas = [];
 
     // Laporan Dosen
     if (!tipe || tipe === 'dosen' || tipe === 'semua') {
-      let query = `
-        SELECT 
-          d.id,
-          d.nama,
-          d.nip,
-          COUNT(DISTINCT ed.id) as jumlah_evaluasi,
-          ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
-          COUNT(detail.id) as total_jawaban,
-          COALESCE(
-            jsonb_agg(
-              DISTINCT jsonb_build_object(
-                'komentar', ed.komentar,
-                'submitted_at', ed.submitted_at
-              )
-            ) FILTER (WHERE ed.komentar IS NOT NULL AND TRIM(ed.komentar) <> ''),
-            '[]'::jsonb
-          ) as komentar_list
-        FROM dosen d
-        LEFT JOIN evaluasi_dosen ed ON d.id = ed.dosen_id
-        LEFT JOIN evaluasi_detail detail ON ed.id = detail.evaluasi_dosen_id
-      `;
-      
-      const params = [];
-      if (periode_id) {
-        query += ' WHERE ed.periode_id = $1';
-        params.push(periode_id);
-      }
-      
-      query += ' GROUP BY d.id, d.nama, d.nip ORDER BY rata_rata DESC NULLS LAST';
+      try {
+        let dosenQuery = prisma.dosen.findMany({
+          select: {
+            id: true,
+            nama: true,
+            nip: true
+          }
+        });
 
-      const result = await db.query(query, params);
-      laporanDosen = result.rows;
-      
-      // Add detail per kategori for each dosen
-      for (const item of laporanDosen) {
-        const detailParams = [item.id];
-        let detailWherePeriode = '';
+        const dosenList = await dosenQuery;
 
-        if (periode_id) {
-          detailWherePeriode = ' AND ed.periode_id = $2';
-          detailParams.push(periode_id);
+        for (const dosen of dosenList) {
+          let evaluasiCount = 0;
+          let avgRating = null;
+          let totalJawaban = 0;
+          let komentarList = [];
+
+          // Get evaluasi data for this dosen
+          const evaluasiList = await prisma.evaluasi_dosen.findMany({
+            where: {
+              dosen_id: dosen.id,
+              ...(validPeriodeId && { periode_id: validPeriodeId })
+            },
+            include: {
+              evaluasi_detail: true
+            }
+          });
+
+          if (evaluasiList.length > 0) {
+            evaluasiCount = evaluasiList.length;
+            
+            // Calculate average rating
+            const allNilai = evaluasiList
+              .flatMap(ev => ev.evaluasi_detail.map(d => d.nilai))
+              .filter(n => n !== null);
+            
+            if (allNilai.length > 0) {
+              avgRating = parseFloat((allNilai.reduce((a, b) => a + b, 0) / allNilai.length).toFixed(2));
+            }
+            
+            totalJawaban = allNilai.length;
+            
+            komentarList = evaluasiList
+              .filter(ev => ev.komentar && ev.komentar.trim() !== '')
+              .map(ev => ({
+                komentar: ev.komentar,
+                submitted_at: ev.submitted_at
+              }));
+          }
+
+          // Get detail per kategori
+          let detailKategori = [];
+          if (evaluasiList.length > 0) {
+            const kategoriData = await prisma.evaluasi_detail.groupBy({
+              by: ['pernyataan_dosen_id'],
+              where: {
+                evaluasi_dosen: {
+                  dosen_id: dosen.id,
+                  ...(validPeriodeId && { periode_id: validPeriodeId })
+                }
+              },
+              _avg: {
+                nilai: true
+              },
+              _count: true
+            });
+
+            for (const item of kategoriData) {
+              const pernyataan = await prisma.pernyataan_dosen.findUnique({
+                where: { id: item.pernyataan_dosen_id }
+              });
+
+              if (pernyataan) {
+                detailKategori.push({
+                  kategori: pernyataan.kategori,
+                  rata_rata: item._avg.nilai ? parseFloat(item._avg.nilai.toFixed(2)) : 0,
+                  total_jawaban: item._count
+                });
+              }
+            }
+          }
+
+          // Get detail evaluasi per mahasiswa
+          let detailEvaluasi = [];
+          if (evaluasiList.length > 0) {
+            const detailList = evaluasiList.map(async (ev) => {
+              const nilaiList = ev.evaluasi_detail.map(d => d.nilai).filter(n => n !== null);
+              const avgNilai = nilaiList.length > 0 
+                ? parseFloat((nilaiList.reduce((a, b) => a + b, 0) / nilaiList.length).toFixed(2))
+                : 0;
+
+              return {
+                id: ev.id,
+                submitted_at: ev.submitted_at,
+                komentar: ev.komentar || '',
+                rata_rata: avgNilai,
+                jumlah_jawaban: nilaiList.length
+              };
+            });
+
+            detailEvaluasi = await Promise.all(detailList);
+          }
+
+          laporanDosen.push({
+            id: dosen.id,
+            nama: dosen.nama,
+            nip: dosen.nip,
+            jumlah_evaluasi: evaluasiCount,
+            rata_rata: avgRating,
+            total_jawaban: totalJawaban,
+            komentar_list: komentarList,
+            detail_kategori: detailKategori,
+            detail_evaluasi: detailEvaluasi
+          });
         }
-
-        const detailResult = await db.query(
-          `SELECT
-             pd.kategori,
-             ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
-             COUNT(detail.id) as total_jawaban
-           FROM evaluasi_dosen ed
-           JOIN evaluasi_detail detail ON ed.id = detail.evaluasi_dosen_id
-           JOIN pernyataan_dosen pd ON detail.pernyataan_dosen_id = pd.id
-           WHERE ed.dosen_id = $1${detailWherePeriode}
-           GROUP BY pd.kategori
-           ORDER BY pd.kategori ASC`,
-          detailParams
-        );
-
-        item.detail_kategori = detailResult.rows;
-
-        const evaluasiDetailResult = await db.query(
-          `SELECT
-             ed.id,
-             ed.submitted_at,
-             COALESCE(ed.komentar, '') as komentar,
-             u.nama as mahasiswa_nama,
-             u.nim as mahasiswa_nim,
-             ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
-             COUNT(detail.id) as jumlah_jawaban
-           FROM evaluasi_dosen ed
-           JOIN users u ON ed.user_id = u.id
-           LEFT JOIN evaluasi_detail detail ON ed.id = detail.evaluasi_dosen_id
-           WHERE ed.dosen_id = $1${detailWherePeriode}
-           GROUP BY ed.id, u.nama, u.nim
-           ORDER BY ed.submitted_at DESC`,
-          detailParams
-        );
-
-        item.detail_evaluasi = evaluasiDetailResult.rows;
+      } catch (dosenError) {
+        console.error('Error fetching laporan dosen:', dosenError);
+        laporanDosen = [];
       }
     }
 
     // Laporan Fasilitas
     if (!tipe || tipe === 'fasilitas' || tipe === 'semua') {
-      let query = `
-        SELECT 
-          f.id,
-          f.nama,
-          f.kode,
-          f.kategori,
-          f.lokasi,
-          COUNT(DISTINCT ef.id) as jumlah_evaluasi,
-          ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
-          COUNT(detail.id) as total_jawaban,
-          COALESCE(
-            jsonb_agg(
-              DISTINCT jsonb_build_object(
-                'komentar', ef.komentar,
-                'submitted_at', ef.submitted_at
-              )
-            ) FILTER (WHERE ef.komentar IS NOT NULL AND TRIM(ef.komentar) <> ''),
-            '[]'::jsonb
-          ) as komentar_list
-        FROM fasilitas f
-        LEFT JOIN evaluasi_fasilitas ef ON f.id = ef.fasilitas_id
-        LEFT JOIN evaluasi_detail detail ON ef.id = detail.evaluasi_fasilitas_id
-      `;
-      
-      const params = [];
-      if (periode_id) {
-        query += ' WHERE ef.periode_id = $1';
-        params.push(periode_id);
-      }
-      
-      query += ' GROUP BY f.id, f.nama, f.kode, f.kategori, f.lokasi ORDER BY rata_rata DESC NULLS LAST';
+      try {
+        const fasilitasList = await prisma.fasilitas.findMany({
+          select: {
+            id: true,
+            nama: true,
+            kode: true,
+            kategori: true,
+            lokasi: true
+          }
+        });
 
-      const result = await db.query(query, params);
-      laporanFasilitas = result.rows;
-      
-      // Add detail per kategori for each fasilitas
-      for (const item of laporanFasilitas) {
-        const detailParams = [item.id];
-        let detailWherePeriode = '';
+        for (const fasilitas of fasilitasList) {
+          let evaluasiCount = 0;
+          let avgRating = null;
+          let totalJawaban = 0;
+          let komentarList = [];
 
-        if (periode_id) {
-          detailWherePeriode = ' AND ef.periode_id = $2';
-          detailParams.push(periode_id);
+          // Get evaluasi data for this fasilitas
+          const evaluasiList = await prisma.evaluasi_fasilitas.findMany({
+            where: {
+              fasilitas_id: fasilitas.id,
+              ...(validPeriodeId && { periode_id: validPeriodeId })
+            },
+            include: {
+              evaluasi_detail: true
+            }
+          });
+
+          if (evaluasiList.length > 0) {
+            evaluasiCount = evaluasiList.length;
+            
+            const allNilai = evaluasiList
+              .flatMap(ev => ev.evaluasi_detail.map(d => d.nilai))
+              .filter(n => n !== null);
+            
+            if (allNilai.length > 0) {
+              avgRating = parseFloat((allNilai.reduce((a, b) => a + b, 0) / allNilai.length).toFixed(2));
+            }
+            
+            totalJawaban = allNilai.length;
+            
+            komentarList = evaluasiList
+              .filter(ev => ev.komentar && ev.komentar.trim() !== '')
+              .map(ev => ({
+                komentar: ev.komentar,
+                submitted_at: ev.submitted_at
+              }));
+          }
+
+          // Get detail per kategori
+          let detailKategori = [];
+          if (evaluasiList.length > 0) {
+            const kategoriData = await prisma.evaluasi_detail.groupBy({
+              by: ['pernyataan_fasilitas_id'],
+              where: {
+                evaluasi_fasilitas: {
+                  fasilitas_id: fasilitas.id,
+                  ...(validPeriodeId && { periode_id: validPeriodeId })
+                }
+              },
+              _avg: {
+                nilai: true
+              },
+              _count: true
+            });
+
+            for (const item of kategoriData) {
+              const pernyataan = await prisma.pernyataan_fasilitas.findUnique({
+                where: { id: item.pernyataan_fasilitas_id }
+              });
+
+              if (pernyataan) {
+                detailKategori.push({
+                  kategori: pernyataan.kategori,
+                  rata_rata: item._avg.nilai ? parseFloat(item._avg.nilai.toFixed(2)) : 0,
+                  total_jawaban: item._count
+                });
+              }
+            }
+          }
+
+          // Get detail evaluasi per mahasiswa
+          let detailEvaluasi = [];
+          if (evaluasiList.length > 0) {
+            const detailList = evaluasiList.map(async (ev) => {
+              const nilaiList = ev.evaluasi_detail.map(d => d.nilai).filter(n => n !== null);
+              const avgNilai = nilaiList.length > 0
+                ? parseFloat((nilaiList.reduce((a, b) => a + b, 0) / nilaiList.length).toFixed(2))
+                : 0;
+
+              return {
+                id: ev.id,
+                submitted_at: ev.submitted_at,
+                komentar: ev.komentar || '',
+                rata_rata: avgNilai,
+                jumlah_jawaban: nilaiList.length
+              };
+            });
+
+            detailEvaluasi = await Promise.all(detailList);
+          }
+
+          laporanFasilitas.push({
+            id: fasilitas.id,
+            nama: fasilitas.nama,
+            kode: fasilitas.kode,
+            kategori: fasilitas.kategori,
+            lokasi: fasilitas.lokasi,
+            jumlah_evaluasi: evaluasiCount,
+            rata_rata: avgRating,
+            total_jawaban: totalJawaban,
+            komentar_list: komentarList,
+            detail_kategori: detailKategori,
+            detail_evaluasi: detailEvaluasi
+          });
         }
-
-        const detailResult = await db.query(
-          `SELECT
-             pf.kategori,
-             ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
-             COUNT(detail.id) as total_jawaban
-           FROM evaluasi_fasilitas ef
-           JOIN evaluasi_detail detail ON ef.id = detail.evaluasi_fasilitas_id
-           JOIN pernyataan_fasilitas pf ON detail.pernyataan_fasilitas_id = pf.id
-           WHERE ef.fasilitas_id = $1${detailWherePeriode}
-           GROUP BY pf.kategori
-           ORDER BY pf.kategori ASC`,
-          detailParams
-        );
-
-        item.detail_kategori = detailResult.rows;
-
-        const evaluasiDetailResult = await db.query(
-          `SELECT
-             ef.id,
-             ef.submitted_at,
-             COALESCE(ef.komentar, '') as komentar,
-             u.nama as mahasiswa_nama,
-             u.nim as mahasiswa_nim,
-             ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
-             COUNT(detail.id) as jumlah_jawaban
-           FROM evaluasi_fasilitas ef
-           JOIN users u ON ef.user_id = u.id
-           LEFT JOIN evaluasi_detail detail ON ef.id = detail.evaluasi_fasilitas_id
-           WHERE ef.fasilitas_id = $1${detailWherePeriode}
-           GROUP BY ef.id, u.nama, u.nim
-           ORDER BY ef.submitted_at DESC`,
-          detailParams
-        );
-
-        item.detail_evaluasi = evaluasiDetailResult.rows;
+      } catch (fasilitasError) {
+        console.error('Error fetching laporan fasilitas:', fasilitasError);
+        laporanFasilitas = [];
       }
     }
 
@@ -337,7 +437,8 @@ router.get('/laporan', async (req, res) => {
     console.error('Get laporan error:', error);
     res.status(500).json({
       success: false,
-      message: 'Terjadi kesalahan pada server'
+      message: 'Terjadi kesalahan pada server',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -132,7 +132,7 @@ const HomeScreen = ({ navigation }) => {
         {/* Warning Card - Deadline */}
         {periodeAktif && (
           <View style={styles.warningCard}>
-            <MaterialCommunityIcons name="information-outline" size={24} color="#E65100" style={styles.warningIcon} />
+            <MaterialCommunityIcons name="information-outline" size={24} color="#EA580C" style={styles.warningIcon} />
             <View style={styles.warningContent}>
               <Text style={styles.warningTitle}>Penting</Text>
               <Text style={styles.warningText}>
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   warningCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFF3E0',
+    backgroundColor: '#FCE9CC',
     padding: spacing.base,
     borderRadius: radius.md,
     marginTop: spacing.base,
@@ -247,12 +247,12 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: typography.fontSize.base,
     fontFamily: typography.fontFamily.bold,
-    color: '#E65100',
+    color: '#EA580C',
     marginBottom: spacing.xs,
   },
   warningText: {
     fontSize: typography.fontSize.sm,
-    color: '#E65100',
+    color: '#EA580C',
     lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
   },
   warningDate: {
@@ -261,3 +261,4 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
+

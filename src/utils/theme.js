@@ -1,40 +1,40 @@
 // Theme configuration - Colors, Typography, Spacing
 export const colors = {
-  // Primary Colors - Academic Green
-  primary: '#2E7D32',        // Forest Green
-  primaryDark: '#1B5E20',    // Dark Green
-  primaryLight: '#A5D6A7',   // Light Green
+  // Primary Colors - Dashboard Blue
+  primary: '#228BE6',
+  primaryDark: '#0B78F0',
+  primaryLight: '#DBECFF',
   
   // Status Colors
-  success: '#66BB6A',        // Green
-  error: '#F44336',
-  warning: '#FFA726',
-  info: '#43A047',           // Green info
+  success: '#16A34A',
+  error: '#F04438',
+  warning: '#EA580C',
+  info: '#2563EB',
   
   // Text Colors
-  textPrimary: '#212121',
-  textSecondary: '#757575',
-  textDisabled: '#BDBDBD',
+  textPrimary: '#0F172A',
+  textSecondary: '#486080',
+  textDisabled: '#90A0B5',
   
   // Background Colors
-  background: '#FFFFFF',
-  surface: '#F5F5F5',
-  surfaceLight: '#FAFAFA',
+  background: '#EEF1F5',
+  surface: '#FFFFFF',
+  surfaceLight: '#F8FAFC',
   
   // Border Colors
-  border: '#E0E0E0',
-  borderLight: '#F5F5F5',
+  border: '#DBE2EA',
+  borderLight: '#E7ECF3',
   
   // Evaluation Card Colors
-  evaluasiDosen: '#2E7D32',  // Academic Green
-  evaluasiFasilitas: '#388E3C',  // Slightly different green
+  evaluasiDosen: '#228BE6',
+  evaluasiFasilitas: '#0B78F0',
   
-  // Likert Scale Colors - Green gradient theme
-  likert1: '#FFCDD2',   // Sangat Tidak Setuju (Red tint)
-  likert2: '#FFE0B2',   // Tidak Setuju (Orange tint)
-  likert3: '#FFF9C4',   // Netral (Yellow tint)
-  likert4: '#C8E6C9',   // Setuju (Light Green)
-  likert5: '#81C784',   // Sangat Setuju (Green)
+  // Likert Scale Colors
+  likert1: '#FFE1DE',
+  likert2: '#FDE9D7',
+  likert3: '#FFF6D7',
+  likert4: '#DBECFF',
+  likert5: '#88C2F4',
 };
 
 export const typography = {
@@ -117,7 +117,7 @@ export const paperTheme = {
     tertiaryContainer: colors.warning + '20',
     surface: colors.surface,
     surfaceVariant: colors.background,
-    surfaceDisabled: colors.disabled + '20',
+    surfaceDisabled: colors.textDisabled + '20',
     background: colors.background,
     error: colors.error,
     errorContainer: colors.error + '20',

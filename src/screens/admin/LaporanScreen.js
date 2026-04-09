@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import adminService from '../../services/adminService';
@@ -46,6 +47,12 @@ const LaporanScreen = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [selectedPeriode, selectedTipe])
+  );
 
   useEffect(() => {
     // Reload data when filters change
@@ -103,8 +110,6 @@ const LaporanScreen = () => {
           id: detail.id,
           submittedAt: detail.submitted_at,
           komentar: detail.komentar,
-          mahasiswaNama: detail.mahasiswa_nama,
-          mahasiswaNim: detail.mahasiswa_nim,
           rataRata: parseFloat(detail.rata_rata) || 0,
           jumlahJawaban: parseInt(detail.jumlah_jawaban) || 0,
         })),
@@ -135,8 +140,6 @@ const LaporanScreen = () => {
           id: detail.id,
           submittedAt: detail.submitted_at,
           komentar: detail.komentar,
-          mahasiswaNama: detail.mahasiswa_nama,
-          mahasiswaNim: detail.mahasiswa_nim,
           rataRata: parseFloat(detail.rata_rata) || 0,
           jumlahJawaban: parseInt(detail.jumlah_jawaban) || 0,
         })),
@@ -159,11 +162,11 @@ const LaporanScreen = () => {
   };
 
   const getRatingColor = (rating) => {
-    if (rating >= 4.5) return '#4CAF50';
-    if (rating >= 4.0) return '#8BC34A';
+    if (rating >= 4.5) return '#16A34A';
+    if (rating >= 4.0) return '#22C55E';
     if (rating >= 3.5) return '#FFC107';
     if (rating >= 3.0) return '#FF9800';
-    return '#F44336';
+    return '#F04438';
   };
 
   const getRatingLabel = (rating) => {
@@ -385,7 +388,7 @@ const LaporanScreen = () => {
             <MaterialCommunityIcons
               name={item.type === 'dosen' ? 'school' : 'office-building'}
               size={24}
-              color={item.type === 'dosen' ? '#2196F3' : '#4CAF50'}
+              color={item.type === 'dosen' ? '#228BE6' : '#16A34A'}
             />
           </View>
           <View style={styles.reportInfo}>
@@ -395,14 +398,14 @@ const LaporanScreen = () => {
             {item.type === 'dosen' ? (
               <Text style={styles.reportSubtitle}>{toDisplayText(item.nip)}</Text>
             ) : (
-              <Text style={styles.reportSubtitle}>{toDisplayText(item.kode)} • {toDisplayText(item.kategori)}</Text>
+              <Text style={styles.reportSubtitle}>{toDisplayText(item.kode)} - {toDisplayText(item.kategori)}</Text>
             )}
           </View>
           <View style={[styles.typeBadge, { 
-            backgroundColor: item.type === 'dosen' ? '#E3F2FD' : '#E8F5E9' 
+            backgroundColor: item.type === 'dosen' ? '#DBECFF' : '#DBECFF' 
           }]}>
             <Text style={[styles.typeBadgeText, {
-              color: item.type === 'dosen' ? '#2196F3' : '#4CAF50'
+              color: item.type === 'dosen' ? '#228BE6' : '#16A34A'
             }]}>
               {item.type === 'dosen' ? 'Dosen' : 'Fasilitas'}
             </Text>
@@ -469,7 +472,7 @@ const LaporanScreen = () => {
               <Text style={styles.detailSubname}>
                 {selectedReport.type === 'dosen'
                   ? `NIP: ${toDisplayText(selectedReport.nip)}`
-                  : `${toDisplayText(selectedReport.kode)} • ${toDisplayText(selectedReport.kategori)}`}
+                  : `${toDisplayText(selectedReport.kode)} - ${toDisplayText(selectedReport.kategori)}`}
               </Text>
 
               <View style={styles.detailStatsRow}>
@@ -490,14 +493,12 @@ const LaporanScreen = () => {
                 <Text style={styles.detailEmpty}>Belum ada detail kategori</Text>
               )}
 
-              <Text style={styles.detailSectionTitle}>Komentar Mahasiswa</Text>
+              <Text style={styles.detailSectionTitle}>Komentar Responden</Text>
               {(selectedReport.detailEvaluasi || []).length > 0 ? (
                 (selectedReport.detailEvaluasi || []).map((item, index) => (
                   <View key={`evaluasi-${item.id}-${index}`} style={styles.commentCard}>
-                    <Text style={styles.commentMeta}>
-                      {toDisplayText(item.mahasiswaNama)} ({toDisplayText(item.mahasiswaNim)})
-                    </Text>
-                    <Text style={styles.commentMeta}>Nilai: {item.rataRata} • Jawaban: {item.jumlahJawaban}</Text>
+                    <Text style={styles.commentMeta}>Responden Anonim</Text>
+                    <Text style={styles.commentMeta}>Nilai: {item.rataRata} - Jawaban: {item.jumlahJawaban}</Text>
                     <Text style={styles.commentMeta}>Tanggal: {new Date(item.submittedAt).toLocaleDateString('id-ID')}</Text>
                     <Text style={styles.commentText}>{toDisplayText(item.komentar)}</Text>
                   </View>
@@ -1053,3 +1054,4 @@ const styles = StyleSheet.create({
 });
 
 export default LaporanScreen;
+

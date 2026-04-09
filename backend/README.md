@@ -30,6 +30,9 @@ DB_NAME=evaluasi_mi
 DB_USER=postgres
 DB_PASSWORD=your_password
 JWT_SECRET=your_secret_key
+
+# Prisma akan construct DATABASE_URL dari variabel ini
+DATABASE_URL="postgresql://postgres:your_password@localhost:5432/evaluasi_mi?schema=public"
 ```
 
 3. **Create database:**
@@ -44,9 +47,10 @@ CREATE DATABASE evaluasi_mi;
 \q
 ```
 
-4. **Run database schema:**
+4. **Setup database schema dengan Prisma:**
 ```bash
-psql -U postgres -d evaluasi_mi -f migrations/schema.sql
+# Apply migrations (akan create semua tables)
+npx prisma migrate deploy
 ```
 
 5. **Seed sample data (optional):**
@@ -157,7 +161,12 @@ curl -X POST http://localhost:3000/api/evaluasi/dosen \
   }'
 ```
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema & Prisma Migrations
+
+Backend sekarang menggunakan **Prisma ORM** untuk database management yang lebih baik, dengan support untuk:
+- Type-safe database queries
+- Automated migrations
+- Easy schema versioning
 
 Lihat file `migrations/schema.sql` untuk detail lengkap struktur database.
 
@@ -172,6 +181,97 @@ Lihat file `migrations/schema.sql` untuk detail lengkap struktur database.
 - `evaluasi_dosen` - Data evaluasi dosen
 - `evaluasi_fasilitas` - Data evaluasi fasilitas
 - `evaluasi_detail` - Detail jawaban evaluasi
+
+### Prisma Setup
+
+Prisma sudah dikonfigurasi dengan introspected schema dari database yang ada. Konfigurasi ada di:
+- `prisma/schema.prisma` - Schema definition
+- `prisma/migrations/` - Migration history
+- `.env` - `DATABASE_URL` untuk koneksi
+
+### Menggunakan Prisma Migrations
+
+#### 1. **Create a new migration** (saat ada perubahan schema)
+```bash
+# Buat migration baru dengan nama deskriptif
+npx prisma migrate dev --name add_new_field
+
+# Contoh:
+# npx prisma migrate dev --name add_user_phone_number
+```
+
+Prisma akan:
+1. Mendeteksi perubahan di `schema.prisma`
+2. Generate migration file di `prisma/migrations/`
+3. Apply migration ke database
+4. Re-generate Prisma Client
+
+#### 2. **Apply existing migrations** (di production/baru pull)
+```bash
+# Terapkan semua pending migrations
+npx prisma migrate deploy
+
+# Dengan dry-run untuk preview:
+npx prisma migrate deploy --dry-run
+```
+
+#### 3. **Reset local database** (development only - HAPUS SEMUA DATA!)
+```bash
+# Reset database dan re-apply semua migrations
+npx prisma migrate reset
+
+# Dengan seed:
+npx prisma migrate reset --skip-seed
+```
+
+#### 4. **Inspect database dengan Prisma Studio** (UI interactive)
+```bash
+npx prisma studio
+```
+
+Buka browser ke `http://localhost:5555` untuk browse & edit data.
+
+### Migration Workflow
+
+**Development:**
+1. Edit `prisma/schema.prisma` jika ada perubahan schema
+2. Jalankan `npx prisma migrate dev --name <description>`
+3. Test di local
+4. Commit `.prisma/schema.prisma` dan migration files ke git
+
+**Production Deployment:**
+1. Pull latest code (termasuk migration files)
+2. Run `npx prisma migrate deploy` sebelum start aplikasi
+3. Aplikasi akan berjalan dengan schema terbaru
+
+### Best Practices
+
+- ✅ Always use named migrations: `--name add_field_reason`
+- ✅ Test migrations di local sebelum production
+- ✅ Commit schema.prisma dan migrations/ bersama source code
+- ✅ Jangan edit migration files setelah deployed
+- ✅ Gunakan `prisma migrate deploy` untuk production (bukan `dev`)
+- ❌ Jangan gunakan `prisma db push` di production
+- ❌ Jangan gunakan `prisma migrate reset` di production
+
+### Troubleshooting
+
+**"Schema not in sync" error:**
+```bash
+# Re-introspect dari database (jika schema berubah dari luar Prisma)
+npx prisma db pull
+```
+
+**Migration failed:**
+```bash
+# Lihat status migrations
+npx prisma migrate status
+
+# Resolve failed migration (jika yakin yang benar)
+npx prisma migrate resolve --rolled-back <migration_name>
+```
+
+## 🗄️ Database Schema
 
 ## 🧪 Testing
 

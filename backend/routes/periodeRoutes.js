@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { prisma } = require('../config/database');
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 // Get active periode
 router.get('/active', authMiddleware, async (req, res) => {
   try {
-    const result = await db.query(
-      "SELECT * FROM periode_evaluasi WHERE status = 'aktif' LIMIT 1"
-    );
+    const periode = await prisma.periode_evaluasi.findFirst({
+      where: { status: 'aktif' }
+    });
 
-    if (result.rows.length === 0) {
+    if (!periode) {
       return res.status(404).json({
         success: false,
         message: 'Tidak ada periode evaluasi aktif'
@@ -19,7 +19,7 @@ router.get('/active', authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: periode
     });
   } catch (error) {
     console.error('Get active periode error:', error);
@@ -33,13 +33,15 @@ router.get('/active', authMiddleware, async (req, res) => {
 // Get all periode (Admin only)
 router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT * FROM periode_evaluasi ORDER BY tanggal_mulai DESC'
-    );
+    const data = await prisma.periode_evaluasi.findMany({
+      orderBy: {
+        tanggal_mulai: 'desc'
+      }
+    });
 
     res.json({
       success: true,
-      data: result.rows
+      data
     });
   } catch (error) {
     console.error('Get periode error:', error);
@@ -55,18 +57,22 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { nama, tahun_ajaran, semester, tanggal_mulai, tanggal_akhir, batas_evaluasi, keterangan } = req.body;
 
-    const result = await db.query(
-      `INSERT INTO periode_evaluasi 
-       (nama, tahun_ajaran, semester, tanggal_mulai, tanggal_akhir, batas_evaluasi, keterangan) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
-       RETURNING *`,
-      [nama, tahun_ajaran, semester, tanggal_mulai, tanggal_akhir, batas_evaluasi, keterangan]
-    );
+    const periode = await prisma.periode_evaluasi.create({
+      data: {
+        nama,
+        tahun_ajaran,
+        semester,
+        tanggal_mulai: new Date(tanggal_mulai),
+        tanggal_akhir: new Date(tanggal_akhir),
+        batas_evaluasi: batas_evaluasi ? new Date(batas_evaluasi) : null,
+        keterangan: keterangan || null
+      }
+    });
 
     res.status(201).json({
       success: true,
       message: 'Periode berhasil dibuat',
-      data: result.rows[0]
+      data: periode
     });
   } catch (error) {
     console.error('Create periode error:', error);
@@ -83,29 +89,32 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     const { id } = req.params;
     const { nama, tahun_ajaran, semester, tanggal_mulai, tanggal_akhir, batas_evaluasi, keterangan, status } = req.body;
 
-    const result = await db.query(
-      `UPDATE periode_evaluasi 
-       SET nama = $1, tahun_ajaran = $2, semester = $3, tanggal_mulai = $4, 
-           tanggal_akhir = $5, batas_evaluasi = $6, keterangan = $7, status = $8,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $9
-       RETURNING *`,
-      [nama, tahun_ajaran, semester, tanggal_mulai, tanggal_akhir, batas_evaluasi, keterangan, status, id]
-    );
+    const periode = await prisma.periode_evaluasi.update({
+      where: { id: parseInt(id) },
+      data: {
+        ...(nama && { nama }),
+        ...(tahun_ajaran && { tahun_ajaran }),
+        ...(semester && { semester }),
+        ...(tanggal_mulai && { tanggal_mulai: new Date(tanggal_mulai) }),
+        ...(tanggal_akhir && { tanggal_akhir: new Date(tanggal_akhir) }),
+        ...(batas_evaluasi && { batas_evaluasi: new Date(batas_evaluasi) }),
+        ...(keterangan && { keterangan }),
+        ...(status && { status })
+      }
+    });
 
-    if (result.rows.length === 0) {
+    res.json({
+      success: true,
+      message: 'Periode berhasil diupdate',
+      data: periode
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
         message: 'Periode tidak ditemukan'
       });
     }
-
-    res.json({
-      success: true,
-      message: 'Periode berhasil diupdate',
-      data: result.rows[0]
-    });
-  } catch (error) {
     console.error('Update periode error:', error);
     res.status(500).json({
       success: false,
@@ -119,28 +128,34 @@ router.put('/:id/activate', authMiddleware, adminMiddleware, async (req, res) =>
   try {
     const { id } = req.params;
 
-    // Deactivate all other periods first
-    await db.query("UPDATE periode_evaluasi SET status = 'tidak_aktif'");
+    // Use Prisma transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Deactivate all other periods first
+      await tx.periode_evaluasi.updateMany({
+        data: { status: 'tidak_aktif' }
+      });
 
-    // Activate selected period
-    const result = await db.query(
-      "UPDATE periode_evaluasi SET status = 'aktif', updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *",
-      [id]
-    );
+      // Activate selected period
+      const updated = await tx.periode_evaluasi.update({
+        where: { id: parseInt(id) },
+        data: { status: 'aktif' }
+      });
 
-    if (result.rows.length === 0) {
+      return updated;
+    });
+
+    res.json({
+      success: true,
+      message: 'Periode berhasil diaktifkan',
+      data: result
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
         message: 'Periode tidak ditemukan'
       });
     }
-
-    res.json({
-      success: true,
-      message: 'Periode berhasil diaktifkan',
-      data: result.rows[0]
-    });
-  } catch (error) {
     console.error('Activate periode error:', error);
     res.status(500).json({
       success: false,
@@ -155,26 +170,27 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     const { id } = req.params;
 
     // Check if it's active
-    const checkResult = await db.query(
-      "SELECT status FROM periode_evaluasi WHERE id = $1",
-      [id]
-    );
+    const periode = await prisma.periode_evaluasi.findUnique({
+      where: { id: parseInt(id) }
+    });
 
-    if (checkResult.rows.length === 0) {
+    if (!periode) {
       return res.status(404).json({
         success: false,
         message: 'Periode tidak ditemukan'
       });
     }
 
-    if (checkResult.rows[0].status === 'aktif') {
+    if (periode.status === 'aktif') {
       return res.status(400).json({
         success: false,
         message: 'Tidak dapat menghapus periode yang sedang aktif'
       });
     }
 
-    await db.query('DELETE FROM periode_evaluasi WHERE id = $1', [id]);
+    await prisma.periode_evaluasi.delete({
+      where: { id: parseInt(id) }
+    });
 
     res.json({
       success: true,

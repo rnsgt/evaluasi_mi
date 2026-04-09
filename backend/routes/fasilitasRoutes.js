@@ -1,19 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { prisma } = require('../config/database');
 const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
 
 // Get all fasilitas
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const result = await db.query(`
-      SELECT * FROM fasilitas
-      ORDER BY kategori, nama ASC
-    `);
+    const data = await prisma.fasilitas.findMany({
+      orderBy: [
+        { kategori: 'asc' },
+        { nama: 'asc' }
+      ]
+    });
 
     res.json({
       success: true,
-      data: result.rows
+      data
     });
   } catch (error) {
     console.error('Get fasilitas error:', error);
@@ -36,28 +38,25 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
       });
     }
 
-    const result = await db.query(
-      `INSERT INTO fasilitas (kode, nama, kategori, lokasi, kapasitas)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        String(kode).toUpperCase().trim(),
-        String(nama).trim(),
-        String(kategori).trim(),
-        lokasi ? String(lokasi).trim() : null,
-        kapasitas ? parseInt(kapasitas, 10) : null,
-      ]
-    );
+    const fasilitas = await prisma.fasilitas.create({
+      data: {
+        kode: String(kode).toUpperCase().trim(),
+        nama: String(nama).trim(),
+        kategori: String(kategori).trim(),
+        lokasi: lokasi ? String(lokasi).trim() : null,
+        kapasitas: kapasitas ? parseInt(kapasitas, 10) : null
+      }
+    });
 
     res.status(201).json({
       success: true,
       message: 'Fasilitas berhasil ditambahkan',
-      data: result.rows[0]
+      data: fasilitas
     });
   } catch (error) {
     console.error('Create fasilitas error:', error);
 
-    if (error.code === '23505') {
+    if (error.code === 'P2002') {
       return res.status(409).json({
         success: false,
         message: 'Kode fasilitas sudah digunakan'
@@ -76,12 +75,11 @@ router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await db.query(
-      'SELECT * FROM fasilitas WHERE id = $1',
-      [id]
-    );
+    const fasilitas = await prisma.fasilitas.findUnique({
+      where: { id: parseInt(id) }
+    });
 
-    if (result.rows.length === 0) {
+    if (!fasilitas) {
       return res.status(404).json({
         success: false,
         message: 'Fasilitas tidak ditemukan'
@@ -90,7 +88,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows[0]
+      data: fasilitas
     });
   } catch (error) {
     console.error('Get fasilitas by ID error:', error);
@@ -107,43 +105,33 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     const { id } = req.params;
     const { kode, nama, kategori, lokasi, kapasitas } = req.body;
 
-    const existing = await db.query('SELECT id FROM fasilitas WHERE id = $1', [id]);
-    if (existing.rows.length === 0) {
+    const fasilitas = await prisma.fasilitas.update({
+      where: { id: parseInt(id) },
+      data: {
+        ...(kode && { kode: String(kode).toUpperCase().trim() }),
+        ...(nama && { nama: String(nama).trim() }),
+        ...(kategori && { kategori: String(kategori).trim() }),
+        ...(lokasi && { lokasi: String(lokasi).trim() }),
+        ...(kapasitas && { kapasitas: parseInt(kapasitas, 10) })
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Fasilitas berhasil diperbarui',
+      data: fasilitas
+    });
+  } catch (error) {
+    console.error('Update fasilitas error:', error);
+
+    if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
         message: 'Fasilitas tidak ditemukan'
       });
     }
 
-    const result = await db.query(
-      `UPDATE fasilitas
-       SET kode = $1,
-           nama = $2,
-           kategori = $3,
-           lokasi = $4,
-           kapasitas = $5,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
-       RETURNING *`,
-      [
-        kode ? String(kode).toUpperCase().trim() : null,
-        nama ? String(nama).trim() : null,
-        kategori ? String(kategori).trim() : null,
-        lokasi ? String(lokasi).trim() : null,
-        kapasitas ? parseInt(kapasitas, 10) : null,
-        id,
-      ]
-    );
-
-    res.json({
-      success: true,
-      message: 'Fasilitas berhasil diperbarui',
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Update fasilitas error:', error);
-
-    if (error.code === '23505') {
+    if (error.code === 'P2002') {
       return res.status(409).json({
         success: false,
         message: 'Kode fasilitas sudah digunakan'
@@ -162,24 +150,22 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await db.query(
-      'DELETE FROM fasilitas WHERE id = $1 RETURNING id, nama',
-      [id]
-    );
+    const fasilitas = await prisma.fasilitas.delete({
+      where: { id: parseInt(id) }
+    });
 
-    if (result.rows.length === 0) {
+    res.json({
+      success: true,
+      message: `Fasilitas "${fasilitas.nama}" berhasil dihapus`,
+      data: fasilitas
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
       return res.status(404).json({
         success: false,
         message: 'Fasilitas tidak ditemukan'
       });
     }
-
-    res.json({
-      success: true,
-      message: `Fasilitas "${result.rows[0].nama}" berhasil dihapus`,
-      data: result.rows[0]
-    });
-  } catch (error) {
     console.error('Delete fasilitas error:', error);
     res.status(500).json({
       success: false,

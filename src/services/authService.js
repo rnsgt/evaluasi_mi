@@ -12,7 +12,7 @@ const authService = {
       identifier: nim, 
       password 
     });
-    return response.data;
+    return response.data || response;
   },
 
   /**
@@ -32,7 +32,7 @@ const authService = {
    */
   register: async (userData) => {
     const response = await api.post('/auth/register', userData);
-    return response.data;
+    return response.data || response;
   },
 
   /**

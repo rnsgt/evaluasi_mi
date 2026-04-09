@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -267,7 +267,7 @@ const PilihDosenScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#EEF1F5',
   },
   loadingContainer: {
     flex: 1,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   mataKuliahBadge: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radius.sm,
@@ -445,3 +445,4 @@ const styles = StyleSheet.create({
 });
 
 export default PilihDosenScreen;
+

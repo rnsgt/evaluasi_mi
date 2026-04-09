@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -356,7 +356,7 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#EEF1F5',
   },
   keyboardView: {
     flex: 1,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.base,
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   kategoriTag: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DBECFF',
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
   },
   instructionCard: {
     flexDirection: 'row',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#DBECFF',
     padding: spacing.base,
     borderRadius: radius.base,
     marginBottom: spacing.lg,
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#DBECFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.sm,
@@ -601,3 +601,4 @@ const styles = StyleSheet.create({
 });
 
 export default FormEvaluasiFasilitasScreen;
+
