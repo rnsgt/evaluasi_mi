@@ -17,6 +17,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import LikertScale from '../../components/LikertScale';
+import ToastNotification from '../../components/ToastNotification';
 import { KATEGORI_EVALUASI_FASILITAS, getTotalPertanyaan } from '../../data/pertanyaanFasilitas';
 import evaluasiService from '../../services/evaluasiService';
 import { getActivePeriode } from '../../services/periodeService';
@@ -33,10 +34,23 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
   const [submitting, setSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activePeriode, setActivePeriode] = useState(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
 
   const totalPertanyaan = getTotalPertanyaan();
   const answeredCount = Object.keys(answers).length;
   const progress = (answeredCount / totalPertanyaan) * 100;
+
+  const showToast = (message, type = 'info') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
+  const hideToast = () => {
+    setToastVisible(false);
+  };
 
   useEffect(() => {
     // Load active periode
@@ -134,7 +148,7 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
       // Check if periode active
       if (!activePeriode) {
-        Alert.alert('Error', 'Tidak ada periode evaluasi aktif');
+        showToast('Tidak ada periode evaluasi aktif', 'error');
         return;
       }
 
@@ -157,20 +171,18 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
       setHasUnsavedChanges(false);
 
-      Alert.alert(
-        'Berhasil!',
-        'Evaluasi Anda telah berhasil dikirim. Terima kasih atas partisipasi Anda.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              navigation.navigate('HomeMain');
-            },
-          },
-        ]
-      );
+      showToast('Evaluasi Anda telah berhasil dikirim!', 'success');
+      
+      // Navigate home after brief delay
+      setTimeout(() => {
+        navigation.navigate('HomeMain');
+      }, 2000);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Gagal mengirim evaluasi');
+      // Check if it's a duplicate evaluation error
+      const errorMessage = error?.message || 'Gagal mengirim evaluasi';
+      const isDuplicate = errorMessage.includes('sudah mengevaluasi') || error?.status === 400;
+      
+      showToast(errorMessage, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -212,6 +224,14 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ToastNotification
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={hideToast}
+        duration={3000}
+        colors={colors}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}

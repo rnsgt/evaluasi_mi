@@ -48,6 +48,7 @@ export const getAdminDashboardStats = async () => {
         rataRata: parseFloat(fasilitas.rata_rata) || 0,
         jumlahEvaluasi: parseInt(fasilitas.jumlah_evaluasi) || 0,
       })),
+      overallFasilitasScore: parseFloat(backendData?.overallFasilitasScore) || 4.5,
     };
   } catch (error) {
     console.error('[statsService] Get admin stats error:', {
@@ -74,7 +75,34 @@ export const getMonthlyTrend = async () => {
   }
 };
 
+/**
+ * Get daily trend data (real-time data per hari)
+ * @param {number} days - Jumlah hari (default 30)
+ * @returns {Promise<Object>} Daily trend data with labels and datasets
+ */
+export const getDailyTrend = async (days = 30) => {
+  try {
+    console.log('[statsService] Fetching daily trend data for', days, 'days...');
+    
+    const response = await api.get('/admin/daily-trend', {
+      params: { days }
+    });
+
+    const backendData = response?.data || response;
+
+    return {
+      labels: backendData?.labels || [],
+      datasets: backendData?.datasets || [],
+      rawData: backendData?.rawData || [],
+    };
+  } catch (error) {
+    console.error('Get daily trend error:', error);
+    throw error;
+  }
+};
+
 export default {
   getAdminDashboardStats,
   getMonthlyTrend,
+  getDailyTrend,
 };

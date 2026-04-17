@@ -11,11 +11,13 @@ import LaporanScreen from '../screens/admin/LaporanScreen';
 import PeriodeScreen from '../screens/admin/PeriodeScreen';
 import FormPeriodeScreen from '../screens/admin/FormPeriodeScreen';
 import SettingsScreen from '../screens/admin/SettingsScreen';
+import ProfileAdminScreen from '../screens/admin/ProfileAdminScreen';
 import KelolaScreen from '../screens/admin/KelolaScreen';
 import FasilitasManagementScreen from '../screens/admin/FasilitasManagementScreen';
 import FormFasilitasScreen from '../screens/admin/FormFasilitasScreen';
 import DosenManagementScreen from '../screens/admin/DosenManagementScreen';
 import FormDosenScreen from '../screens/admin/FormDosenScreen';
+import ChangePasswordScreen from '../screens/student/ChangePasswordScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -71,6 +73,24 @@ const AdminNavigator = () => {
       }}
     >
       <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
+      
+      {/* Admin Profile */}
+      <Stack.Screen 
+        name="ProfileAdmin" 
+        component={ProfileAdminScreen}
+        options={{
+          presentation: 'modal',
+        }}
+      />
+
+      {/* Change Password */}
+      <Stack.Screen 
+        name="ChangePassword" 
+        component={ChangePasswordScreen}
+        options={{
+          presentation: 'modal',
+        }}
+      />
       
       {/* Periode Management */}
       <Stack.Screen 

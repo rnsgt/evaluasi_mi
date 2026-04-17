@@ -105,6 +105,19 @@ router.get('/dashboard', async (req, res) => {
       LIMIT 5
     `;
 
+    // Overall fasilitas score (real-time)
+    const overallFasilitasScoreResult = await prisma.$queryRaw`
+      SELECT 
+        ROUND(AVG(detail.nilai)::numeric, 2) as rata_rata,
+        COUNT(DISTINCT ef.id) as total_evaluasi
+      FROM evaluasi_fasilitas ef
+      JOIN evaluasi_detail detail ON ef.id = detail.evaluasi_fasilitas_id
+    `;
+
+    const overallFasilitasScore = overallFasilitasScoreResult.length > 0 && overallFasilitasScoreResult[0].rata_rata
+      ? parseFloat(overallFasilitasScoreResult[0].rata_rata)
+      : 4.5; // Default jika tidak ada evaluasi
+
     // Fasilitas yang perlu perbaikan (rating < 3.5)
     const fasilitasPerluPerbaikanResult = await prisma.$queryRaw`
       SELECT 
@@ -150,7 +163,8 @@ router.get('/dashboard', async (req, res) => {
           periodeNama: activePeriodeNama
         },
         topDosen: serializeDashboardRows(topDosenResult),
-        fasilitasPerluPerbaikan: serializeDashboardRows(fasilitasPerluPerbaikanResult)
+        fasilitasPerluPerbaikan: serializeDashboardRows(fasilitasPerluPerbaikanResult),
+        overallFasilitasScore: overallFasilitasScore
       }
     });
   } catch (error) {
@@ -435,6 +449,94 @@ router.get('/laporan', async (req, res) => {
     });
   } catch (error) {
     console.error('Get laporan error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan pada server',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Daily trend data (evaluasi per hari)
+router.get('/daily-trend', async (req, res) => {
+  try {
+    const { days = 30 } = req.query; // Default 30 hari
+    const daysCount = Math.min(parseInt(days) || 30, 365); // Max 365 hari
+    
+    const now = new Date();
+    const startDate = new Date(now.getTime() - daysCount * 24 * 60 * 60 * 1000);
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = now.toISOString().split('T')[0];
+
+    // Query untuk mendapatkan data evaluasi per hari
+    const dailyData = await prisma.$queryRaw`
+      SELECT 
+        DATE(submitted_at) as tanggal,
+        COUNT(*) as total_evaluasi,
+        SUM(CASE WHEN evaluasi_dosen_id IS NOT NULL THEN 1 ELSE 0 END) as evaluasi_dosen,
+        SUM(CASE WHEN evaluasi_fasilitas_id IS NOT NULL THEN 1 ELSE 0 END) as evaluasi_fasilitas
+      FROM evaluasi_detail
+      WHERE DATE(submitted_at) >= ${startDateStr}::date 
+        AND DATE(submitted_at) <= ${endDateStr}::date
+      GROUP BY DATE(submitted_at)
+      ORDER BY DATE(submitted_at) ASC
+    `;
+
+    // Transform data untuk chart
+    const chartData = dailyData.map(item => ({
+      tanggal: new Date(item.tanggal).toISOString().split('T')[0],
+      totalEvaluasi: Number(item.total_evaluasi) || 0,
+      dosenEvaluasi: Number(item.evaluasi_dosen) || 0,
+      fasilitasEvaluasi: Number(item.evaluasi_fasilitas) || 0,
+    }));
+
+    // Build complete series untuk missing dates
+    const allDates = [];
+    let current = new Date(startDate);
+    while (current <= now) {
+      const dateStr = current.toISOString().split('T')[0];
+      const found = chartData.find(d => d.tanggal === dateStr);
+      allDates.push(found || {
+        tanggal: dateStr,
+        totalEvaluasi: 0,
+        dosenEvaluasi: 0,
+        fasilitasEvaluasi: 0,
+      });
+      current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        labels: allDates.map(d => {
+          const date = new Date(d.tanggal);
+          return `${date.getDate()}/${date.getMonth() + 1}`;
+        }),
+        datasets: [
+          {
+            data: allDates.map(d => d.totalEvaluasi),
+            label: 'Total Evaluasi',
+            strokeWidth: 2,
+            color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
+          },
+          {
+            data: allDates.map(d => d.dosenEvaluasi),
+            label: 'Evaluasi Dosen',
+            strokeWidth: 2,
+            color: (opacity = 1) => `rgba(34, 139, 230, ${opacity})`,
+          },
+          {
+            data: allDates.map(d => d.fasilitasEvaluasi),
+            label: 'Evaluasi Fasilitas',
+            strokeWidth: 2,
+            color: (opacity = 1) => `rgba(22, 163, 74, ${opacity})`,
+          },
+        ],
+        rawData: allDates,
+      }
+    });
+  } catch (error) {
+    console.error('Get daily trend error:', error);
     res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan pada server',

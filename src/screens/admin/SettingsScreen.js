@@ -40,15 +40,7 @@ const SettingsScreen = ({ navigation }) => {
       description: 'Kelola informasi profil Anda',
       icon: 'account-circle',
       color: '#228BE6',
-      onPress: () => Alert.alert('Info', 'Fitur dalam pengembangan'),
-    },
-    {
-      id: 'help',
-      title: 'Bantuan & Panduan',
-      description: 'Panduan penggunaan aplikasi',
-      icon: 'help-circle',
-      color: '#0B78F0',
-      onPress: () => Alert.alert('Info', 'Fitur dalam pengembangan'),
+      onPress: () => navigation.navigate('ProfileAdmin'),
     },
     {
       id: 'about',

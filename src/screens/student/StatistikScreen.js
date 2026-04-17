@@ -192,6 +192,8 @@ const StatistikScreen = () => {
           </View>
         </View>
 
+
+
         {/* Visual Chart - Simple Bar */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Grafik Partisipasi</Text>

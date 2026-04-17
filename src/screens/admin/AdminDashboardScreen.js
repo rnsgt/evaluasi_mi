@@ -56,21 +56,26 @@ const AdminDashboardScreen = () => {
   }, [stats]);
 
   const fasilitasScore = useMemo(() => {
-    if (!stats?.fasilitasPerluPerbaikan?.length) return 4.5;
-    const total = stats.fasilitasPerluPerbaikan.reduce((sum, item) => sum + (item.rataRata || 0), 0);
-    return total / stats.fasilitasPerluPerbaikan.length;
-  }, [stats]);
+    if (!stats?.overallFasilitasScore) return 0;
+    return stats.overallFasilitasScore;
+  }, [stats?.overallFasilitasScore]);
 
   const trendBars = useMemo(() => {
-    const totalWeek = Math.max(stats?.weekEvaluasi || 0, 1);
-    const today = Math.max(stats?.todayEvaluasi || 0, 1);
-    const base = [0.3, 0.5, 0.7, 0.45, 0.82, 0.25, 0.2];
+    if (!stats?.dailyTrend || stats.dailyTrend.length === 0) {
+      // Fallback jika tidak ada data
+      return [0.2, 0.3, 0.4, 0.35, 0.6, 0.25, 0.2];
+    }
 
-    return base.map((value, index) => {
-      const scaled = Math.min(1, value + (totalWeek / 2000) * 0.2 + (today / 600) * (index === 4 ? 0.2 : 0));
-      return Math.max(0.18, scaled);
+    // Get max value untuk normalize heights
+    const maxValue = Math.max(...stats.dailyTrend.map(item => item.total), 1);
+    
+    // Convert total count menjadi bar height (0.18 - 1.0)
+    return stats.dailyTrend.map(item => {
+      const normalized = item.total / maxValue;
+      // Map ke range 0.18 - 1.0 (minimum visible height 0.18)
+      return Math.max(0.18, normalized);
     });
-  }, [stats]);
+  }, [stats?.dailyTrend]);
 
   const latestEvaluasi = useMemo(() => {
     const dosenItems = (stats?.top5Dosen || []).slice(0, 2).map((item, index) => ({
@@ -232,9 +237,6 @@ const AdminDashboardScreen = () => {
 
         <View style={styles.latestHeader}>
           <Text style={styles.sectionTitle}>Evaluasi Terbaru</Text>
-          <TouchableOpacity>
-            <Text style={styles.linkText}>Lihat Semua</Text>
-          </TouchableOpacity>
         </View>
 
         {latestEvaluasi.map((item) => (
