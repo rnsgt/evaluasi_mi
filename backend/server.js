@@ -2,7 +2,12 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const os = require('os');
+const { checkEnvVars } = require('./config/env');
 const { testConnection, isDatabaseConnected } = require('./config/database');
+const { helmetMiddleware, limiter, authLimiter, registrationLimiter } = require('./middleware/securityMiddleware');
+
+// 🔐 Validate environment variables first
+checkEnvVars();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,13 +16,31 @@ const HOST = process.env.HOST || '0.0.0.0';
 // Test database connection
 testConnection();
 
-// Middleware
+// 🔐 Security Middleware - Apply first
+app.use(helmetMiddleware);
+
+// Body parser with size limits
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// CORS - Restrict to known origins
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-  credentials: true
+  origin: function (origin, callback) {
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3002').split(',');
+    if (!origin || allowedOrigins.some(o => o.trim() === (origin || ''))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: Origin not allowed'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// General rate limiter
+app.use(limiter);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -30,7 +53,12 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
+// Auth routes with stricter rate limiting
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', registrationLimiter);
 app.use('/api/auth', require('./routes/authRoutes'));
+
+// Other API routes
 app.use('/api/dosen', require('./routes/dosenRoutes'));
 app.use('/api/fasilitas', require('./routes/fasilitasRoutes'));
 app.use('/api/periode', require('./routes/periodeRoutes'));

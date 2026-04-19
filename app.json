@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "evaluasi_mi",
-    "slug": "evaluasi_mi",
+    "slug": "evaluasi-mi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,13 +18,20 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.sgtrn.evaluasimi"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "58813593-2c6f-4e78-bd4c-04817d6c5169"
+      }
+    },
+    "owner": "sgtrns-organization"
   }
 }
