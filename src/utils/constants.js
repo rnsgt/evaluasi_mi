@@ -24,11 +24,13 @@ export const API_BASE_URL_CANDIDATES = [
   'http://10.0.2.2:3002/api',
   'http://127.0.0.1:3002/api',
   'http://localhost:3002/api',
+  'http://DESKTOP-SDR4RKK:3002/api',
+  ,
 ].filter(Boolean);
 
 export const API_BASE_URL = __DEV__
   ? API_BASE_URL_CANDIDATES[0] // Development (otomatis fallback untuk emulator/device)
-  : 'http://10.1.11.7:3002/api'; // Production (temporary lokal - ganti saat go-live)
+  : 'http://10.1.43.201:3002'; // Production (temporary lokal - ganti saat go-live)
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {
