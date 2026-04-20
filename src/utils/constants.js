@@ -28,7 +28,7 @@ export const API_BASE_URL_CANDIDATES = [
 
 export const API_BASE_URL = __DEV__
   ? API_BASE_URL_CANDIDATES[0] // Development (otomatis fallback untuk emulator/device)
-  : 'http://192.168.37.19:3002/api'; // Production (temporary lokal - ganti saat go-live)
+  : 'http://10.1.11.7:3002/api'; // Production (temporary lokal - ganti saat go-live)
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {
