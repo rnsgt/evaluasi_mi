@@ -116,7 +116,7 @@ router.get('/dashboard', async (req, res) => {
 
     const overallFasilitasScore = overallFasilitasScoreResult.length > 0 && overallFasilitasScoreResult[0].rata_rata
       ? parseFloat(overallFasilitasScoreResult[0].rata_rata)
-      : 4.5; // Default jika tidak ada evaluasi
+      : 0.0; // Default jika tidak ada evaluasi
 
     // Fasilitas yang perlu perbaikan (rating < 3.5)
     const fasilitasPerluPerbaikanResult = await prisma.$queryRaw`
@@ -460,26 +460,44 @@ router.get('/laporan', async (req, res) => {
 // Daily trend data (evaluasi per hari)
 router.get('/daily-trend', async (req, res) => {
   try {
-    const { days = 30 } = req.query; // Default 30 hari
-    const daysCount = Math.min(parseInt(days) || 30, 365); // Max 365 hari
+    const { days = 30, type } = req.query; // Default 30 hari
     
+    let startDate, endDate;
     const now = new Date();
-    const startDate = new Date(now.getTime() - daysCount * 24 * 60 * 60 * 1000);
+
+    if (type === 'current_week') {
+      // Dapatkan hari Senin dari minggu ini
+      const day = now.getDay();
+      const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+      startDate = new Date(now);
+      startDate.setDate(diffToMonday);
+      startDate.setHours(0,0,0,0);
+      
+      // Dapatkan hari Minggu
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23,59,59,999);
+    } else {
+      const daysCount = Math.min(parseInt(days) || 30, 365); // Max 365 hari
+      startDate = new Date(now.getTime() - daysCount * 24 * 60 * 60 * 1000);
+      endDate = now;
+    }
+    
     const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = now.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
 
     // Query untuk mendapatkan data evaluasi per hari
     const dailyData = await prisma.$queryRaw`
       SELECT 
-        DATE(submitted_at) as tanggal,
+        DATE(created_at) as tanggal,
         COUNT(*) as total_evaluasi,
         SUM(CASE WHEN evaluasi_dosen_id IS NOT NULL THEN 1 ELSE 0 END) as evaluasi_dosen,
         SUM(CASE WHEN evaluasi_fasilitas_id IS NOT NULL THEN 1 ELSE 0 END) as evaluasi_fasilitas
       FROM evaluasi_detail
-      WHERE DATE(submitted_at) >= ${startDateStr}::date 
-        AND DATE(submitted_at) <= ${endDateStr}::date
-      GROUP BY DATE(submitted_at)
-      ORDER BY DATE(submitted_at) ASC
+      WHERE DATE(created_at) >= ${startDateStr}::date 
+        AND DATE(created_at) <= ${endDateStr}::date
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) ASC
     `;
 
     // Transform data untuk chart
@@ -492,8 +510,10 @@ router.get('/daily-trend', async (req, res) => {
 
     // Build complete series untuk missing dates
     const allDates = [];
-    let current = new Date(startDate);
-    while (current <= now) {
+    let current = new Date(startDateStr);
+    // Kita iterasi sampai endDate (khusus current_week, endDate bisa di masa depan minggu ini)
+    const endIterate = new Date(endDateStr);
+    while (current <= endIterate) {
       const dateStr = current.toISOString().split('T')[0];
       const found = chartData.find(d => d.tanggal === dateStr);
       allDates.push(found || {

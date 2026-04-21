@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -15,7 +16,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import statsService from '../../services/statsService';
 
-const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+// Labels default jika gagal
+const defaultDayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 const AdminDashboardScreen = () => {
   const { colors } = useTheme();
@@ -25,16 +27,34 @@ const AdminDashboardScreen = () => {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [])
+  );
 
   const loadStats = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await statsService.getAdminDashboardStats();
-      setStats(data);
+      
+      const [dashboardData, trendData] = await Promise.all([
+        statsService.getAdminDashboardStats(),
+        statsService.getDailyTrend(7, 'current_week') // Ambil data spesifik minggu ini (Sen-Min)
+      ]);
+      
+      // Generate labels untuk chart bar (Sen, Sel, dsb)
+      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      const trendLabels = trendData?.rawData?.map(item => {
+        const date = new Date(item.tanggal);
+        return days[date.getDay()];
+      }) || defaultDayLabels;
+
+      setStats({
+        ...dashboardData,
+        dailyTrend: trendData?.rawData?.map(item => ({ total: item.totalEvaluasi })) || [],
+        trendLabels: trendLabels,
+      });
     } catch (error) {
       console.error('Load admin stats error:', error);
       setError(error?.message || 'Gagal memuat data dashboard');
@@ -146,7 +166,7 @@ const AdminDashboardScreen = () => {
     {
       title: 'Evaluasi Hari Ini',
       value: stats.todayEvaluasi || 0,
-      subtitle: '+12% dari kemarin',
+      subtitle: 'Total Evaluasi',
       subtitleColor: '#16A34A',
       icon: 'calendar-blank-outline',
       iconBg: '#DCEAFE',
@@ -155,7 +175,7 @@ const AdminDashboardScreen = () => {
     {
       title: 'Minggu Ini',
       value: stats.weekEvaluasi || 0,
-      subtitle: 'Sesuai Target',
+      subtitle: 'Total Evaluasi',
       subtitleColor: '#0B78F0',
       icon: 'calendar-month-outline',
       iconBg: '#DCEAFE',
@@ -211,27 +231,31 @@ const AdminDashboardScreen = () => {
           <View style={styles.trendHeader}>
             <Text style={styles.sectionTitle}>Tren Evaluasi</Text>
             <View style={styles.badgePill}>
-              <Text style={styles.badgePillText}>7 Hari Terakhir</Text>
+              <Text style={styles.badgePillText}>Minggu Ini</Text>
             </View>
           </View>
 
           <View style={styles.barChartWrap}>
-            {trendBars.map((height, index) => (
-              <View key={dayLabels[index]} style={styles.barColumn}>
-                <View style={styles.barTrack}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      {
-                        height: `${Math.round(height * 100)}%`,
-                        backgroundColor: index === 4 ? '#228BE6' : '#88C2F4',
-                      },
-                    ]}
-                  />
+            {trendBars.map((height, index) => {
+              const label = stats?.trendLabels?.[index] || defaultDayLabels[index];
+              return (
+                <View key={`${label}-${index}`} style={styles.barColumn}>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          height: `${Math.round(height * 100)}%`,
+                          // Highlight bar hari ini (jika harinya cocok)
+                          backgroundColor: label === defaultDayLabels[(new Date().getDay() + 6) % 7] ? '#228BE6' : '#88C2F4',
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.dayLabel}>{label}</Text>
                 </View>
-                <Text style={styles.dayLabel}>{dayLabels[index]}</Text>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
 

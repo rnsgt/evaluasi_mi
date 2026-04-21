@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ const LaporanScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [flatData, setFlatData] = useState([]);
   
   // Filter states
   const [selectedPeriode, setSelectedPeriode] = useState(null);
@@ -148,6 +149,26 @@ const LaporanScreen = () => {
       const combined = [...dosenReport, ...fasilitasReport];
       setReportData(combined);
       setFilteredData(combined);
+      
+      // Create flat data for UI
+      let flat = [];
+      combined.forEach(item => {
+        (item.detailEvaluasi || []).forEach(evaluasi => {
+          flat.push({
+            id: `eval-${item.type}-${evaluasi.id}`,
+            type: item.type,
+            nama: item.nama,
+            nip_kode: item.type === 'dosen' ? item.nip : `${item.kode} - ${item.kategori}`,
+            rataRata: evaluasi.rataRata,
+            jumlahJawaban: evaluasi.jumlahJawaban,
+            komentar: evaluasi.komentar,
+            submittedAt: evaluasi.submittedAt
+          });
+        });
+      });
+      // Sort newest first
+      flat.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      setFlatData(flat);
     } catch (error) {
       console.error('Load laporan error:', error);
     } finally {
@@ -354,6 +375,34 @@ const LaporanScreen = () => {
           .join('\n');
       }
 
+      // TABEL DATA MENTAH (RAW DATA) - Menampilkan setiap evaluasi satu per satu
+      csvContent += '\n\nDATA RINCIAN EVALUASI (RAW DATA)\n\n';
+      const rawHeader = [
+        'NO',
+        'TANGGAL',
+        'TIPE',
+        'NAMA DOSEN / FASILITAS',
+        'RATA-RATA NILAI',
+        'KOMENTAR'
+      ];
+      csvContent += rawHeader.map((value) => `"${value}"`).join(',') + '\n';
+
+      let rawIndex = 1;
+      filteredData.forEach((item) => {
+        const detailList = item.detailEvaluasi || [];
+        detailList.forEach((evaluasi) => {
+          const rawRow = [
+            rawIndex++,
+            new Date(evaluasi.submittedAt).toLocaleDateString('id-ID'),
+            item.type === 'dosen' ? 'DOSEN' : 'FASILITAS',
+            item.nama,
+            evaluasi.rataRata,
+            evaluasi.komentar || '-',
+          ];
+          csvContent += rawRow.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',') + '\n';
+        });
+      });
+
       const fileName = `laporan-evaluasi-${Date.now()}.csv`;
       const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
 
@@ -372,17 +421,9 @@ const LaporanScreen = () => {
 
   const renderReportCard = ({ item }) => {
     const ratingColor = getRatingColor(parseFloat(item.rataRata));
-    const ratingLabel = getRatingLabel(parseFloat(item.rataRata));
     
     return (
-      <TouchableOpacity
-        style={styles.reportCard}
-        activeOpacity={0.8}
-        onPress={() => {
-          setSelectedReport(item);
-          setShowDetailModal(true);
-        }}
-      >
+      <View style={styles.reportCard}>
         <View style={styles.reportHeader}>
           <View style={styles.reportIconContainer}>
             <MaterialCommunityIcons
@@ -395,14 +436,10 @@ const LaporanScreen = () => {
             <Text style={styles.reportNama} numberOfLines={1}>
               {toDisplayText(item.nama)}
             </Text>
-            {item.type === 'dosen' ? (
-              <Text style={styles.reportSubtitle}>{toDisplayText(item.nip)}</Text>
-            ) : (
-              <Text style={styles.reportSubtitle}>{toDisplayText(item.kode)} - {toDisplayText(item.kategori)}</Text>
-            )}
+            <Text style={styles.reportSubtitle}>{toDisplayText(item.nip_kode)}</Text>
           </View>
           <View style={[styles.typeBadge, { 
-            backgroundColor: item.type === 'dosen' ? '#DBECFF' : '#DBECFF' 
+            backgroundColor: item.type === 'dosen' ? '#DBECFF' : '#DCFCE7' 
           }]}>
             <Text style={[styles.typeBadgeText, {
               color: item.type === 'dosen' ? '#228BE6' : '#16A34A'
@@ -414,37 +451,30 @@ const LaporanScreen = () => {
         
         <View style={styles.reportStats}>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Rata-rata</Text>
+            <Text style={styles.statLabel}>Nilai Evaluasi</Text>
             <View style={[styles.ratingBadge, { backgroundColor: ratingColor + '20' }]}>
               <MaterialCommunityIcons name="star" size={16} color={ratingColor} />
               <Text style={[styles.ratingValue, { color: ratingColor }]}>
                 {item.rataRata}
               </Text>
             </View>
-            <Text style={[styles.ratingLabel, { color: ratingColor }]}>
-              {ratingLabel}
-            </Text>
           </View>
           
           <View style={styles.statDivider} />
           
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Jumlah Evaluasi</Text>
-            <Text style={styles.statValue}>{item.jumlahEvaluasi}</Text>
-          </View>
-          
-          <View style={styles.statDivider} />
-          
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Total Jawaban</Text>
-            <Text style={styles.statValue}>{item.totalJawaban}</Text>
+            <Text style={styles.statLabel}>Tanggal</Text>
+            <Text style={[styles.statValue, {fontSize: 13}]}>{new Date(item.submittedAt).toLocaleDateString('id-ID')}</Text>
           </View>
         </View>
 
-        <View style={styles.detailHintWrap}>
-          <Text style={styles.detailHintText}>Tap untuk lihat detail evaluasi dan komentar</Text>
-        </View>
-      </TouchableOpacity>
+        {item.komentar ? (
+          <View style={{marginTop: 12, padding: 12, backgroundColor: '#F8F9FA', borderRadius: 8}}>
+            <Text style={{fontSize: 12, color: '#64748B', marginBottom: 4}}>Komentar:</Text>
+            <Text style={{fontSize: 14, color: '#334155'}}>{item.komentar}</Text>
+          </View>
+        ) : null}
+      </View>
     );
   };
 
@@ -636,8 +666,10 @@ const LaporanScreen = () => {
       {/* Summary Cards */}
       <View style={styles.summarySection}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{filteredData.length}</Text>
-          <Text style={styles.summaryLabel}>Total Item</Text>
+          <Text style={styles.summaryValue}>
+            {filteredData.reduce((sum, item) => sum + item.jumlahEvaluasi, 0)}
+          </Text>
+          <Text style={styles.summaryLabel}>Total Evaluasi</Text>
         </View>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryValue}>
@@ -654,9 +686,9 @@ const LaporanScreen = () => {
 
       {/* Report List */}
       <FlatList
-        data={filteredData}
+        data={flatData}
         renderItem={renderReportCard}
-        keyExtractor={(item) => `${item.type}-${item.id}`}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyState}>

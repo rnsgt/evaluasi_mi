@@ -98,8 +98,8 @@ const RegisterScreen = ({ navigation }) => {
       await register(formData);
       Alert.alert(
         'Berhasil',
-        'Registrasi berhasil! Silakan login dengan akun Anda.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        'Registrasi berhasil! Anda akan langsung masuk ke Dashboard.',
+        [{ text: 'OK' }]
       );
     } catch (error) {
       Alert.alert('Error', error.message || 'Registrasi gagal');
