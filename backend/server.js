@@ -83,18 +83,20 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, HOST, () => {
-  const lanIp = Object.values(os.networkInterfaces())
-    .flat()
-    .find((iface) => iface && iface.family === 'IPv4' && !iface.internal)?.address;
+// Start server only if not running in Vercel Serverless
+if (!process.env.VERCEL) {
+  app.listen(PORT, HOST, () => {
+    const lanIp = Object.values(os.networkInterfaces())
+      .flat()
+      .find((iface) => iface && iface.family === 'IPv4' && !iface.internal)?.address;
 
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 API URL (local): http://localhost:${PORT}`);
-  if (lanIp) {
-    console.log(`🔗 API URL (LAN): http://${lanIp}:${PORT}`);
-  }
-});
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 API URL (local): http://localhost:${PORT}`);
+    if (lanIp) {
+      console.log(`🔗 API URL (LAN): http://${lanIp}:${PORT}`);
+    }
+  });
+}
 
 module.exports = app;

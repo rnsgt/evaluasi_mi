@@ -4,14 +4,13 @@
  */
 
 const requiredEnvVars = [
-  'PORT',
-  'NODE_ENV',
-  'DB_HOST',
-  'DB_PORT',
-  'DB_NAME',
-  'DB_USER',
   'JWT_SECRET',
 ];
+
+// In Prisma, we usually just need DATABASE_URL, not all the granular ones.
+if (!process.env.DATABASE_URL) {
+  requiredEnvVars.push('DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER');
+}
 
 const checkEnvVars = () => {
   console.log('🔍 Validating environment variables...');
@@ -46,25 +45,23 @@ const checkEnvVars = () => {
     }
   }
 
-  // Validate PORT
-  const port = parseInt(process.env.PORT);
-  if (isNaN(port) || port < 1 || port > 65535) {
-    console.error('❌ Invalid PORT number. Must be between 1-65535');
-    process.exit(1);
+  // Validate PORT if provided (Vercel might not provide PORT directly in serverless)
+  if (process.env.PORT) {
+    const port = parseInt(process.env.PORT);
+    if (isNaN(port) || port < 1 || port > 65535) {
+      console.warn('⚠️ Invalid PORT number provided, using default');
+    }
   }
 
   // Validate NODE_ENV
   const validEnv = ['development', 'staging', 'production'];
-  if (!validEnv.includes(process.env.NODE_ENV)) {
-    console.error(`❌ Invalid NODE_ENV. Must be one of: ${validEnv.join(', ')}`);
-    process.exit(1);
+  if (process.env.NODE_ENV && !validEnv.includes(process.env.NODE_ENV)) {
+    console.warn(`⚠️ Unknown NODE_ENV: ${process.env.NODE_ENV}`);
   }
 
   // Log validated environment
   console.log('✅ All environment variables validated');
-  console.log(`   Environment: ${process.env.NODE_ENV}`);
-  console.log(`   Port: ${port}`);
-  console.log(`   Database: ${process.env.DB_NAME}@${process.env.DB_HOST}:${process.env.DB_PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'production'}`);
   console.log(`   JWT Expiry: ${process.env.JWT_EXPIRES_IN || '7d'}`);
 };
 
