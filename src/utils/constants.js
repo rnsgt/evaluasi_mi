@@ -30,7 +30,7 @@ export const API_BASE_URL_CANDIDATES = [
 
 export const API_BASE_URL = __DEV__
   ? API_BASE_URL_CANDIDATES[0] // Development (otomatis fallback untuk emulator/device)
-  : 'http://10.1.43.201:3002'; // Production (temporary lokal - ganti saat go-live)
+  : 'http://10.1.9.197:3002'; // Production (temporary lokal - ganti saat go-live)
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {
@@ -65,7 +65,7 @@ export const LIKERT_SCALE = [
   { value: 3, label: 'Netral', short: '3' },
   { value: 4, label: 'Setuju', short: '4' },
   { value: 5, label: 'Sangat Setuju', short: '5' },
-]; 
+];
 
 // Status Akademik
 export const STATUS_AKADEMIK = {
