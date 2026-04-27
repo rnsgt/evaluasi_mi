@@ -81,8 +81,9 @@ api.interceptors.response.use(
         });
       }
       
+      const failedUrl = error.config?.baseURL || 'Unknown URL';
       return Promise.reject({
-        message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+        message: `Tidak dapat terhubung ke server (${failedUrl}). Periksa koneksi internet Anda.`,
         status: 0,
       });
     } else {
