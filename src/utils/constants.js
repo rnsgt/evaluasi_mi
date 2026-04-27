@@ -30,7 +30,7 @@ export const API_BASE_URL_CANDIDATES = [
 
 export const API_BASE_URL = __DEV__
   ? API_BASE_URL_CANDIDATES[0] // Development (otomatis fallback untuk emulator/device)
-  : 'http://10.1.9.197:3002/api'; // Production (temporary lokal - ganti saat go-live)
+  : 'https://api-evaluasi-mi.vercel.app/'; // Production (temporary lokal - ganti saat go-live)
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {
