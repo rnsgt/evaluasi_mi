@@ -1,185 +1,108 @@
-﻿import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
+
+const { width } = Dimensions.get('window');
 
 const KelolaScreen = ({ navigation }) => {
   const { colors } = useTheme();
-  const menuItems = [
-    {
-      id: 'fasilitas',
-      title: 'Kelola Fasilitas',
-      description: 'Tambah, edit, dan hapus data fasilitas kampus',
-      icon: 'office-building',
-      color: '#16A34A',
-      route: 'FasilitasManagement',
-    },
-    {
-      id: 'dosen',
-      title: 'Kelola Dosen',
-      description: 'Tambah, edit, dan hapus data dosen pengampu',
-      icon: 'account-tie',
-      color: '#228BE6',
-      route: 'DosenManagement',
-    },
-  ];
 
-  const handleMenuPress = (route) => {
-    navigation.navigate(route);
-  };
+  const renderMenuCard = (title, icon, color, onPress, description) => (
+    <TouchableOpacity 
+      style={[styles.menuCard, { borderLeftColor: color }]} 
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.iconBox, { backgroundColor: color + '15' }]}>
+        <MaterialCommunityIcons name={icon} size={28} color={color} />
+      </View>
+      <View style={styles.menuInfo}>
+        <Text style={styles.menuTitle}>{title}</Text>
+        <Text style={styles.menuDesc}>{description}</Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={24} color="#CBD5E1" />
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerSubtitle}>ADMIN</Text>
-          <Text style={styles.headerTitle}>Kelola Data Master</Text>
-        </View>
+        <Text style={styles.headerSubtitle}>MANAJEMEN DATA</Text>
+        <Text style={styles.headerTitle}>Pusat Kendali</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* Info Card */}
-          <View style={styles.infoCard}>
-            <MaterialCommunityIcons
-              name="information"
-              size={20}
-              color={colors.primary}
-            />
-            <Text style={styles.infoText}>
-              Kelola data master yang akan digunakan dalam evaluasi akademik
-            </Text>
-          </View>
-
-          {/* Menu Cards */}
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.menuCard}
-              onPress={() => handleMenuPress(item.route)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.menuIconContainer, { backgroundColor: item.color + '20' }]}>
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={40}
-                  color={item.color}
-                />
-              </View>
-              <View style={styles.menuContent}>
-                <Text style={styles.menuTitle}>{item.title}</Text>
-                <Text style={styles.menuDescription}>{item.description}</Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          ))}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>AKADEMIK & EVALUASI</Text>
+          {renderMenuCard(
+            'Periode Evaluasi',
+            'calendar-clock',
+            '#2563EB',
+            () => navigation.navigate('Periode'),
+            'Kelola tahun ajaran dan jadwal evaluasi'
+          )}
+          {renderMenuCard(
+            'Kelola Dosen',
+            'account-tie',
+            '#8B5CF6',
+            () => navigation.navigate('Dosen'),
+            'Manajemen data dosen dan pengampu'
+          )}
+          {renderMenuCard(
+            'Kelola Fasilitas',
+            'office-building',
+            '#EA580C',
+            () => navigation.navigate('Fasilitas'),
+            'Manajemen sarana dan prasarana kampus'
+          )}
         </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>PERTANYAAN & INSTRUMEN</Text>
+          {renderMenuCard(
+            'Kuesioner Dosen',
+            'comment-question-outline',
+            '#10B981',
+            () => navigation.navigate('KuesionerManagement', { type: 'dosen' }),
+            'Atur butir pertanyaan evaluasi dosen'
+          )}
+          {renderMenuCard(
+            'Kuesioner Fasilitas',
+            'comment-search-outline',
+            '#06B6D4',
+            () => navigation.navigate('KuesionerManagement', { type: 'fasilitas' }),
+            'Atur butir pertanyaan evaluasi fasilitas'
+          )}
+        </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    letterSpacing: 1,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginTop: 2,
-  },
-  content: {
-    padding: spacing.base,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: staticColors.primary + '10',
-    padding: spacing.base,
-    borderRadius: radius.base,
-    marginBottom: spacing.base,
-  },
-  infoText: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    lineHeight: 20,
-  },
-  menuCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: spacing.base,
-    borderRadius: radius.base,
-    marginBottom: spacing.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  menuIconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.base,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuContent: {
-    flex: 1,
-    marginLeft: spacing.base,
-  },
-  menuTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-    marginBottom: 2,
-  },
-  menuDescription: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    lineHeight: 18,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  header: { padding: 24, backgroundColor: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: '#2563EB', fontWeight: 'bold', letterSpacing: 1.5 },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#0F172A', marginTop: 4 },
+  scrollContent: { padding: 20 },
+  section: { marginBottom: 32 },
+  sectionLabel: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginLeft: 12, marginBottom: 16, letterSpacing: 1 },
+  menuCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, borderLeftWidth: 6, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  iconBox: { width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  menuInfo: { flex: 1, marginLeft: 16 },
+  menuTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
+  menuDesc: { fontSize: 12, color: '#64748B', marginTop: 4, lineHeight: 18 },
 });
 
 export default KelolaScreen;
-

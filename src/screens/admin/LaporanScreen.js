@@ -17,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import adminService from '../../services/adminService';
 import periodeService from '../../services/periodeService';
 
@@ -26,149 +25,56 @@ const LaporanScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [reportData, setReportData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [flatData, setFlatData] = useState([]);
-  
-  // Filter states
   const [selectedPeriode, setSelectedPeriode] = useState(null);
   const [selectedTipe, setSelectedTipe] = useState('semua');
   const [periodeList, setPeriodeList] = useState([]);
-  
-  // Modal states
   const [showPeriodeModal, setShowPeriodeModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
-  
-  const tipeOptions = [
-    { value: 'semua', label: 'Semua' },
-    { value: 'dosen', label: 'Dosen' },
-    { value: 'fasilitas', label: 'Fasilitas' },
-  ];
 
   useEffect(() => {
-    loadData();
+    loadInitialData();
   }, []);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadData();
-    }, [selectedPeriode, selectedTipe])
-  );
-
-  useEffect(() => {
-    // Reload data when filters change
-    if (periodeList.length > 0) {
-      loadData();
+  const loadInitialData = async () => {
+    try {
+      const periodes = await periodeService.getAllPeriode();
+      setPeriodeList(periodes);
+      const active = periodes.find(p => p.status === 'aktif');
+      if (active) setSelectedPeriode(active);
+      loadLaporan(active?.id, selectedTipe);
+    } catch (error) {
+      console.error('Load initial data error:', error);
     }
-  }, [selectedPeriode, selectedTipe]);
+  };
 
-  const loadData = async () => {
+  const loadLaporan = async (periodeId, tipe) => {
     try {
       setLoading(true);
-      
-      // Load periode
-      const periode = await periodeService.getAllPeriode();
-      setPeriodeList(periode);
-      
-      // Set active periode as default
-      const activePeriode = periode.find((p) => p.status === 'aktif');
-      if (activePeriode && !selectedPeriode) {
-        setSelectedPeriode(activePeriode);
-      }
-      
-      // Load laporan from backend API
-      const filters = {};
-      if (selectedPeriode) {
-        filters.periode_id = selectedPeriode.id;
-      }
-      if (selectedTipe !== 'semua') {
-        filters.tipe = selectedTipe;
-      }
-      
+      const filters = { periode_id: periodeId, tipe };
       const laporan = await adminService.getLaporan(filters);
       
-      // Transform backend data to match frontend format
-      const dosenReport = (laporan.dosen || []).map((item) => ({
-        id: item.id,
-        nama: item.nama,
-        nip: item.nip,
-        type: 'dosen',
-        rataRata: parseFloat(item.rata_rata) || 0,
-        jumlahEvaluasi: parseInt(item.jumlah_evaluasi) || 0,
-        totalJawaban: parseInt(item.total_jawaban) || 0,
-        detailKategori: (item.detail_kategori || []).map((detail) => ({
-          kategori: detail.kategori,
-          rataRata: parseFloat(detail.rata_rata) || 0,
-          totalJawaban: parseInt(detail.total_jawaban) || 0,
-        })),
-        komentarList: (item.komentar_list || [])
-          .map((comment) => ({
-            komentar: comment.komentar,
-            submittedAt: comment.submitted_at,
-          }))
-          .filter((comment) => comment.komentar),
-        detailEvaluasi: (item.detail_evaluasi || []).map((detail) => ({
-          id: detail.id,
-          submittedAt: detail.submitted_at,
-          komentar: detail.komentar,
-          rataRata: parseFloat(detail.rata_rata) || 0,
-          jumlahJawaban: parseInt(detail.jumlah_jawaban) || 0,
-        })),
-      }));
-      
-      const fasilitasReport = (laporan.fasilitas || []).map((item) => ({
-        id: item.id,
-        nama: item.nama,
-        kode: item.kode,
-        kategori: item.kategori,
-        lokasi: item.lokasi,
-        type: 'fasilitas',
-        rataRata: parseFloat(item.rata_rata) || 0,
-        jumlahEvaluasi: parseInt(item.jumlah_evaluasi) || 0,
-        totalJawaban: parseInt(item.total_jawaban) || 0,
-        detailKategori: (item.detail_kategori || []).map((detail) => ({
-          kategori: detail.kategori,
-          rataRata: parseFloat(detail.rata_rata) || 0,
-          totalJawaban: parseInt(detail.total_jawaban) || 0,
-        })),
-        komentarList: (item.komentar_list || [])
-          .map((comment) => ({
-            komentar: comment.komentar,
-            submittedAt: comment.submitted_at,
-          }))
-          .filter((comment) => comment.komentar),
-        detailEvaluasi: (item.detail_evaluasi || []).map((detail) => ({
-          id: detail.id,
-          submittedAt: detail.submitted_at,
-          komentar: detail.komentar,
-          rataRata: parseFloat(detail.rata_rata) || 0,
-          jumlahJawaban: parseInt(detail.jumlah_jawaban) || 0,
-        })),
-      }));
-      
-      const combined = [...dosenReport, ...fasilitasReport];
-      setReportData(combined);
-      setFilteredData(combined);
-      
-      // Create flat data for UI
+      const combined = [
+        ...(laporan.dosen || []).map(i => ({ ...i, type: 'dosen' })),
+        ...(laporan.fasilitas || []).map(i => ({ ...i, type: 'fasilitas' }))
+      ];
+
       let flat = [];
       combined.forEach(item => {
-        (item.detailEvaluasi || []).forEach(evaluasi => {
+        (item.detail_evaluasi || []).forEach(evaluasi => {
           flat.push({
-            id: `eval-${item.type}-${evaluasi.id}`,
+            id: `${item.type}-${evaluasi.id}`,
             type: item.type,
             nama: item.nama,
-            nip_kode: item.type === 'dosen' ? item.nip : `${item.kode} - ${item.kategori}`,
-            rataRata: evaluasi.rataRata,
-            jumlahJawaban: evaluasi.jumlahJawaban,
+            subnama: item.type === 'dosen' ? item.nip : item.kode,
+            rataRata: evaluasi.rata_rata,
             komentar: evaluasi.komentar,
-            submittedAt: evaluasi.submittedAt
+            submittedAt: evaluasi.submitted_at
           });
         });
       });
-      // Sort newest first
-      flat.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      flat.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
       setFlatData(flat);
+      setReportData(combined);
     } catch (error) {
       console.error('Load laporan error:', error);
     } finally {
@@ -176,914 +82,171 @@ const LaporanScreen = () => {
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
-
-  const getRatingColor = (rating) => {
-    if (rating >= 4.5) return '#16A34A';
-    if (rating >= 4.0) return '#22C55E';
-    if (rating >= 3.5) return '#FFC107';
-    if (rating >= 3.0) return '#FF9800';
-    return '#F04438';
-  };
-
-  const getRatingLabel = (rating) => {
-    if (rating >= 4.5) return 'Sangat Baik';
-    if (rating >= 4.0) return 'Baik';
-    if (rating >= 3.5) return 'Cukup';
-    if (rating >= 3.0) return 'Kurang';
-    return 'Sangat Kurang';
-  };
-
-  const toDisplayText = (value) => {
-    if (value === null || value === undefined) return '-';
-    if (typeof value === 'string' || typeof value === 'number') return String(value);
-
-    if (typeof value === 'object') {
-      if (value.nama) return String(value.nama);
-      if (value.kode) return String(value.kode);
-      return JSON.stringify(value);
+  const handleExport = async () => {
+    if (flatData.length === 0) {
+      Alert.alert('Info', 'Tidak ada data untuk diunduh');
+      return;
     }
+    // Simple CSV Export logic
+    let csv = 'Tanggal,Tipe,Subjek,Nilai,Komentar\n';
+    flatData.forEach(row => {
+      csv += `${new Date(row.submittedAt).toLocaleDateString()},${row.type.toUpperCase()},"${row.nama}",${row.rataRata},"${row.komentar || '-'}"\n`;
+    });
 
-    return String(value);
+    const fileUri = `${FileSystem.cacheDirectory}Laporan-Evaluasi.csv`;
+    await FileSystem.writeAsStringAsync(fileUri, csv);
+    await Sharing.shareAsync(fileUri);
   };
 
-  const getKomentarExport = (item) => {
-    const comments = (item.komentarList || [])
-      .map((entry) => String(entry.komentar || '').trim())
-      .filter((value) => value.length > 0);
-
-    return comments.length > 0 ? comments.join(' | ') : '-';
-  };
-
-  const getMappedKategori = (detailKategori = [], targetType) => {
-    const mapped = {};
-
-    if (targetType === 'dosen') {
-      mapped['PENGUASAAN MATERI'] = '';
-      mapped['METODE PENGAJARAN'] = '';
-      mapped['KOMUNIKASI'] = '';
-      mapped['PENILAIAN'] = '';
-      mapped['KEDISIPLINAN'] = '';
-
-      detailKategori.forEach((detail) => {
-        const category = String(detail.kategori || '').toUpperCase();
-        const value = detail.rataRata;
-
-        if (category.includes('PERSIAPAN') || category.includes('PENGUASAAN')) {
-          mapped['PENGUASAAN MATERI'] = value;
-        } else if (category.includes('PENYAMPAIAN') || category.includes('METODE')) {
-          mapped['METODE PENGAJARAN'] = value;
-        } else if (category.includes('INTERAKSI') || category.includes('KOMUNIKASI')) {
-          mapped['KOMUNIKASI'] = value;
-        } else if (category.includes('EVALUASI') || category.includes('PENILAIAN')) {
-          mapped['PENILAIAN'] = value;
-        } else if (category.includes('SIKAP') || category.includes('ETIKA') || category.includes('DISIPLIN')) {
-          mapped['KEDISIPLINAN'] = value;
-        }
-      });
-    }
-
-    if (targetType === 'fasilitas') {
-      mapped['AKSESIBILITAS'] = '';
-      mapped['KEBERSIHAN'] = '';
-      mapped['KELENGKAPAN'] = '';
-      mapped['KENYAMANAN'] = '';
-
-      detailKategori.forEach((detail) => {
-        const category = String(detail.kategori || '').toUpperCase();
-        const value = detail.rataRata;
-
-        if (category.includes('AKSES')) {
-          mapped['AKSESIBILITAS'] = value;
-        } else if (category.includes('BERSIH')) {
-          mapped['KEBERSIHAN'] = value;
-        } else if (category.includes('LENGKAP')) {
-          mapped['KELENGKAPAN'] = value;
-        } else if (category.includes('NYAMAN')) {
-          mapped['KENYAMANAN'] = value;
-        }
-      });
-    }
-
-    return mapped;
-  };
-
-  const handleExportReport = async () => {
-    try {
-      if (filteredData.length === 0) {
-        Alert.alert('Tidak Ada Data', 'Belum ada data laporan yang bisa diunduh.');
-        return;
-      }
-
-      const isSharingAvailable = await Sharing.isAvailableAsync();
-      if (!isSharingAvailable) {
-        Alert.alert('Tidak Didukung', 'Perangkat ini tidak mendukung berbagi file laporan.');
-        return;
-      }
-
-      // Separate dosen and fasilitas
-      const dosenData = filteredData.filter((item) => item.type === 'dosen');
-      const fasilitasData = filteredData.filter((item) => item.type === 'fasilitas');
-
-      let csvContent = '';
-
-      // TABEL DOSEN
-      if (dosenData.length > 0) {
-        csvContent += 'LAPORAN DOSEN\n\n';
-        const dosenHeader = [
-          'NO',
-          'TIPE',
-          'NAMA DOSEN',
-          'PENGUASAAN MATERI',
-          'METODE PENGAJARAN',
-          'KOMUNIKASI',
-          'PENILAIAN',
-          'KEDISIPLINAN',
-          'RATA-RATA',
-          'JUMLAH EVALUASI',
-          'KOMENTAR',
-        ];
-
-        const dosenRows = dosenData.map((item, index) => {
-          const kategoriMap = getMappedKategori(item.detailKategori, 'dosen');
-
-          return [
-            index + 1,
-            'DOSEN',
-            item.nama,
-            kategoriMap['PENGUASAAN MATERI'] || '',
-            kategoriMap['METODE PENGAJARAN'] || '',
-            kategoriMap['KOMUNIKASI'] || '',
-            kategoriMap['PENILAIAN'] || '',
-            kategoriMap['KEDISIPLINAN'] || '',
-            item.rataRata,
-            item.jumlahEvaluasi,
-            getKomentarExport(item),
-          ];
-        });
-
-        csvContent += dosenHeader
-          .map((value) => `"${value}"`)
-          .join(',') + '\n';
-        csvContent += dosenRows
-          .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
-          .join('\n') + '\n\n';
-      }
-
-      // TABEL FASILITAS
-      if (fasilitasData.length > 0) {
-        csvContent += 'LAPORAN FASILITAS\n\n';
-        const fasilitasHeader = [
-          'NO',
-          'TIPE',
-          'NAMA',
-          'AKSESIBILITAS',
-          'KEBERSIHAN',
-          'KELENGKAPAN',
-          'KENYAMANAN',
-          'RATA-RATA',
-          'JUMLAH EVALUASI',
-          'KOMENTAR',
-        ];
-
-        const fasilitasRows = fasilitasData.map((item, index) => {
-          const kategoriMap = getMappedKategori(item.detailKategori, 'fasilitas');
-
-          return [
-            index + 1,
-            'FASILITAS',
-            item.nama,
-            kategoriMap['AKSESIBILITAS'] || '',
-            kategoriMap['KEBERSIHAN'] || '',
-            kategoriMap['KELENGKAPAN'] || '',
-            kategoriMap['KENYAMANAN'] || '',
-            item.rataRata,
-            item.jumlahEvaluasi,
-            getKomentarExport(item),
-          ];
-        });
-
-        csvContent += fasilitasHeader
-          .map((value) => `"${value}"`)
-          .join(',') + '\n';
-        csvContent += fasilitasRows
-          .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(','))
-          .join('\n');
-      }
-
-      // TABEL DATA MENTAH (RAW DATA) - Menampilkan setiap evaluasi satu per satu
-      csvContent += '\n\nDATA RINCIAN EVALUASI (RAW DATA)\n\n';
-      const rawHeader = [
-        'NO',
-        'TANGGAL',
-        'TIPE',
-        'NAMA DOSEN / FASILITAS',
-        'RATA-RATA NILAI',
-        'KOMENTAR'
-      ];
-      csvContent += rawHeader.map((value) => `"${value}"`).join(',') + '\n';
-
-      let rawIndex = 1;
-      filteredData.forEach((item) => {
-        const detailList = item.detailEvaluasi || [];
-        detailList.forEach((evaluasi) => {
-          const rawRow = [
-            rawIndex++,
-            new Date(evaluasi.submittedAt).toLocaleDateString('id-ID'),
-            item.type === 'dosen' ? 'DOSEN' : 'FASILITAS',
-            item.nama,
-            evaluasi.rataRata,
-            evaluasi.komentar || '-',
-          ];
-          csvContent += rawRow.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',') + '\n';
-        });
-      });
-
-      const fileName = `laporan-evaluasi-${Date.now()}.csv`;
-      const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-
-      await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: 'utf8' });
-
-      await Sharing.shareAsync(fileUri, {
-        mimeType: 'text/csv',
-        dialogTitle: 'Unduh Laporan Evaluasi',
-        UTI: 'public.comma-separated-values-text',
-      });
-    } catch (error) {
-      console.error('Export laporan error:', error);
-      Alert.alert('Gagal', 'Laporan belum berhasil diunduh. Coba lagi.');
-    }
-  };
-
-  const renderReportCard = ({ item }) => {
-    const ratingColor = getRatingColor(parseFloat(item.rataRata));
-    
-    return (
-      <View style={styles.reportCard}>
-        <View style={styles.reportHeader}>
-          <View style={styles.reportIconContainer}>
-            <MaterialCommunityIcons
-              name={item.type === 'dosen' ? 'school' : 'office-building'}
-              size={24}
-              color={item.type === 'dosen' ? '#228BE6' : '#16A34A'}
-            />
-          </View>
-          <View style={styles.reportInfo}>
-            <Text style={styles.reportNama} numberOfLines={1}>
-              {toDisplayText(item.nama)}
-            </Text>
-            <Text style={styles.reportSubtitle}>{toDisplayText(item.nip_kode)}</Text>
-          </View>
-          <View style={[styles.typeBadge, { 
-            backgroundColor: item.type === 'dosen' ? '#DBECFF' : '#DCFCE7' 
-          }]}>
-            <Text style={[styles.typeBadgeText, {
-              color: item.type === 'dosen' ? '#228BE6' : '#16A34A'
-            }]}>
-              {item.type === 'dosen' ? 'Dosen' : 'Fasilitas'}
-            </Text>
-          </View>
+  const renderReportCard = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={[styles.typeIcon, { backgroundColor: item.type === 'dosen' ? '#EFF6FF' : '#FFF7ED' }]}>
+          <MaterialCommunityIcons name={item.type === 'dosen' ? 'school' : 'office-building'} size={24} color={item.type === 'dosen' ? '#2563EB' : '#EA580C'} />
         </View>
-        
-        <View style={styles.reportStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Nilai Evaluasi</Text>
-            <View style={[styles.ratingBadge, { backgroundColor: ratingColor + '20' }]}>
-              <MaterialCommunityIcons name="star" size={16} color={ratingColor} />
-              <Text style={[styles.ratingValue, { color: ratingColor }]}>
-                {item.rataRata}
-              </Text>
-            </View>
-          </View>
-          
-          <View style={styles.statDivider} />
-          
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Tanggal</Text>
-            <Text style={[styles.statValue, {fontSize: 13}]}>{new Date(item.submittedAt).toLocaleDateString('id-ID')}</Text>
-          </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardNama}>{item.nama}</Text>
+          <Text style={styles.cardSubnama}>{item.subnama}</Text>
         </View>
-
-        {item.komentar ? (
-          <View style={{marginTop: 12, padding: 12, backgroundColor: '#F8F9FA', borderRadius: 8}}>
-            <Text style={{fontSize: 12, color: '#64748B', marginBottom: 4}}>Komentar:</Text>
-            <Text style={{fontSize: 14, color: '#334155'}}>{item.komentar}</Text>
-          </View>
-        ) : null}
-      </View>
-    );
-  };
-
-  const renderDetailModal = () => {
-    if (!selectedReport) return null;
-
-    return (
-      <Modal
-        visible={showDetailModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowDetailModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContentLarge}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Detail Evaluasi</Text>
-              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
-                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView contentContainerStyle={styles.detailScrollContent}>
-              <Text style={styles.detailName}>{selectedReport.nama}</Text>
-              <Text style={styles.detailSubname}>
-                {selectedReport.type === 'dosen'
-                  ? `NIP: ${toDisplayText(selectedReport.nip)}`
-                  : `${toDisplayText(selectedReport.kode)} - ${toDisplayText(selectedReport.kategori)}`}
-              </Text>
-
-              <View style={styles.detailStatsRow}>
-                <Text style={styles.detailStatsText}>Rata-rata: {selectedReport.rataRata}</Text>
-                <Text style={styles.detailStatsText}>Jumlah Evaluasi: {selectedReport.jumlahEvaluasi}</Text>
-                <Text style={styles.detailStatsText}>Total Jawaban: {selectedReport.totalJawaban}</Text>
-              </View>
-
-              <Text style={styles.detailSectionTitle}>Rata-rata Per Kategori</Text>
-              {(selectedReport.detailKategori || []).length > 0 ? (
-                (selectedReport.detailKategori || []).map((detail, index) => (
-                  <View key={`kategori-${index}`} style={styles.detailRow}>
-                    <Text style={styles.detailRowLabel}>{toDisplayText(detail.kategori)}</Text>
-                    <Text style={styles.detailRowValue}>{detail.rataRata}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.detailEmpty}>Belum ada detail kategori</Text>
-              )}
-
-              <Text style={styles.detailSectionTitle}>Komentar Responden</Text>
-              {(selectedReport.detailEvaluasi || []).length > 0 ? (
-                (selectedReport.detailEvaluasi || []).map((item, index) => (
-                  <View key={`evaluasi-${item.id}-${index}`} style={styles.commentCard}>
-                    <Text style={styles.commentMeta}>Responden Anonim</Text>
-                    <Text style={styles.commentMeta}>Nilai: {item.rataRata} - Jawaban: {item.jumlahJawaban}</Text>
-                    <Text style={styles.commentMeta}>Tanggal: {new Date(item.submittedAt).toLocaleDateString('id-ID')}</Text>
-                    <Text style={styles.commentText}>{toDisplayText(item.komentar)}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.detailEmpty}>Belum ada komentar</Text>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
-  const renderPeriodeModal = () => (
-    <Modal
-      visible={showPeriodeModal}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setShowPeriodeModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Pilih Periode</Text>
-            <TouchableOpacity onPress={() => setShowPeriodeModal(false)}>
-              <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            data={periodeList}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.modalItem,
-                  selectedPeriode?.id === item.id && styles.modalItemActive,
-                ]}
-                onPress={() => {
-                  setSelectedPeriode(item);
-                  setShowPeriodeModal(false);
-                }}
-              >
-                <View style={styles.modalItemContent}>
-                  <Text style={styles.modalItemText}>{item.nama}</Text>
-                  <Text style={styles.modalItemSubtext}>
-                    {item.tanggal_mulai} s/d {item.tanggal_akhir}
-                  </Text>
-                </View>
-                {item.status === 'aktif' && (
-                  <View style={styles.aktiveBadge}>
-                    <Text style={styles.aktiveBadgeText}>Aktif</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            )}
-          />
+        <View style={styles.ratingBadge}>
+          <MaterialCommunityIcons name="star" size={14} color="#EAB308" />
+          <Text style={styles.ratingText}>{item.rataRata}</Text>
         </View>
       </View>
-    </Modal>
+      {item.komentar && (
+        <View style={styles.komentarBox}>
+          <Text style={styles.komentarLabel}>Komentar Responden:</Text>
+          <Text style={styles.komentarText}>{item.komentar}</Text>
+        </View>
+      )}
+      <View style={styles.cardFooter}>
+        <Text style={styles.footerDate}>{new Date(item.submittedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
+      </View>
+    </View>
   );
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Memuat laporan...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerSubtitle}>ADMIN</Text>
-          <Text style={styles.headerTitle}>Laporan Evaluasi</Text>
+          <Text style={styles.headerSubtitle}>LAPORAN SISTEM</Text>
+          <Text style={styles.headerTitle}>Hasil Evaluasi</Text>
         </View>
-        <TouchableOpacity style={styles.exportButton} onPress={handleExportReport}>
-          <MaterialCommunityIcons name="download" size={20} color="#FFFFFF" />
-          <Text style={styles.exportButtonText}>Unduh</Text>
+        <TouchableOpacity style={styles.downloadBtn} onPress={handleExport}>
+          <MaterialCommunityIcons name="download" size={20} color="#FFF" />
+          <Text style={styles.downloadText}>Export</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Filters */}
       <View style={styles.filterSection}>
-        {/* Periode Filter */}
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowPeriodeModal(true)}
-        >
-          <MaterialCommunityIcons
-            name="calendar"
-            size={20}
-            color={colors.primary}
-          />
-          <Text style={styles.filterButtonText} numberOfLines={1}>
-            {selectedPeriode ? selectedPeriode.nama : 'Pilih Periode'}
-          </Text>
-          <MaterialCommunityIcons
-            name="chevron-down"
-            size={20}
-            color={colors.textSecondary}
-          />
+        <TouchableOpacity style={styles.periodeSelector} onPress={() => setShowPeriodeModal(true)}>
+          <MaterialCommunityIcons name="calendar-range" size={20} color="#2563EB" />
+          <Text style={styles.periodeSelectedText}>{selectedPeriode?.nama || 'Pilih Periode'}</Text>
+          <MaterialCommunityIcons name="chevron-down" size={20} color="#94A3B8" />
         </TouchableOpacity>
         
-        {/* Tipe Filter */}
-        <View style={styles.tipeFilterContainer}>
-          {tipeOptions.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.tipeChip,
-                selectedTipe === option.value && styles.tipeChipActive,
-              ]}
-              onPress={() => setSelectedTipe(option.value)}
+        <View style={styles.tipeTabs}>
+          {['semua', 'dosen', 'fasilitas'].map(t => (
+            <TouchableOpacity 
+              key={t} 
+              style={[styles.tab, selectedTipe === t && styles.tabActive]}
+              onPress={() => {
+                setSelectedTipe(t);
+                loadLaporan(selectedPeriode?.id, t);
+              }}
             >
-              <Text
-                style={[
-                  styles.tipeChipText,
-                  selectedTipe === option.value && styles.tipeChipTextActive,
-                ]}
-              >
-                {option.label}
-              </Text>
+              <Text style={[styles.tabText, selectedTipe === t && styles.tabTextActive]}>{t.toUpperCase()}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {/* Summary Cards */}
-      <View style={styles.summarySection}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>
-            {filteredData.reduce((sum, item) => sum + item.jumlahEvaluasi, 0)}
-          </Text>
-          <Text style={styles.summaryLabel}>Total Evaluasi</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>
-            {filteredData.length > 0
-              ? (
-                  filteredData.reduce((sum, item) => sum + parseFloat(item.rataRata), 0) /
-                  filteredData.length
-                ).toFixed(2)
-              : '0.00'}
-          </Text>
-          <Text style={styles.summaryLabel}>Rata-rata Keseluruhan</Text>
-        </View>
-      </View>
+      {loading ? (
+        <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={flatData}
+          renderItem={renderReportCard}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="file-document-outline" size={80} color="#CBD5E1" />
+              <Text style={styles.emptyText}>Tidak ada data laporan ditemukan</Text>
+            </View>
+          }
+        />
+      )}
 
-      {/* Report List */}
-      <FlatList
-        data={flatData}
-        renderItem={renderReportCard}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons
-              name="file-document-outline"
-              size={64}
-              color={colors.textDisabled}
-            />
-            <Text style={styles.emptyStateText}>Tidak ada data laporan</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Coba ubah filter atau periode
-            </Text>
+      <Modal visible={showPeriodeModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Pilih Periode Laporan</Text>
+            {periodeList.map(p => (
+              <TouchableOpacity 
+                key={p.id} 
+                style={styles.modalItem}
+                onPress={() => {
+                  setSelectedPeriode(p);
+                  setShowPeriodeModal(false);
+                  loadLaporan(p.id, selectedTipe);
+                }}
+              >
+                <Text style={styles.modalItemText}>{p.nama}</Text>
+                {p.status === 'aktif' && <View style={styles.activeTag}><Text style={styles.activeTagText}>Aktif</Text></View>}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowPeriodeModal(false)}>
+              <Text style={styles.closeBtnText}>Tutup</Text>
+            </TouchableOpacity>
           </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-          />
-        }
-      />
-
-      {renderPeriodeModal()}
-      {renderDetailModal()}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF1F5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.base,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    letterSpacing: 1,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginTop: 2,
-  },
-  exportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: staticColors.primary,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    gap: spacing.xs,
-  },
-  exportButtonText: {
-    color: '#FFFFFF',
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.semibold,
-  },
-  filterSection: {
-    paddingHorizontal: spacing.base,
-    paddingBottom: spacing.base,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    borderRadius: 18,
-    marginBottom: spacing.sm,
-  },
-  filterButtonText: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  tipeFilterContainer: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  tipeChip: {
-    flex: 1,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 14,
-    backgroundColor: '#DBEAFE',
-    alignItems: 'center',
-  },
-  tipeChipActive: {
-    backgroundColor: staticColors.primary,
-  },
-  tipeChipText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    fontFamily: typography.fontFamily.medium,
-  },
-  tipeChipTextActive: {
-    color: '#fff',
-  },
-  summarySection: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.base,
-    paddingBottom: spacing.base,
-    gap: spacing.sm,
-  },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: spacing.base,
-    borderRadius: 18,
-    alignItems: 'center',
-  },
-  summaryValue: {
-    fontSize: 24,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.primary,
-  },
-  summaryLabel: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  listContent: {
-    padding: spacing.base,
-  },
-  reportCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: spacing.base,
-    marginBottom: spacing.base,
-  },
-  detailHintWrap: {
-    marginTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-    paddingTop: spacing.sm,
-  },
-  detailHintText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    fontFamily: typography.fontFamily.medium,
-  },
-  reportHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.base,
-  },
-  reportIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  reportInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  reportNama: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-  },
-  reportSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginTop: 2,
-  },
-  typeBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-  },
-  typeBadgeText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-  },
-  reportStats: {
-    flexDirection: 'row',
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: staticColors.border,
-    marginHorizontal: spacing.xs,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.base,
-    gap: 4,
-  },
-  ratingValue: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-  },
-  ratingLabel: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    marginTop: 2,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textSecondary,
-    marginTop: spacing.base,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textDisabled,
-    marginTop: spacing.xs,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
-  },
-  modalContentLarge: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  modalItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  modalItemActive: {
-    backgroundColor: staticColors.primary + '10',
-  },
-  modalItemContent: {
-    flex: 1,
-  },
-  modalItemText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-  },
-  modalItemSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginTop: 2,
-  },
-  aktiveBadge: {
-    backgroundColor: staticColors.success + '20',
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-  },
-  aktiveBadgeText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.success,
-  },
-  detailScrollContent: {
-    padding: spacing.base,
-  },
-  detailName: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  detailSubname: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginTop: 2,
-  },
-  detailStatsRow: {
-    marginTop: spacing.sm,
-    padding: spacing.sm,
-    backgroundColor: '#f8f9fa',
-    borderRadius: radius.sm,
-    gap: 4,
-  },
-  detailStatsText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textPrimary,
-  },
-  detailSectionTitle: {
-    marginTop: spacing.base,
-    marginBottom: spacing.xs,
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  detailRowLabel: {
-    flex: 1,
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginRight: spacing.sm,
-  },
-  detailRowValue: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.primary,
-  },
-  detailEmpty: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    fontStyle: 'italic',
-  },
-  commentCard: {
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.sm,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  commentMeta: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginBottom: 2,
-  },
-  commentText: {
-    marginTop: spacing.xs,
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textPrimary,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, backgroundColor: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: '#2563EB', fontWeight: 'bold', letterSpacing: 1.5 },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#0F172A', marginTop: 4 },
+  downloadBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0F172A', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  downloadText: { color: '#FFF', fontWeight: 'bold', marginLeft: 8, fontSize: 13 },
+  filterSection: { paddingHorizontal: 24, paddingVertical: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  periodeSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
+  periodeSelectedText: { flex: 1, marginLeft: 12, fontSize: 14, color: '#1E293B', fontWeight: '600' },
+  tipeTabs: { flexDirection: 'row', gap: 8 },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: '#F1F5F9' },
+  tabActive: { backgroundColor: '#2563EB' },
+  tabText: { fontSize: 11, fontWeight: 'bold', color: '#64748B' },
+  tabTextActive: { color: '#FFF' },
+  listContent: { padding: 24 },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  typeIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  cardInfo: { flex: 1, marginLeft: 16 },
+  cardNama: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
+  cardSubnama: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  ratingBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEFCE8', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  ratingText: { fontSize: 14, fontWeight: 'bold', color: '#854D0E', marginLeft: 4 },
+  komentarBox: { marginTop: 16, padding: 12, backgroundColor: '#F8FAFC', borderRadius: 12, borderLeftWidth: 3, borderLeftColor: '#CBD5E1' },
+  komentarLabel: { fontSize: 10, fontWeight: 'bold', color: '#94A3B8', marginBottom: 4 },
+  komentarText: { fontSize: 13, color: '#475569', lineHeight: 20 },
+  cardFooter: { marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'flex-end' },
+  footerDate: { fontSize: 11, color: '#94A3B8' },
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { marginTop: 16, fontSize: 16, color: '#94A3B8' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContent: { backgroundColor: '#FFF', width: '100%', borderRadius: 24, padding: 24 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 20 },
+  modalItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalItemText: { fontSize: 15, color: '#1E293B', fontWeight: '500' },
+  activeTag: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  activeTagText: { fontSize: 10, color: '#166534', fontWeight: 'bold' },
+  closeBtn: { marginTop: 20, backgroundColor: '#F1F5F9', padding: 16, borderRadius: 16, alignItems: 'center' },
+  closeBtnText: { fontWeight: 'bold', color: '#64748B' },
 });
 
 export default LaporanScreen;
-

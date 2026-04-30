@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,281 +6,121 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
-import authService from '../../services/authService';
+
+const { width } = Dimensions.get('window');
 
 const ProfileAdminScreen = ({ navigation }) => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout } = useAuth();
   const { colors } = useTheme();
-  const [loadingProfile, setLoadingProfile] = useState(false);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setLoadingProfile(true);
-        const profile = await authService.getProfile();
-        if (profile) {
-          await updateUser({
-            ...user,
-            ...profile,
-          });
-        }
-      } catch (error) {
-        console.error('Load profile error:', error);
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
-
-    loadProfile();
-  }, []);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Keluar Akun',
-      'Apakah Anda yakin ingin keluar dari aplikasi?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Keluar',
-          style: 'destructive',
-          onPress: logout,
-        },
-      ]
-    );
+    Alert.alert('Keluar Admin', 'Apakah Anda yakin ingin keluar?', [
+      { text: 'Batal', style: 'cancel' },
+      { text: 'Keluar', style: 'destructive', onPress: logout },
+    ]);
   };
 
-  const handleChangePassword = () => {
-    navigation.navigate('ChangePassword');
-  };
-
-  const InfoCard = ({ icon, label, value }) => (
-    <View style={[styles.infoCard, { backgroundColor: colors.card }]}>
-      <View style={[styles.infoIconContainer, { backgroundColor: colors.primary + '20' }]}>
-        <MaterialCommunityIcons name={icon} size={24} color={colors.primary} />
+  const renderInfoRow = (icon, label, value, color) => (
+    <View style={styles.infoRow}>
+      <View style={[styles.infoIconBox, { backgroundColor: color + '15' }]}>
+        <MaterialCommunityIcons name={icon} size={22} color={color} />
       </View>
-      <View style={styles.infoContent}>
-        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
-        <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{value}</Text>
+      <View style={styles.infoTextContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value || '-'}</Text>
       </View>
     </View>
   );
 
-  if (loadingProfile && !user) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Memuat profil...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.background }]}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Profil Admin</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profil Admin</Text>
         </View>
 
-        {/* Profile Info */}
-        <View style={[styles.profileSection, { backgroundColor: colors.background }]}>
-          <View style={styles.avatarContainer}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>
-                {user?.nama ? user.nama.substring(0, 2).toUpperCase() : 'AD'}
-              </Text>
+        <View style={styles.profileCard}>
+          <View style={styles.avatarWrapper}>
+            <View style={styles.avatar}>
+              <MaterialCommunityIcons name="shield-account" size={40} color="#FFF" />
             </View>
-            <View style={[styles.statusIndicator, { backgroundColor: colors.success, borderColor: colors.background }]} />
+            <View style={styles.onlineStatus} />
           </View>
-          <Text style={[styles.profileName, { color: colors.textPrimary }]}>{user?.nama || 'Administrator'}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: colors.primary + '20' }]}>
-            <Text style={[styles.roleBadgeText, { color: colors.primary }]}>Administator</Text>
+          <Text style={styles.userName}>{user?.nama || 'Administrator'}</Text>
+          <Text style={styles.userEmail}>{user?.email || '-'}</Text>
+          <View style={styles.adminTag}>
+            <Text style={styles.adminTagText}>SUPER ADMIN</Text>
           </View>
         </View>
 
-        {/* Admin Info */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>INFORMASI AKUN</Text>
-          
-          <InfoCard
-            icon="email-outline"
-            label="EMAIL"
-            value={user?.email || '-'}
-          />
-          <InfoCard
-            icon="shield-account-outline"
-            label="ROLE"
-            value={user?.role === 'admin' ? 'Administrator' : user?.role || '-'}
-          />
+          <Text style={styles.sectionTitle}>INFORMASI AKUN</Text>
+          <View style={styles.infoContainer}>
+            {renderInfoRow('identifier', 'NIM / ID', user?.nim || 'ADM-01', '#2563EB')}
+            <View style={styles.divider} />
+            {renderInfoRow('account-outline', 'Nama Lengkap', user?.nama, '#8B5CF6')}
+            <View style={styles.divider} />
+            {renderInfoRow('email-outline', 'Email Sistem', user?.email, '#10B981')}
+          </View>
         </View>
 
-        {/* Account Settings */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PENGATURAN AKUN</Text>
-          
-          <TouchableOpacity
-            onPress={handleChangePassword}
-            style={[styles.actionButton, { backgroundColor: colors.primary }]}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="lock-reset" size={20} color="white" style={styles.actionButtonIcon} />
-            <Text style={styles.actionButtonLabel}>Ubah Password</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            onPress={handleLogout}
-            style={[styles.actionButton, styles.logoutButton, { borderColor: colors.error }]}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="logout" size={20} color={colors.error} style={styles.actionButtonIcon} />
-            <Text style={[styles.actionButtonLabel, styles.logoutButtonLabel, { color: colors.error }]}>Keluar Akun</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>PENGATURAN</Text>
+          <View style={styles.infoContainer}>
+            <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('ChangePassword')}>
+              <View style={[styles.infoIconBox, { backgroundColor: '#F1F5F9' }]}>
+                <MaterialCommunityIcons name="lock-reset" size={22} color="#475569" />
+              </View>
+              <Text style={styles.actionLabel}>Ubah Password</Text>
+              <MaterialCommunityIcons name="chevron-right" size={24} color="#CBD5E1" />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
+          <Text style={styles.logoutText}>Keluar Admin</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.versionText}>Panel Admin Versi 1.0.0 (Premium)</Text>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  header: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.lg,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-  },
-  profileSection: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: spacing.base,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 36,
-    fontFamily: typography.fontFamily.bold,
-    color: 'white',
-  },
-  statusIndicator: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 3,
-  },
-  profileName: {
-    fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.bold,
-    marginBottom: spacing.sm,
-  },
-  roleBadge: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  roleBadgeText: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-  },
-  section: {
-    marginTop: spacing.base,
-    paddingHorizontal: spacing.base,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.bold,
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
-    marginTop: spacing.base,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    borderRadius: radius.md,
-    padding: spacing.base,
-    marginBottom: spacing.sm,
-    elevation: 2,
-  },
-  infoIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  infoContent: {
-    flex: 1,
-    marginLeft: spacing.base,
-    justifyContent: 'center',
-  },
-  infoLabel: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  infoValue: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.md,
-  },
-  actionButtonIcon: {
-    marginRight: spacing.sm,
-  },
-  actionButtonLabel: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: 'white',
-  },
-  logoutButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-  },
-  logoutButtonLabel: {
-    color: 'inherit',
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  scrollContent: { padding: 24, paddingBottom: 40 },
+  header: { marginBottom: 24 },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#0F172A' },
+  profileCard: { backgroundColor: '#FFF', borderRadius: 32, padding: 32, alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, marginBottom: 32 },
+  avatarWrapper: { position: 'relative', marginBottom: 16 },
+  avatar: { width: 90, height: 90, borderRadius: 30, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
+  onlineStatus: { position: 'absolute', bottom: 5, right: 5, width: 18, height: 18, backgroundColor: '#10B981', borderRadius: 9, borderWidth: 3, borderColor: '#FFF' },
+  userName: { fontSize: 20, fontWeight: 'bold', color: '#0F172A' },
+  userEmail: { fontSize: 14, color: '#64748B', marginTop: 4 },
+  adminTag: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  adminTagText: { fontSize: 10, fontWeight: 'bold', color: '#1E293B', letterSpacing: 1 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 12, letterSpacing: 1 },
+  infoContainer: { backgroundColor: '#FFF', borderRadius: 24, padding: 16, elevation: 2 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  infoIconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  infoTextContent: { flex: 1, marginLeft: 16 },
+  infoLabel: { fontSize: 11, color: '#94A3B8', fontWeight: 'bold' },
+  infoValue: { fontSize: 15, fontWeight: '600', color: '#1E293B', marginTop: 2 },
+  divider: { height: 1, backgroundColor: '#F1F5F9' },
+  actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  actionLabel: { flex: 1, marginLeft: 16, fontSize: 15, fontWeight: '600', color: '#1E293B' },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FEF2F2', paddingVertical: 18, borderRadius: 20, marginTop: 12 },
+  logoutText: { color: '#EF4444', fontSize: 16, fontWeight: 'bold', marginLeft: 12 },
+  versionText: { textAlign: 'center', color: '#94A3B8', fontSize: 11, marginTop: 32 },
 });
 
 export default ProfileAdminScreen;

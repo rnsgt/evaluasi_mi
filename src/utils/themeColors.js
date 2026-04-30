@@ -1,17 +1,27 @@
 // Theme Color Palettes for Light and Dark Modes
 
 export const lightTheme = {
-  // Primary Colors - Dashboard Blue
-  primary: '#228BE6',
-  primaryDark: '#0B78F0',
-  primaryLight: '#88C2F4',
+  // Primary Colors - UNSRI Navy Blue
+  primary: '#0F3C59',
+  primaryDark: '#0A283C',
+  primaryLight: '#E6F0F9',
+  
+  // Secondary Colors - UNSRI Gold/Yellow
+  secondary: '#FFC107',
+  secondaryDark: '#B28704',
+  secondaryLight: '#FFF8E1',
+
+  // Tertiary Colors - MI Red
+  tertiary: '#B91C1C',
+  tertiaryDark: '#7F1D1D',
+  tertiaryLight: '#FEF2F2',
   
   // Status Colors
-  success: '#228BE6',
-  error: '#F44336',          // Red
-  danger: '#F44336',         // Red (alias)
-  warning: '#FFA726',        // Orange
-  info: '#228BE6',
+  success: '#16A34A',
+  error: '#DC2626',
+  danger: '#DC2626',
+  warning: '#EA580C',
+  info: '#0284C7',
   
   // Text Colors
   textPrimary: '#212121',
@@ -64,17 +74,27 @@ export const lightTheme = {
 };
 
 export const darkTheme = {
-  // Primary Colors - Dashboard Blue (dark mode)
-  primary: '#228BE6',
-  primaryDark: '#0B78F0',
+  // Primary Colors - UNSRI Navy Blue (dark mode)
+  primary: '#228BE6', // Keep brighter blue for dark mode visibility, or use Navy
+  primaryDark: '#0F3C59',
   primaryLight: '#88C2F4',
   
+  // Secondary Colors - UNSRI Gold/Yellow
+  secondary: '#FFC107',
+  secondaryDark: '#B28704',
+  secondaryLight: '#FFF8E1',
+
+  // Tertiary Colors - MI Red
+  tertiary: '#EF4444', // Brighter red for dark mode
+  tertiaryDark: '#B91C1C',
+  tertiaryLight: '#FEF2F2',
+  
   // Status Colors
-  success: '#88C2F4',
-  error: '#EF5350',          // Lighter Red
-  danger: '#EF5350',         // Lighter Red (alias)
-  warning: '#FFB74D',        // Lighter Orange
-  info: '#88C2F4',
+  success: '#4ADE80',
+  error: '#F87171',
+  danger: '#F87171',
+  warning: '#FBBF24',
+  info: '#38BDF8',
   
   // Text Colors
   textPrimary: '#FFFFFF',

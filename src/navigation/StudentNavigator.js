@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { colors as staticColors, typography } from '../utils/theme';
+import { Platform } from 'react-native';
 
 // Screens
 import HomeScreen from '../screens/student/HomeScreen';
@@ -19,14 +19,9 @@ import FormEvaluasiFasilitasScreen from '../screens/student/FormEvaluasiFasilita
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Home Stack Navigator untuk nested screens
 const HomeStack = () => {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="PilihDosen" component={PilihDosenScreen} />
       <Stack.Screen name="FormEvaluasiDosen" component={FormEvaluasiDosenScreen} />
@@ -36,14 +31,9 @@ const HomeStack = () => {
   );
 };
 
-// Profile Stack Navigator untuk nested screens
 const ProfileStack = () => {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProfileMain" component={ProfileScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
@@ -59,29 +49,37 @@ const StudentNavigator = () => {
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
+          if (route.name === 'Beranda') iconName = focused ? 'home-variant' : 'home-variant-outline';
+          else if (route.name === 'Riwayat') iconName = focused ? 'clipboard-text-clock' : 'clipboard-text-clock-outline';
+          else if (route.name === 'Statistik') iconName = focused ? 'chart-box' : 'chart-box-outline';
+          else if (route.name === 'Profil') iconName = focused ? 'account-circle' : 'account-circle-outline';
 
-          if (route.name === 'Beranda') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Riwayat') {
-            iconName = focused ? 'history' : 'history';
-          } else if (route.name === 'Statistik') {
-            iconName = focused ? 'chart-bar' : 'chart-bar';
-          } else if (route.name === 'Profil') {
-            iconName = focused ? 'account' : 'account-outline';
-          }
-
-          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+          return (
+            <MaterialCommunityIcons 
+              name={iconName} 
+              size={focused ? 28 : 24} 
+              color={color} 
+              style={focused ? { marginBottom: 2 } : {}}
+            />
+          );
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: '#2563EB',
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: {
-          fontSize: typography.fontSize.xs,
-          fontFamily: typography.fontFamily.medium,
+          fontSize: 11,
+          fontWeight: 'bold',
+          marginBottom: Platform.OS === 'ios' ? 0 : 10,
         },
         tabBarStyle: {
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 0,
+          height: Platform.OS === 'ios' ? 88 : 70,
+          paddingTop: 10,
+          elevation: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
         },
       })}
     >

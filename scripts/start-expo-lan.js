@@ -79,8 +79,8 @@ async function main() {
   const isWin = process.platform === 'win32';
   const command = isWin ? 'cmd.exe' : 'npx';
   const args = isWin
-    ? ['/c', `npx expo start --clear --lan --port ${freePort}`]
-    : ['expo', 'start', '--clear', '--lan', '--port', freePort];
+    ? ['/c', `npx expo start --lan`]
+    : ['expo', 'start', '--lan'];
 
   const child = spawn(command, args, {
     stdio: 'inherit',

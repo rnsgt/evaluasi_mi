@@ -1,40 +1,50 @@
 // Theme configuration - Colors, Typography, Spacing
 export const colors = {
-  // Primary Colors - Dashboard Blue
-  primary: '#228BE6',
-  primaryDark: '#0B78F0',
-  primaryLight: '#DBECFF',
+  // Primary Colors - UNSRI Navy Blue
+  primary: '#0F3C59', // Dark Navy Blue
+  primaryDark: '#0A283C',
+  primaryLight: '#E6F0F9',
+  
+  // Secondary Colors - UNSRI Gold/Yellow
+  secondary: '#FFC107',
+  secondaryDark: '#B28704',
+  secondaryLight: '#FFF8E1',
+
+  // Tertiary Colors - MI Red
+  tertiary: '#B91C1C', // Red from MI logo
+  tertiaryDark: '#7F1D1D',
+  tertiaryLight: '#FEF2F2',
   
   // Status Colors
   success: '#16A34A',
-  error: '#F04438',
+  error: '#DC2626',
   warning: '#EA580C',
-  info: '#2563EB',
+  info: '#0284C7',
   
   // Text Colors
   textPrimary: '#0F172A',
-  textSecondary: '#486080',
-  textDisabled: '#90A0B5',
+  textSecondary: '#475569',
+  textDisabled: '#94A3B8',
   
   // Background Colors
-  background: '#EEF1F5',
+  background: '#F8FAFC',
   surface: '#FFFFFF',
-  surfaceLight: '#F8FAFC',
+  surfaceLight: '#F1F5F9',
   
   // Border Colors
-  border: '#DBE2EA',
-  borderLight: '#E7ECF3',
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
   
   // Evaluation Card Colors
-  evaluasiDosen: '#228BE6',
-  evaluasiFasilitas: '#0B78F0',
+  evaluasiDosen: '#0F3C59',
+  evaluasiFasilitas: '#B91C1C',
   
   // Likert Scale Colors
-  likert1: '#FFE1DE',
-  likert2: '#FDE9D7',
-  likert3: '#FFF6D7',
-  likert4: '#DBECFF',
-  likert5: '#88C2F4',
+  likert1: '#FEF2F2',
+  likert2: '#FFEDD5',
+  likert3: '#FEF9C3',
+  likert4: '#E0F2FE',
+  likert5: '#DCFCE7',
 };
 
 export const typography = {

@@ -1,30 +1,26 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService from '../../services/fasilitasService';
 
 const PilihFasilitasScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const [fasilitas, setFasilitas] = useState([]);
   const [filteredFasilitas, setFilteredFasilitas] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedKategori, setSelectedKategori] = useState('Semua');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const kategoriList = fasilitasService.getAllKategori();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadFasilitas();
@@ -32,15 +28,16 @@ const PilihFasilitasScreen = ({ navigation }) => {
 
   useEffect(() => {
     filterFasilitas();
-  }, [fasilitas, searchQuery, selectedKategori]);
+  }, [searchQuery, fasilitas]);
 
   const loadFasilitas = async () => {
     try {
       setLoading(true);
       const data = await fasilitasService.getAllFasilitas();
       setFasilitas(data);
+      setFilteredFasilitas(data);
     } catch (error) {
-      console.error('Error loading fasilitas:', error);
+      console.error('Load fasilitas error:', error);
     } finally {
       setLoading(false);
     }
@@ -53,395 +50,126 @@ const PilihFasilitasScreen = ({ navigation }) => {
   };
 
   const filterFasilitas = () => {
-    let filtered = [...fasilitas];
-
-    // Filter by kategori
-    if (selectedKategori !== 'Semua') {
-      filtered = filtered.filter((f) => f.kategori === selectedKategori);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (f) =>
-          f.nama.toLowerCase().includes(query) ||
-          f.kode.toLowerCase().includes(query) ||
-          f.lokasi.toLowerCase().includes(query)
+    if (searchQuery) {
+      const filtered = fasilitas.filter(f =>
+        f.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.kode.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      setFilteredFasilitas(filtered);
+    } else {
+      setFilteredFasilitas(fasilitas);
     }
-
-    setFilteredFasilitas(filtered);
   };
 
-  const handleSelectFasilitas = (fasilitas) => {
-    navigation.navigate('FormEvaluasiFasilitas', {
-      fasilitasId: fasilitas.id,
-      namaFasilitas: fasilitas.nama,
-      kodeFasilitas: fasilitas.kode,
-      kategoriFasilitas: fasilitas.kategori,
-      lokasi: fasilitas.lokasi,
-    });
-  };
-
-  const renderKategoriChip = ({ item }) => {
-    const isSelected = item === selectedKategori;
-    return (
-      <TouchableOpacity
-        style={[styles.kategoriChip, isSelected && styles.kategoriChipActive]}
-        onPress={() => setSelectedKategori(item)}
-      >
-        <Text
-          style={[styles.kategoriChipText, isSelected && styles.kategoriChipTextActive]}
-        >
-          {item}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderFasilitasCard = ({ item }) => {
-    return (
-      <TouchableOpacity
-        style={styles.fasilitasCard}
-        onPress={() => handleSelectFasilitas(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.fasilitasIconContainer}>
-          <MaterialCommunityIcons
-            name={item.icon || 'office-building'}
-            size={32}
-            color={colors.primary}
-          />
+  const renderFasilitasCard = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('FormEvaluasiFasilitas', {
+        fasilitasId: item.id,
+        namaFasilitas: item.nama,
+        kodeFasilitas: item.kode,
+        kategoriFasilitas: item.kategori,
+        lokasi: item.lokasi,
+      })}
+      activeOpacity={0.8}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.iconBox}>
+          <MaterialCommunityIcons name="office-building-outline" size={28} color="#EA580C" />
         </View>
-        <View style={styles.fasilitasInfo}>
-          <Text style={styles.fasilitasNama} numberOfLines={1}>
-            {item.nama}
-          </Text>
+        <View style={styles.cardInfo}>
+          <Text style={styles.fasilitasName} numberOfLines={1}>{item.nama}</Text>
           <Text style={styles.fasilitasKode}>{item.kode}</Text>
-          <View style={styles.fasilitasDetails}>
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons
-                name="map-marker"
-                size={14}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.detailText} numberOfLines={1}>
-                {item.lokasi}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons
-                name="account-group"
-                size={14}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.detailText}>Kapasitas: {item.kapasitas}</Text>
-            </View>
-          </View>
-          <View style={styles.kategoriTag}>
-            <Text style={styles.kategoriTagText}>{item.kategori}</Text>
-          </View>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textSecondary} />
-      </TouchableOpacity>
+        <MaterialCommunityIcons name="chevron-right" size={24} color="#CBD5E1" />
+      </View>
+      <View style={styles.cardFooter}>
+        <View style={styles.detailItem}>
+          <MaterialCommunityIcons name="map-marker-outline" size={14} color="#64748B" />
+          <Text style={styles.detailText}>{item.lokasi || 'Kampus Utama'}</Text>
+        </View>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>{item.kategori}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#EA580C" />
+          <Text style={styles.loadingText}>Memuat data fasilitas...</Text>
+        </View>
+      </SafeAreaView>
     );
-  };
-
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <MaterialCommunityIcons
-        name="office-building-outline"
-        size={64}
-        color={colors.textDisabled}
-      />
-      <Text style={styles.emptyStateText}>Tidak ada fasilitas ditemukan</Text>
-      <Text style={styles.emptyStateSubtext}>
-        Coba ubah filter atau kata kunci pencarian
-      </Text>
-    </View>
-  );
-
-  const renderLoadingSkeleton = () => (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.loadingText}>Memuat data fasilitas...</Text>
-    </View>
-  );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pilih Fasilitas</Text>
-        <View style={styles.backButton} />
+        <Text style={styles.headerTitle}>Evaluasi Fasilitas</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <MaterialCommunityIcons
-          name="magnify"
-          size={20}
-          color={colors.textSecondary}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Cari fasilitas, kode, atau lokasi..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={colors.textSecondary}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialCommunityIcons
-              name="close-circle"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Kategori Filter */}
-      <View style={styles.filterSection}>
-        <Text style={styles.filterLabel}>Kategori:</Text>
-        <FlatList
-          horizontal
-          data={kategoriList}
-          renderItem={renderKategoriChip}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.kategoriList}
-        />
-      </View>
-
-      {/* Fasilitas List */}
-      {loading ? (
-        renderLoadingSkeleton()
-      ) : (
-        <FlatList
-          data={filteredFasilitas}
-          renderItem={renderFasilitasCard}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={renderEmptyState}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-
-      {/* Results Count */}
-      {!loading && (
-        <View style={styles.resultsCount}>
-          <Text style={styles.resultsCountText}>
-            Menampilkan {filteredFasilitas.length} dari {fasilitas.length} fasilitas
-          </Text>
+      <View style={styles.searchSection}>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={22} color="#64748B" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari fasilitas atau lokasi..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#94A3B8"
+          />
         </View>
-      )}
+      </View>
+
+      <FlatList
+        data={filteredFasilitas}
+        renderItem={renderFasilitasCard}
+        keyExtractor={item => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#EA580C']} />}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="office-building-marker-outline" size={80} color="#CBD5E1" />
+            <Text style={styles.emptyText}>Fasilitas tidak ditemukan</Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF1F5',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    backgroundColor: staticColors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-    elevation: 2,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: staticColors.background,
-    margin: spacing.base,
-    paddingHorizontal: spacing.base,
-    borderRadius: radius.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    elevation: 1,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  filterSection: {
-    backgroundColor: staticColors.background,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  filterLabel: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
-  },
-  kategoriList: {
-    paddingHorizontal: spacing.base,
-  },
-  kategoriChip: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: staticColors.surface,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  kategoriChipActive: {
-    backgroundColor: staticColors.primary,
-    borderColor: staticColors.primary,
-  },
-  kategoriChipText: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-  },
-  kategoriChipTextActive: {
-    color: '#FFFFFF',
-  },
-  listContent: {
-    padding: spacing.base,
-  },
-  fasilitasCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: staticColors.background,
-    padding: spacing.base,
-    borderRadius: radius.base,
-    marginBottom: spacing.base,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  fasilitasIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#DBECFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.base,
-  },
-  fasilitasInfo: {
-    flex: 1,
-  },
-  fasilitasNama: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginBottom: 4,
-  },
-  fasilitasKode: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  fasilitasDetails: {
-    marginBottom: spacing.sm,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  detailText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginLeft: 4,
-    flex: 1,
-  },
-  kategoriTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#DBECFF',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-  },
-  kategoriTagText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.primary,
-    fontFamily: typography.fontFamily.medium,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxl * 2,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.md,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    marginTop: spacing.base,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textDisabled,
-    marginTop: spacing.sm,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xxl,
-  },
-  loadingText: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
-    marginTop: spacing.base,
-  },
-  resultsCount: {
-    backgroundColor: staticColors.background,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  resultsCountText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#64748B' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  backButton: { width: 40, height: 40, backgroundColor: '#F8FAFC', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  searchSection: { padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 16, paddingHorizontal: 16, height: 50 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: '#0F172A' },
+  listContent: { padding: 20, paddingBottom: 40 },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  iconBox: { width: 52, height: 52, borderRadius: 18, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
+  cardInfo: { flex: 1, marginLeft: 16 },
+  fasilitasName: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
+  fasilitasKode: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  cardFooter: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  detailItem: { flexDirection: 'row', alignItems: 'center' },
+  detailText: { fontSize: 12, color: '#64748B', marginLeft: 6 },
+  tag: { backgroundColor: '#FFEDD5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  tagText: { fontSize: 10, color: '#EA580C', fontWeight: 'bold' },
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { marginTop: 16, fontSize: 16, color: '#94A3B8' },
 });
 
 export default PilihFasilitasScreen;
-

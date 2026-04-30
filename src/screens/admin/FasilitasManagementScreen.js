@@ -5,62 +5,44 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
   TextInput,
   Alert,
-  RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService from '../../services/fasilitasService';
 
 const FasilitasManagementScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const [fasilitas, setFasilitas] = useState([]);
+  const [filteredFasilitas, setFilteredFasilitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [fasilitasList, setFasilitasList] = useState([]);
-  const [filteredList, setFilteredList] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedKategori, setSelectedKategori] = useState('Semua');
-  const [stats, setStats] = useState({ total: 0, aktif: 0, tidak_aktif: 0 });
 
   useEffect(() => {
-    loadData();
+    loadFasilitas();
   }, []);
 
-  // Reload data setiap kali screen mendapat focus
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('FasilitasManagementScreen focused - reloading data');
-      loadData();
-    }, [])
-  );
-
   useEffect(() => {
-    applyFilters();
-  }, [searchQuery, selectedKategori, fasilitasList]);
+    if (searchQuery) {
+      setFilteredFasilitas(fasilitas.filter(f => f.nama.toLowerCase().includes(searchQuery.toLowerCase()) || f.kode.includes(searchQuery)));
+    } else {
+      setFilteredFasilitas(fasilitas);
+    }
+  }, [searchQuery, fasilitas]);
 
-  const loadData = async () => {
+  const loadFasilitas = async () => {
     try {
-      console.log('=== loadData START ===');
       setLoading(true);
-      const [data, statsData] = await Promise.all([
-        fasilitasService.getAllFasilitas(true),
-        fasilitasService.getFasilitasStats(),
-      ]);
-      console.log('loadData - fetched data count:', data?.length || 0);
-      console.log('loadData - fetched data:', data);
-      console.log('loadData - fetched stats:', statsData);
-      setFasilitasList(data);
-      console.log('loadData - setFasilitasList called with', data?.length || 0, 'items');
-      setStats(statsData);
-      console.log('=== loadData END - SUCCESS ===');
+      const data = await fasilitasService.getAllFasilitas();
+      setFasilitas(data);
+      setFilteredFasilitas(data);
     } catch (error) {
       console.error('Load fasilitas error:', error);
-      Alert.alert('Error', 'Gagal memuat data fasilitas');
     } finally {
       setLoading(false);
     }
@@ -68,658 +50,120 @@ const FasilitasManagementScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await loadFasilitas();
     setRefreshing(false);
   };
 
-  const applyFilters = async () => {
-    try {
-      console.log('=== applyFilters START ===');
-      console.log('Current fasilitasList length:', fasilitasList?.length || 0);
-      console.log('searchQuery:', searchQuery, 'selectedKategori:', selectedKategori);
-      
-      let filtered = [...fasilitasList];
-
-      // Apply kategori filter
-      if (selectedKategori !== 'Semua') {
-        const before = filtered.length;
-        filtered = filtered.filter((f) => f.kategori === selectedKategori);
-        console.log('After kategori filter:', before, '->', filtered.length);
-      }
-
-      // Apply search filter
-      if (searchQuery.trim()) {
-        const before = filtered.length;
-        const query = searchQuery.toLowerCase();
-        filtered = filtered.filter(
-          (f) =>
-            f.nama.toLowerCase().includes(query) ||
-            f.kode.toLowerCase().includes(query) ||
-            f.lokasi.toLowerCase().includes(query)
-        );
-        console.log('After search filter:', before, '->', filtered.length);
-      }
-
-      console.log('Final filtered count:', filtered.length);
-      setFilteredList(filtered);
-      console.log('=== applyFilters END ===');
-    } catch (error) {
-      console.error('Apply filters error:', error);
-    }
+  const handleDeleteFasilitas = (id, nama) => {
+    Alert.alert('Hapus Fasilitas', `Yakin ingin menghapus ${nama}?`, [
+      { text: 'Batal', style: 'cancel' },
+      { text: 'Hapus', style: 'destructive', onPress: async () => {
+        try {
+          await fasilitasService.deleteFasilitas(id);
+          loadFasilitas();
+        } catch (error) {
+          Alert.alert('Gagal', 'Terjadi kesalahan saat menghapus data.');
+        }
+      }},
+    ]);
   };
 
-  const handleCreate = () => {
-    navigation.navigate('FormFasilitas', { mode: 'create' });
-  };
-
-  const handleEdit = (fasilitas) => {
-    console.log('handleEdit called with:', fasilitas);
-    if (!navigation) {
-      Alert.alert('Error', 'Navigation tidak tersedia');
-      return;
-    }
-    try {
-      navigation.navigate('FormFasilitas', { mode: 'edit', fasilitas });
-    } catch (error) {
-      console.error('Navigation error:', error);
-      Alert.alert('Error', 'Gagal membuka form: ' + error.message);
-    }
-  };
-
-  const handleToggleStatus = async (fasilitas) => {
-    const newStatus = fasilitas.status === 'aktif' ? 'tidak aktif' : 'aktif';
-    Alert.alert(
-      'Ubah Status',
-      `Ubah status fasilitas "${fasilitas.nama}" menjadi ${newStatus}?`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Ubah',
-          onPress: async () => {
-            try {
-              await fasilitasService.toggleStatus(fasilitas.id);
-              Alert.alert('Berhasil', 'Status fasilitas berhasil diubah');
-              loadData();
-            } catch (error) {
-              Alert.alert('Error', 'Gagal mengubah status fasilitas');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDelete = (fasilitas) => {
-    console.log('handleDelete called with:', fasilitas);
-    if (!fasilitas?.id) {
-      Alert.alert('Error', 'ID fasilitas tidak valid');
-      return;
-    }
-    Alert.alert(
-      'Hapus Fasilitas',
-      `Hapus fasilitas "${fasilitas.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('Deleting fasilitas with id:', fasilitas.id);
-              const result = await fasilitasService.deleteFasilitas(fasilitas.id);
-              console.log('Delete result:', result);
-              if (result.success) {
-                Alert.alert('Berhasil', 'Fasilitas berhasil dihapus', [
-                  {
-                    text: 'OK',
-                    onPress: async () => {
-                      console.log('Calling loadData() after delete success dialog close');
-                      await loadData();
-                      console.log('loadData() completed, should trigger applyFilters');
-                    },
-                  },
-                ]);
-              } else {
-                Alert.alert('Error', result.message);
-              }
-            } catch (error) {
-              console.error('Delete error:', error);
-              Alert.alert('Error', 'Gagal menghapus fasilitas: ' + error.message);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderFasilitasCard = ({ item }) => {
-    const primaryColor = colors?.primary || staticColors.primary;
-    const dangerColor = colors?.danger || staticColors.danger;
-    const successColor = colors?.success || staticColors.success;
-    const disabledColor = colors?.textDisabled || staticColors.textDisabled;
-    const secondaryColor = colors?.textSecondary || staticColors.textSecondary;
-    
-    const statusColor = item.status === 'aktif' ? successColor : disabledColor;
-
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderLeft}>
-            <View style={styles.iconContainer}>
-              <MaterialCommunityIcons
-                name={item.icon || 'office-building'}
-                size={28}
-                color={primaryColor}
-              />
-            </View>
-            <View style={styles.cardHeaderInfo}>
-              <Text style={styles.cardNama} numberOfLines={1}>
-                {item.nama}
-              </Text>
-              <Text style={styles.cardKode}>{item.kode}</Text>
-            </View>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {item.status === 'aktif' ? 'Aktif' : 'Tidak Aktif'}
-            </Text>
-          </View>
+  const renderFasilitasItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.iconBox}>
+          <MaterialCommunityIcons name="office-building" size={26} color="#EA580C" />
         </View>
-
-        <View style={styles.cardContent}>
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="tag" size={16} color={secondaryColor} />
-            <Text style={styles.infoLabel}>Kategori:</Text>
-            <View style={styles.kategoriBadge}>
-              <Text style={styles.kategoriText}>{item.kategori}</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="map-marker" size={16} color={secondaryColor} />
-            <Text style={styles.infoLabel}>Lokasi:</Text>
-            <Text style={styles.infoValue}>{item.lokasi}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="account-group" size={16} color={secondaryColor} />
-            <Text style={styles.infoLabel}>Kapasitas:</Text>
-            <Text style={styles.infoValue}>{item.kapasitas} orang</Text>
-          </View>
-
-          {item.fasilitas && item.fasilitas.length > 0 && (
-            <View style={styles.fasilitasContainer}>
-              <Text style={styles.fasilitasLabel}>Fasilitas:</Text>
-              <View style={styles.fasilitasChips}>
-                {item.fasilitas.slice(0, 3).map((f, index) => (
-                  <View key={index} style={styles.fasilitasChip}>
-                    <Text style={styles.fasilitasChipText}>{f}</Text>
-                  </View>
-                ))}
-                {item.fasilitas.length > 3 && (
-                  <Text style={styles.fasilitasMore}>+{item.fasilitas.length - 3}</Text>
-                )}
-              </View>
-            </View>
-          )}
+        <View style={styles.cardInfo}>
+          <Text style={styles.fasilitasName} numberOfLines={1}>{item.nama}</Text>
+          <Text style={styles.kode}>KODE: {item.kode}</Text>
         </View>
-
-        <View style={styles.cardActions}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.actionButton, { backgroundColor: primaryColor + '20' }]}
-            onPress={() => {
-              console.log('EDIT button pressed for item:', item);
-              handleEdit(item);
-            }}
-          >
-            <MaterialCommunityIcons name="pencil" size={18} color={primaryColor} />
-            <Text style={[styles.actionButtonText, { color: primaryColor }]}>Edit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={[styles.actionButton, { backgroundColor: dangerColor + '20' }]}
-            onPress={() => {
-              console.log('DELETE button pressed for item:', item);
-              handleDelete(item);
-            }}
-          >
-            <MaterialCommunityIcons name="delete" size={18} color={dangerColor} />
-            <Text style={[styles.actionButtonText, { color: dangerColor }]}>Hapus</Text>
-          </TouchableOpacity>
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryBadgeText}>{item.kategori}</Text>
         </View>
       </View>
-    );
-  };
-
-  if (loading) {
-    const primaryColor = colors?.primary || staticColors.primary;
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={primaryColor} />
-          <Text style={styles.loadingText}>Memuat data fasilitas...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Defensive color fallbacks
-  const primaryColor = colors?.primary || staticColors.primary;
-  const successColor = colors?.success || staticColors.success;
-  const disabledColor = colors?.textDisabled || staticColors.textDisabled;
-  const secondaryColor = colors?.textSecondary || staticColors.textSecondary;
-  const textPrimary = colors?.textPrimary || staticColors.textPrimary;
+      <View style={styles.cardActions}>
+        <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('FormFasilitas', { fasilitas: item })}>
+          <MaterialCommunityIcons name="pencil-outline" size={18} color="#2563EB" />
+          <Text style={styles.editBtnText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteFasilitas(item.id, item.nama)}>
+          <MaterialCommunityIcons name="trash-can-outline" size={18} color="#EF4444" />
+          <Text style={styles.deleteBtnText}>Hapus</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={textPrimary} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerSubtitle}>KELOLA DATA</Text>
-          <Text style={styles.headerTitle}>Fasilitas</Text>
+        <Text style={styles.headerTitle}>Kelola Fasilitas</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('FormFasilitas')}>
+          <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchSection}>
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={22} color="#64748B" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari nama atau kode..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholderTextColor="#94A3B8"
+          />
         </View>
       </View>
 
-      {/* Stats Cards */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: successColor }]}>{stats.aktif}</Text>
-          <Text style={styles.statLabel}>Aktif</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: disabledColor }]}>
-            {stats.tidak_aktif}
-          </Text>
-          <Text style={styles.statLabel}>Tidak Aktif</Text>
-        </View>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <MaterialCommunityIcons name="magnify" size={20} color={secondaryColor} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Cari nama, kode, atau lokasi..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialCommunityIcons name="close-circle" size={20} color={secondaryColor} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Kategori Filter */}
-      <View style={styles.filterContainer}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={fasilitasService.getAllKategori()}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.filterChip,
-                selectedKategori === item && styles.filterChipActive,
-              ]}
-              onPress={() => setSelectedKategori(item)}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  selectedKategori === item && styles.filterChipTextActive,
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-
-      {/* Fasilitas List */}
       <FlatList
-        data={filteredList}
-        renderItem={renderFasilitasCard}
-        keyExtractor={(item) => item.id.toString()}
+        data={filteredFasilitas}
+        renderItem={renderFasilitasItem}
+        keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#EA580C']} />}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons
-              name="office-building-outline"
-              size={64}
-              color={disabledColor}
-            />
-            <Text style={styles.emptyStateText}>Tidak ada fasilitas ditemukan</Text>
-            <Text style={styles.emptyStateSubtext}>
-              {searchQuery || selectedKategori !== 'Semua'
-                ? 'Coba ubah filter atau pencarian'
-                : 'Tap tombol + untuk menambah fasilitas baru'}
-            </Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[primaryColor]} />
+          !loading && (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="office-building-marker-outline" size={80} color="#CBD5E1" />
+              <Text style={styles.emptyText}>Data fasilitas tidak ditemukan</Text>
+            </View>
+          )
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity 
-        style={styles.fab} 
-        activeOpacity={0.7}
-        onPress={() => {
-          console.log('CREATE/Tambah button pressed');
-          handleCreate();
-        }}
-      >
-        <MaterialCommunityIcons name="plus" size={28} color="#fff" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    letterSpacing: 1,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginTop: 2,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    padding: spacing.base,
-    gap: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: spacing.sm,
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  statValue: {
-    fontSize: 24,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.primary,
-  },
-  statLabel: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginTop: 2,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    marginHorizontal: spacing.base,
-    marginTop: spacing.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  filterContainer: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-  },
-  filterChip: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.base,
-    borderRadius: radius.full,
-    backgroundColor: '#f5f5f5',
-    marginRight: spacing.xs,
-  },
-  filterChipActive: {
-    backgroundColor: staticColors.primary,
-  },
-  filterChipText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    fontFamily: typography.fontFamily.medium,
-  },
-  filterChipTextActive: {
-    color: '#fff',
-  },
-  listContent: {
-    padding: spacing.base,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: radius.base,
-    padding: spacing.base,
-    marginBottom: spacing.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: radius.base,
-    backgroundColor: staticColors.primary + '10',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardHeaderInfo: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    justifyContent: 'center',
-  },
-  cardNama: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-  },
-  cardKode: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.full,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
-  },
-  statusText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-  },
-  cardContent: {
-    marginBottom: spacing.sm,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  infoLabel: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginLeft: 6,
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textPrimary,
-    marginLeft: spacing.xs,
-  },
-  kategoriBadge: {
-    flex: 1,
-    marginLeft: spacing.xs,
-    backgroundColor: staticColors.primary + '10',
-    paddingVertical: 2,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-    alignSelf: 'flex-start',
-  },
-  kategoriText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.primary,
-  },
-  fasilitasContainer: {
-    marginTop: spacing.xs,
-  },
-  fasilitasLabel: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginBottom: 4,
-  },
-  fasilitasChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  fasilitasChip: {
-    backgroundColor: '#f0f0f0',
-    paddingVertical: 2,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.xs,
-  },
-  fasilitasChipText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-  },
-  fasilitasMore: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    fontStyle: 'italic',
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.sm,
-    gap: 4,
-  },
-  actionButtonText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textSecondary,
-    marginTop: spacing.base,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textDisabled,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-  fab: {
-    position: 'absolute',
-    right: spacing.base,
-    bottom: spacing.base,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: staticColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  backButton: { width: 40, height: 40, backgroundColor: '#F8FAFC', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  addButton: { width: 40, height: 40, backgroundColor: '#EA580C', borderRadius: 12, justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  searchSection: { padding: 20, backgroundColor: '#FFF' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 16, paddingHorizontal: 16, height: 50 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: '#0F172A' },
+  listContent: { padding: 20, paddingBottom: 40 },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 16, marginBottom: 16, elevation: 2 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  iconBox: { width: 50, height: 50, borderRadius: 15, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center' },
+  cardInfo: { flex: 1, marginLeft: 16 },
+  fasilitasName: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
+  kode: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  categoryBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  categoryBadgeText: { fontSize: 10, color: '#64748B', fontWeight: 'bold' },
+  cardActions: { flexDirection: 'row', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  editBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, backgroundColor: '#EFF6FF', borderRadius: 10, marginRight: 8 },
+  editBtnText: { color: '#2563EB', fontSize: 13, fontWeight: 'bold', marginLeft: 6 },
+  deleteBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, backgroundColor: '#FEF2F2', borderRadius: 10 },
+  deleteBtnText: { color: '#EF4444', fontSize: 13, fontWeight: 'bold', marginLeft: 6 },
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { marginTop: 16, fontSize: 16, color: '#94A3B8' },
 });
 
 export default FasilitasManagementScreen;

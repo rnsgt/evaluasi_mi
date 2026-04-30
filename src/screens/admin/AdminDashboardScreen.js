@@ -1,63 +1,63 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  TouchableOpacity,
+  Dimensions,
+  ImageBackground,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
-import statsService from '../../services/statsService';
+import evaluasiService from '../../services/evaluasiService';
 
-// Labels default jika gagal
-const defaultDayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+const { width } = Dimensions.get('window');
 
-const AdminDashboardScreen = () => {
+const AdminDashboardScreen = ({ navigation }) => {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState(null);
-  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalDosen: 0,
+    totalMahasiswa: 0,
+    totalEvaluasi: 0,
+    totalFasilitas: 0,
+    partisipasi: {
+      persentase: 0,
+      uniqueMahasiswa: 0,
+    },
+    evaluasiDosen: 0,
+    evaluasiFasilitas: 0,
+  });
 
-  useFocusEffect(
-    useCallback(() => {
-      loadStats();
-    }, [])
-  );
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
-  const loadStats = async () => {
+  const loadDashboardData = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      const [dashboardData, trendData] = await Promise.all([
-        statsService.getAdminDashboardStats(),
-        statsService.getDailyTrend(7, 'current_week') // Ambil data spesifik minggu ini (Sen-Min)
-      ]);
-      
-      // Generate labels untuk chart bar (Sen, Sel, dsb)
-      const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-      const trendLabels = trendData?.rawData?.map(item => {
-        const date = new Date(item.tanggal);
-        return days[date.getDay()];
-      }) || defaultDayLabels;
-
-      setStats({
-        ...dashboardData,
-        dailyTrend: trendData?.rawData?.map(item => ({ total: item.totalEvaluasi })) || [],
-        trendLabels: trendLabels,
-      });
+      const data = await evaluasiService.getAdminDashboard();
+      if (data) {
+        setStats({
+          totalDosen: data.totalDosen || 0,
+          totalMahasiswa: data.totalMahasiswa || 0,
+          totalEvaluasi: data.totalEvaluasi || 0,
+          totalFasilitas: data.totalFasilitas || 0,
+          partisipasi: data.partisipasi || { persentase: 0, uniqueMahasiswa: 0 },
+          evaluasiDosen: data.evaluasiDosen || 0,
+          evaluasiFasilitas: data.evaluasiFasilitas || 0,
+        });
+      }
     } catch (error) {
-      console.error('Load admin stats error:', error);
-      setError(error?.message || 'Gagal memuat data dashboard');
+      console.error('Load dashboard error:', error);
     } finally {
       setLoading(false);
     }
@@ -65,474 +65,172 @@ const AdminDashboardScreen = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadStats();
+    await loadDashboardData();
     setRefreshing(false);
   };
 
-  const dosenScore = useMemo(() => {
-    if (!stats?.top5Dosen?.length) return 0;
-    const total = stats.top5Dosen.reduce((sum, item) => sum + (item.rataRata || 0), 0);
-    return total / stats.top5Dosen.length;
-  }, [stats]);
+  const renderStatCard = (title, value, icon, color) => (
+    <View style={[styles.statCard, { borderLeftColor: color }]}>
+      <View style={[styles.statIconBox, { backgroundColor: color + '15' }]}>
+        <MaterialCommunityIcons name={icon} size={24} color={color} />
+      </View>
+      <View style={styles.statContent}>
+        <Text style={styles.statLabel}>{title}</Text>
+        <Text style={styles.statValue}>{value}</Text>
+      </View>
+    </View>
+  );
 
-  const fasilitasScore = useMemo(() => {
-    if (!stats?.overallFasilitasScore) return 0;
-    return stats.overallFasilitasScore;
-  }, [stats?.overallFasilitasScore]);
-
-  const trendBars = useMemo(() => {
-    if (!stats?.dailyTrend || stats.dailyTrend.length === 0) {
-      // Fallback jika tidak ada data
-      return [0.2, 0.3, 0.4, 0.35, 0.6, 0.25, 0.2];
-    }
-
-    // Get max value untuk normalize heights
-    const maxValue = Math.max(...stats.dailyTrend.map(item => item.total), 1);
-    
-    // Convert total count menjadi bar height (0.18 - 1.0)
-    return stats.dailyTrend.map(item => {
-      const normalized = item.total / maxValue;
-      // Map ke range 0.18 - 1.0 (minimum visible height 0.18)
-      return Math.max(0.18, normalized);
-    });
-  }, [stats?.dailyTrend]);
-
-  const latestEvaluasi = useMemo(() => {
-    const dosenItems = (stats?.top5Dosen || []).slice(0, 2).map((item, index) => ({
-      id: `dosen-${item.id}`,
-      label: 'DOSEN',
-      name: item.nama || `Mahasiswa #${8000 + index}`,
-      time: index === 0 ? '2 menit yang lalu' : '1 jam yang lalu',
-      score: item.rataRata || 0,
-      tagStyle: 'purple',
-    }));
-
-    const fasilitasItems = (stats?.fasilitasPerluPerbaikan || []).slice(0, 1).map((item, index) => ({
-      id: `fasilitas-${item.id}`,
-      label: 'FASILITAS',
-      name: item.nama || `Mahasiswa #${1000 + index}`,
-      time: '15 menit yang lalu',
-      score: item.rataRata || 0,
-      tagStyle: 'orange',
-    }));
-
-    const merged = [...dosenItems, ...fasilitasItems];
-    if (merged.length === 0) {
-      return [
-        {
-          id: 'dummy-1',
-          label: 'DOSEN',
-          name: 'Mahasiswa #8291',
-          time: '2 menit yang lalu',
-          score: 5,
-          tagStyle: 'purple',
-        },
-        {
-          id: 'dummy-2',
-          label: 'FASILITAS',
-          name: 'Mahasiswa #1042',
-          time: '15 menit yang lalu',
-          score: 3.5,
-          tagStyle: 'orange',
-        },
-      ];
-    }
-    return merged.slice(0, 3);
-  }, [stats]);
-
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Memuat dashboard...</Text>
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text style={styles.loadingText}>Menyiapkan Dashboard...</Text>
         </View>
       </SafeAreaView>
     );
   }
-
-  if (!stats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={56} color={staticColors.textDisabled} />
-          <Text style={styles.errorText}>Data dashboard tidak tersedia</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const cardData = [
-    {
-      title: 'Evaluasi Hari Ini',
-      value: stats.todayEvaluasi || 0,
-      subtitle: 'Total Evaluasi',
-      subtitleColor: '#16A34A',
-      icon: 'calendar-blank-outline',
-      iconBg: '#DCEAFE',
-      iconColor: '#228BE6',
-    },
-    {
-      title: 'Minggu Ini',
-      value: stats.weekEvaluasi || 0,
-      subtitle: 'Total Evaluasi',
-      subtitleColor: '#0B78F0',
-      icon: 'calendar-month-outline',
-      iconBg: '#DCEAFE',
-      iconColor: '#2563EB',
-    },
-    {
-      title: 'Evaluasi Dosen',
-      value: dosenScore.toFixed(1),
-      subtitle: 'Skala 5.0',
-      subtitleColor: '#94A3B8',
-      icon: 'account-school-outline',
-      iconBg: '#F1E3FF',
-      iconColor: '#8B5CF6',
-    },
-    {
-      title: 'Fasilitas',
-      value: fasilitasScore.toFixed(1),
-      subtitle: fasilitasScore < 4 ? 'Perlu Perhatian' : 'Kondisi Baik',
-      subtitleColor: fasilitasScore < 4 ? '#EF4444' : '#16A34A',
-      icon: 'office-building-outline',
-      iconBg: '#FCE9CC',
-      iconColor: '#EA580C',
-    },
-  ];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.secondary]} />}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.headerGreeting}>SELAMAT DATANG,</Text>
-            <Text style={styles.headerTitle}>Admin Akademik</Text>
-          </View>
-        </View>
-
-        <View style={styles.cardsGrid}>
-          {cardData.map((card) => (
-            <View key={card.title} style={styles.metricCard}>
-              <View style={[styles.metricIcon, { backgroundColor: card.iconBg }]}>
-                <MaterialCommunityIcons name={card.icon} size={20} color={card.iconColor} />
+        <ImageBackground 
+          source={require('../../../assets/gedung diklat.jpg')}
+          style={styles.headerCard}
+          imageStyle={styles.headerCardImage}
+        >
+          <View style={styles.headerOverlay}>
+            <View style={styles.headerContent}>
+              <View>
+                <Text style={styles.headerSubtitle}>PANEL ADMIN MI</Text>
+                <Text style={styles.headerTitle}>Selamat Datang!</Text>
               </View>
-              <Text style={styles.metricTitle}>{card.title}</Text>
-              <Text style={styles.metricValue}>{card.value}</Text>
-              <Text style={[styles.metricSubtitle, { color: card.subtitleColor }]}>{card.subtitle}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.trendCard}>
-          <View style={styles.trendHeader}>
-            <Text style={styles.sectionTitle}>Tren Evaluasi</Text>
-            <View style={styles.badgePill}>
-              <Text style={styles.badgePillText}>Minggu Ini</Text>
+              <View style={styles.adminBadge}>
+                <Image source={require('../../../assets/logomi.png')} style={{width: 25, height: 30, borderRadius: 50, resizeMode: 'contain'}} />
+              </View>
             </View>
           </View>
+        </ImageBackground>
 
-          <View style={styles.barChartWrap}>
-            {trendBars.map((height, index) => {
-              const label = stats?.trendLabels?.[index] || defaultDayLabels[index];
-              return (
-                <View key={`${label}-${index}`} style={styles.barColumn}>
-                  <View style={styles.barTrack}>
-                    <View
-                      style={[
-                        styles.barFill,
-                        {
-                          height: `${Math.round(height * 100)}%`,
-                          // Highlight bar hari ini (jika harinya cocok)
-                          backgroundColor: label === defaultDayLabels[(new Date().getDay() + 6) % 7] ? '#228BE6' : '#88C2F4',
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.dayLabel}>{label}</Text>
-                </View>
-              );
-            })}
+        <View style={styles.grid}>
+          <View style={styles.row}>
+            {renderStatCard('Total Dosen', stats.totalDosen, 'account-tie', colors.primary)}
+            {renderStatCard('Mahasiswa', stats.totalMahasiswa, 'account-group', colors.secondaryDark)}
+          </View>
+          <View style={styles.row}>
+            {renderStatCard('Fasilitas', stats.totalFasilitas, 'office-building', colors.tertiary)}
+            {renderStatCard('Total Evaluasi', stats.totalEvaluasi, 'clipboard-check', colors.success)}
           </View>
         </View>
 
-        <View style={styles.latestHeader}>
-          <Text style={styles.sectionTitle}>Evaluasi Terbaru</Text>
-        </View>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Analisis Partisipasi</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Laporan')}>
+              <Text style={[styles.sectionLink, { color: colors.tertiary }]}>Detail Laporan</Text>
+            </TouchableOpacity>
+          </View>
 
-        {latestEvaluasi.map((item) => (
-          <View key={item.id} style={styles.latestCard}>
-            <View style={styles.avatarCircle}>
-              <MaterialCommunityIcons name="account-outline" size={24} color="#64748B" />
+          <View style={styles.chartCard}>
+            <View style={styles.participationHeader}>
+              <View>
+                <Text style={styles.participationValue}>{stats.partisipasi.persentase}%</Text>
+                <Text style={styles.participationLabel}>Tingkat Partisipasi Mahasiswa</Text>
+              </View>
+              <MaterialCommunityIcons name="trending-up" size={32} color="#10B981" />
             </View>
-            <View style={styles.latestInfo}>
-              <Text style={styles.latestName} numberOfLines={1}>
-                {item.name}
+            
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarFill, { width: `${stats.partisipasi.persentase}%` }]} />
+            </View>
+            
+            <View style={styles.participationFooter}>
+              <Text style={styles.participationSubtext}>
+                {stats.partisipasi.uniqueMahasiswa} dari {stats.totalMahasiswa} mahasiswa telah berpartisipasi
               </Text>
-              <View style={styles.latestMetaRow}>
-                <View
-                  style={[
-                    styles.typeTag,
-                    item.tagStyle === 'purple' ? styles.typeTagPurple : styles.typeTagOrange,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.typeTagText,
-                      item.tagStyle === 'purple' ? styles.typeTagTextPurple : styles.typeTagTextOrange,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </View>
-                <Text style={styles.timeText}>{item.time}</Text>
+            </View>
+
+            <View style={styles.typeDistribution}>
+              <View style={styles.typeItem}>
+                <View style={[styles.typeDot, { backgroundColor: colors.primary }]} />
+                <Text style={styles.typeLabel}>Dosen: {stats.evaluasiDosen}</Text>
+              </View>
+              <View style={styles.typeItem}>
+                <View style={[styles.typeDot, { backgroundColor: colors.tertiary }]} />
+                <Text style={styles.typeLabel}>Fasilitas: {stats.evaluasiFasilitas}</Text>
               </View>
             </View>
-            <Text style={styles.scoreText}>{`${Number(item.score || 0).toFixed(1)} ★`}</Text>
           </View>
-        ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary, marginBottom: 16 }]}>Aksi Cepat</Text>
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Periode')}>
+              <MaterialCommunityIcons name="calendar-plus" size={24} color={colors.primary} />
+              <Text style={styles.actionBtnText}>Periode</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Dosen')}>
+              <MaterialCommunityIcons name="account-tie-outline" size={24} color={colors.secondaryDark} />
+              <Text style={styles.actionBtnText}>Dosen</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Fasilitas')}>
+              <MaterialCommunityIcons name="office-building-cog" size={24} color={colors.tertiary} />
+              <Text style={styles.actionBtnText}>Fasilitas</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF1F5',
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.base,
-    paddingBottom: spacing.xl,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    color: staticColors.textSecondary,
-    fontSize: typography.fontSize.base,
-  },
-  errorText: {
-    marginTop: spacing.base,
-    color: staticColors.textSecondary,
-    fontSize: typography.fontSize.base,
-  },
-  headerRow: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerGreeting: {
-    fontSize: typography.fontSize.sm,
-    color: '#2C8CF4',
-    fontFamily: typography.fontFamily.medium,
-    letterSpacing: 0.8,
-  },
-  headerTitle: {
-    marginTop: 4,
-    fontSize: 34,
-    lineHeight: 40,
-    color: '#0F172A',
-    fontFamily: typography.fontFamily.bold,
-  },
-  bellButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#DCEAFE',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  dotBadge: {
-    position: 'absolute',
-    top: 9,
-    right: 10,
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: '#F04438',
-  },
-  cardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  metricCard: {
-    width: '48.2%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.md,
-  },
-  metricIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  metricTitle: {
-    color: '#486080',
-    fontSize: typography.fontSize.base,
-    marginBottom: spacing.xs,
-  },
-  metricValue: {
-    color: '#0F172A',
-    fontSize: 36,
-    lineHeight: 42,
-    fontFamily: typography.fontFamily.bold,
-  },
-  metricSubtitle: {
-    marginTop: 4,
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-  },
-  trendCard: {
-    marginTop: spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: spacing.base,
-    marginBottom: spacing.lg,
-  },
-  trendHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.base,
-  },
-  sectionTitle: {
-    color: '#0F172A',
-    fontSize: typography.fontSize.xl,
-    lineHeight: 32,
-    fontFamily: typography.fontFamily.bold,
-  },
-  badgePill: {
-    backgroundColor: '#DBECFF',
-    borderRadius: 999,
-    paddingHorizontal: spacing.base,
-    paddingVertical: 6,
-  },
-  badgePillText: {
-    color: '#228BE6',
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-  },
-  barChartWrap: {
-    marginTop: spacing.base,
-    height: 180,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  barColumn: {
-    alignItems: 'center',
-    width: 30,
-  },
-  barTrack: {
-    width: 12,
-    height: 132,
-    borderRadius: 7,
-    backgroundColor: '#E7ECF3',
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: {
-    width: '100%',
-    borderRadius: 8,
-  },
-  dayLabel: {
-    marginTop: 10,
-    color: '#90A0B5',
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-  },
-  latestHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  linkText: {
-    color: '#228BE6',
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.medium,
-  },
-  latestCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EEF2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.base,
-  },
-  latestInfo: {
-    flex: 1,
-  },
-  latestName: {
-    color: '#0F172A',
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.bold,
-  },
-  latestMetaRow: {
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typeTag: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginRight: spacing.sm,
-  },
-  typeTagPurple: {
-    backgroundColor: '#EFE4FF',
-  },
-  typeTagOrange: {
-    backgroundColor: '#FDE9D7',
-  },
-  typeTagText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.bold,
-    letterSpacing: 0.4,
-  },
-  typeTagTextPurple: {
-    color: '#7C3AED',
-  },
-  typeTagTextOrange: {
-    color: '#EA580C',
-  },
-  timeText: {
-    color: '#94A3B8',
-    fontSize: typography.fontSize.sm,
-  },
-  scoreText: {
-    color: '#D99A00',
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.bold,
-    marginLeft: spacing.sm,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#64748B', fontWeight: '500' },
+  scrollContent: { padding: 24, paddingTop: 16 },
+  headerCard: { width: '100%', minHeight: 140, marginBottom: 32, borderRadius: 28, overflow: 'hidden', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+  headerCardImage: { resizeMode: 'cover' },
+  headerOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 60, 89, 0.8)', padding: 24, justifyContent: 'center' },
+  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerSubtitle: { fontSize: 12, color: '#FFC107', fontWeight: 'bold', letterSpacing: 1.5 },
+  headerTitle: { fontSize: 26, fontWeight: 'bold', color: '#FFFFFF', marginTop: 4 },
+  adminBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, elevation: 4 },
+  adminBadgeText: { color: '#0F3C59', fontSize: 10, fontWeight: 'bold', marginLeft: 6 },
+  grid: { marginBottom: 32 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  statCard: { width: (width - 64) / 2, backgroundColor: '#FFF', borderRadius: 20, padding: 16, borderLeftWidth: 5, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  statIconBox: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  statContent: {},
+  statLabel: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  statValue: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', marginTop: 2 },
+  section: { marginBottom: 32 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  sectionLink: { fontSize: 13, color: '#2563EB', fontWeight: '600' },
+  chartCard: { backgroundColor: '#FFF', borderRadius: 24, padding: 24, elevation: 2 },
+  participationHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  participationValue: { fontSize: 32, fontWeight: 'bold', color: '#0F172A' },
+  participationLabel: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  progressBarContainer: { height: 12, backgroundColor: '#F1F5F9', borderRadius: 6, overflow: 'hidden', marginBottom: 16 },
+  progressBarFill: { height: '100%', backgroundColor: '#10B981', borderRadius: 6 },
+  participationFooter: { marginBottom: 20 },
+  participationSubtext: { fontSize: 12, color: '#94A3B8', fontStyle: 'italic' },
+  typeDistribution: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  typeItem: { flexDirection: 'row', alignItems: 'center', marginRight: 24 },
+  typeDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+  typeLabel: { fontSize: 12, color: '#475569', fontWeight: '600' },
+  quickActions: { flexDirection: 'row', justifyContent: 'space-between' },
+  actionBtn: { width: (width - 64) / 3, backgroundColor: '#FFF', padding: 16, borderRadius: 20, alignItems: 'center', elevation: 2 },
+  actionBtnText: { marginTop: 8, fontSize: 11, fontWeight: 'bold', color: '#1E293B' },
 });
 
 export default AdminDashboardScreen;

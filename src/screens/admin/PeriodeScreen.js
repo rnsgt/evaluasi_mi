@@ -5,38 +5,34 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
-  RefreshControl,
   ActivityIndicator,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import periodeService from '../../services/periodeService';
+import evaluasiService from '../../services/evaluasiService';
+import { formatDate } from '../../utils/helpers';
 
 const PeriodeScreen = ({ navigation }) => {
   const { colors } = useTheme();
+  const [periodes, setPeriodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [periodeList, setPeriodeList] = useState([]);
-  const [activePeriode, setActivePeriode] = useState(null);
 
   useEffect(() => {
-    loadPeriode();
+    loadPeriodes();
   }, []);
 
-  const loadPeriode = async () => {
+  const loadPeriodes = async () => {
     try {
       setLoading(true);
       const data = await periodeService.getAllPeriode();
-      setPeriodeList(data);
-      
-      const active = data.find((p) => p.status === 'aktif');
-      setActivePeriode(active);
+      setPeriodes(data);
     } catch (error) {
-      console.error('Load periode error:', error);
-      Alert.alert('Error', 'Gagal memuat data periode');
+      console.error('Load periodes error:', error);
     } finally {
       setLoading(false);
     }
@@ -44,492 +40,138 @@ const PeriodeScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadPeriode();
+    await loadPeriodes();
     setRefreshing(false);
   };
 
-  const handleCreate = () => {
-    navigation.navigate('FormPeriode', { mode: 'create' });
+  const handleToggleStatus = async (id, currentStatus) => {
+    const newStatus = currentStatus === 'aktif' ? 'tidak_aktif' : 'aktif';
+    try {
+      await periodeService.updatePeriodeStatus(id, newStatus);
+      loadPeriodes();
+    } catch (error) {
+      Alert.alert('Gagal', 'Terjadi kesalahan saat memperbarui status periode.');
+    }
   };
 
-  const handleEdit = (periode) => {
-    navigation.navigate('FormPeriode', { mode: 'edit', periode });
-  };
-
-  const handleActivate = (periode) => {
-    Alert.alert(
-      'Aktifkan Periode',
-      `Aktifkan periode "${periode.nama}"?\n\nPeriode yang sedang aktif akan dinonaktifkan secara otomatis.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Aktifkan',
-          onPress: async () => {
-            try {
-              await periodeService.activatePeriode(periode.id);
-              Alert.alert('Berhasil', 'Periode berhasil diaktifkan');
-              loadPeriode();
-            } catch (error) {
-              Alert.alert('Error', 'Gagal mengaktifkan periode');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDeactivate = (periode) => {
-    Alert.alert(
-      'Nonaktifkan Periode',
-      `Nonaktifkan periode "${periode.nama}"?`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Nonaktifkan',
-          onPress: async () => {
-            try {
-              await periodeService.deactivatePeriode(periode.id);
-              Alert.alert('Berhasil', 'Periode berhasil dinonaktifkan');
-              loadPeriode();
-            } catch (error) {
-              Alert.alert('Error', 'Gagal menonaktifkan periode');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDelete = (periode) => {
-    if (periode.status === 'aktif') {
-      Alert.alert('Tidak Dapat Dihapus', 'Periode yang sedang aktif tidak dapat dihapus');
+  const handleDelete = (id, nama, status) => {
+    if (status === 'aktif') {
+      Alert.alert('Gagal', 'Tidak dapat menghapus periode yang sedang aktif.');
       return;
     }
 
-    Alert.alert(
-      'Hapus Periode',
-      `Hapus periode "${periode.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const result = await periodeService.deletePeriode(periode.id);
-              if (result.success) {
-                Alert.alert('Berhasil', 'Periode berhasil dihapus');
-                loadPeriode();
-              } else {
-                Alert.alert('Error', result.message);
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Gagal menghapus periode');
-            }
-          },
-        },
-      ]
-    );
+    Alert.alert('Hapus Periode', `Yakin ingin menghapus periode "${nama}"? Data evaluasi pada periode ini mungkin akan hilang.`, [
+      { text: 'Batal', style: 'cancel' },
+      { text: 'Hapus', style: 'destructive', onPress: async () => {
+        try {
+          await evaluasiService.deletePeriode(id);
+          loadPeriodes();
+        } catch (error) {
+          Alert.alert('Error', error?.response?.data?.message || 'Gagal menghapus periode');
+        }
+      }},
+    ]);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'aktif':
-        return colors.success;
-      case 'selesai':
-        return colors.textDisabled;
-      default:
-        return colors.warning;
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'aktif':
-        return 'Aktif';
-      case 'selesai':
-        return 'Selesai';
-      default:
-        return 'Tidak Aktif';
-    }
-  };
-
-  const renderPeriodeCard = ({ item }) => {
-    const statusColor = getStatusColor(item.status);
-    const statusLabel = getStatusLabel(item.status);
-    const isActive = item.status === 'aktif';
-
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardTitleContainer}>
-            <Text style={styles.cardTitle}>{item.nama}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
-            </View>
-          </View>
+  const renderPeriodeItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={[styles.statusBadge, { backgroundColor: item.status === 'aktif' ? '#DCFCE7' : '#F1F5F9' }]}>
+          <View style={[styles.statusDot, { backgroundColor: item.status === 'aktif' ? '#22C55E' : '#94A3B8' }]} />
+          <Text style={[styles.statusText, { color: item.status === 'aktif' ? '#166534' : '#475569' }]}>
+            {item.status === 'aktif' ? 'AKTIF' : 'NON-AKTIF'}
+          </Text>
         </View>
-
-        <View style={styles.cardContent}>
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="calendar" size={16} color={colors.textSecondary} />
-            <Text style={styles.infoLabel}>Tahun Ajaran:</Text>
-            <Text style={styles.infoValue}>{item.tahun_ajaran}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="calendar-check" size={16} color={colors.textSecondary} />
-            <Text style={styles.infoLabel}>Semester:</Text>
-            <Text style={styles.infoValue}>{item.semester}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="calendar-range" size={16} color={colors.textSecondary} />
-            <Text style={styles.infoLabel}>Periode:</Text>
-            <Text style={styles.infoValue}>
-              {item.tanggal_mulai} s/d {item.tanggal_akhir}
-            </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <MaterialCommunityIcons name="clock-alert" size={16} color={colors.textSecondary} />
-            <Text style={styles.infoLabel}>Batas Evaluasi:</Text>
-            <Text style={styles.infoValue}>{item.batas_evaluasi}</Text>
-          </View>
-
-          {item.keterangan && (
-            <View style={styles.keteranganContainer}>
-              <Text style={styles.keterangan}>{item.keterangan}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.cardActions}>
-          {item.status === 'tidak_aktif' && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.activateButton]}
-              onPress={() => handleActivate(item)}
-            >
-              <MaterialCommunityIcons name="check-circle" size={18} color="#fff" />
-              <Text style={styles.actionButtonText}>Aktifkan</Text>
-            </TouchableOpacity>
-          )}
-
-          {item.status === 'aktif' && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.deactivateButton]}
-              onPress={() => handleDeactivate(item)}
-            >
-              <MaterialCommunityIcons name="close-circle" size={18} color="#fff" />
-              <Text style={styles.actionButtonText}>Nonaktifkan</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => handleEdit(item)}
-          >
-            <MaterialCommunityIcons name="pencil" size={18} color="#fff" />
-            <Text style={styles.actionButtonText}>Edit</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('FormPeriode', { periode: item })} style={styles.iconAction}>
+            <MaterialCommunityIcons name="pencil" size={20} color="#64748B" />
           </TouchableOpacity>
-
+          <TouchableOpacity onPress={() => handleDelete(item.id, item.nama, item.status)} style={[styles.iconAction, { marginLeft: 12 }]}>
+            <MaterialCommunityIcons name="trash-can-outline" size={20} color="#EF4444" />
+          </TouchableOpacity>
         </View>
       </View>
-    );
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Memuat periode...</Text>
+      
+      <Text style={styles.periodeTitle}>{item.nama}</Text>
+      <View style={styles.divider} />
+      
+      <View style={styles.dateRow}>
+        <View style={styles.dateItem}>
+          <MaterialCommunityIcons name="calendar-play" size={16} color="#64748B" />
+          <Text style={styles.dateText}>{formatDate(item.tanggal_mulai, 'DD MMM YYYY')}</Text>
         </View>
-      </SafeAreaView>
-    );
-  }
+        <MaterialCommunityIcons name="arrow-right" size={14} color="#CBD5E1" />
+        <View style={styles.dateItem}>
+          <MaterialCommunityIcons name="calendar-stop" size={16} color="#64748B" />
+          <Text style={styles.dateText}>{formatDate(item.tanggal_akhir, 'DD MMM YYYY')}</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.statusBtn, { backgroundColor: item.status === 'aktif' ? '#FEF2F2' : '#EFF6FF' }]}
+        onPress={() => handleToggleStatus(item.id, item.status)}
+      >
+        <Text style={[styles.statusBtnText, { color: item.status === 'aktif' ? '#EF4444' : '#2563EB' }]}>
+          {item.status === 'aktif' ? 'Nonaktifkan Periode' : 'Aktifkan Periode'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>ADMIN</Text>
-        <Text style={styles.headerTitle}>Kelola Periode</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#0F172A" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Periode Evaluasi</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('FormPeriode')}>
+          <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+        </TouchableOpacity>
       </View>
 
-      {/* Active Periode Info */}
-      {activePeriode && (
-        <View style={styles.activePeriodeCard}>
-          <MaterialCommunityIcons name="information" size={20} color={colors.success} />
-          <View style={styles.activePeriodeInfo}>
-            <Text style={styles.activePeriodeLabel}>Periode Aktif:</Text>
-            <Text style={styles.activePeriodeNama}>{activePeriode.nama}</Text>
-          </View>
-        </View>
-      )}
-
-      {/* Periode List */}
       <FlatList
-        data={periodeList}
-        renderItem={renderPeriodeCard}
-        keyExtractor={(item) => item.id.toString()}
+        data={periodes}
+        renderItem={renderPeriodeItem}
+        keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons
-              name="calendar-blank"
-              size={64}
-              color={colors.textDisabled}
-            />
-            <Text style={styles.emptyStateText}>Belum ada periode</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Tap tombol + untuk membuat periode baru
-            </Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-          />
+          !loading && (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="calendar-search" size={80} color="#CBD5E1" />
+              <Text style={styles.emptyText}>Belum ada periode evaluasi</Text>
+            </View>
+          )
         }
       />
-
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={handleCreate}>
-        <MaterialCommunityIcons name="plus" size={28} color="#fff" />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EEF1F5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.base,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
-  },
-  header: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.base,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    letterSpacing: 1,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginTop: 2,
-  },
-  activePeriodeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: staticColors.success + '10',
-    padding: spacing.base,
-    marginHorizontal: spacing.base,
-    marginTop: spacing.base,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: staticColors.success + '30',
-  },
-  activePeriodeInfo: {
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  activePeriodeLabel: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-  },
-  activePeriodeNama: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-    marginTop: 2,
-  },
-  listContent: {
-    padding: spacing.base,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: spacing.base,
-    marginBottom: spacing.base,
-  },
-  cardHeader: {
-    marginBottom: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  cardTitleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    flex: 1,
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginRight: spacing.sm,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.full,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
-  },
-  statusText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-  },
-  cardContent: {
-    marginBottom: spacing.sm,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  infoLabel: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    marginLeft: 6,
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textPrimary,
-    marginLeft: spacing.xs,
-  },
-  keteranganContainer: {
-    marginTop: spacing.xs,
-    padding: spacing.sm,
-    backgroundColor: '#F2F6FC',
-    borderRadius: radius.sm,
-  },
-  keterangan: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    fontStyle: 'italic',
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
-    gap: 4,
-  },
-  activateButton: {
-    backgroundColor: staticColors.success,
-  },
-  deactivateButton: {
-    backgroundColor: staticColors.warning,
-  },
-  editButton: {
-    backgroundColor: staticColors.primary,
-  },
-  deletePillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: radius.full,
-    backgroundColor: staticColors.danger,
-    marginLeft: spacing.sm,
-    gap: 4,
-    minWidth: 74,
-  },
-  deletePillButtonDisabled: {
-    backgroundColor: staticColors.border,
-  },
-  deletePillText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.semibold,
-    color: '#fff',
-  },
-  deletePillTextDisabled: {
-    color: staticColors.textDisabled,
-  },
-  disabledButton: {
-    backgroundColor: staticColors.border,
-  },
-  actionButtonText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: '#fff',
-  },
-  disabledButtonText: {
-    color: staticColors.textDisabled,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textSecondary,
-    marginTop: spacing.base,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textDisabled,
-    marginTop: spacing.xs,
-  },
-  fab: {
-    position: 'absolute',
-    right: spacing.base,
-    bottom: spacing.base,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: staticColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  backButton: { width: 40, height: 40, backgroundColor: '#F8FAFC', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  addButton: { width: 40, height: 40, backgroundColor: '#2563EB', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  listContent: { padding: 20, paddingBottom: 40 },
+  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, elevation: 2 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  iconAction: { padding: 4 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusText: { fontSize: 10, fontWeight: 'bold' },
+  periodeTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 16 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  dateItem: { flexDirection: 'row', alignItems: 'center' },
+  dateText: { fontSize: 13, color: '#475569', fontWeight: '600', marginLeft: 8 },
+  statusBtn: { paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
+  statusBtnText: { fontSize: 13, fontWeight: 'bold' },
+  emptyState: { alignItems: 'center', marginTop: 100 },
+  emptyText: { marginTop: 16, fontSize: 16, color: '#94A3B8' },
 });
 
 export default PeriodeScreen;

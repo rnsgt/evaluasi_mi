@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius, shadows } from '../../utils/theme';
 import { formatDate, groupBy } from '../../utils/helpers';
-import { useAuth } from '../../contexts/AuthContext';
 import evaluasiService from '../../services/evaluasiService';
 
 const RiwayatScreen = () => {
-  const { user } = useAuth();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,41 +34,21 @@ const RiwayatScreen = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Get all riwayat (both dosen and fasilitas) from backend API
       const riwayat = await evaluasiService.getRiwayat();
-      
-      // Transform data to display format
-      const transformedData = riwayat.map((item) => {
-        if (item.type === 'DOSEN') {
-          return {
-            id: item.id,
-            tanggal: item.submitted_at,
-            type: 'DOSEN',
-            subject: item.mata_kuliah_nama || 'Evaluasi Dosen',
-            nama: item.dosen_nama,
-            nip: item.dosen_nip,
-            status: 'SELESAI',
-            rawData: item,
-          };
-        } else {
-          return {
-            id: item.id,
-            tanggal: item.submitted_at,
-            type: 'FASILITAS',
-            subject: item.fasilitas_nama,
-            nama: item.fasilitas_kategori,
-            kode: item.fasilitas_kode,
-            lokasi: item.fasilitas_lokasi,
-            status: 'SELESAI',
-            rawData: item,
-          };
-        }
-      });
-
+      const transformedData = riwayat.map((item) => ({
+        id: item.id,
+        tanggal: item.submitted_at,
+        type: item.type,
+        subject: item.type === 'DOSEN' ? (item.mata_kuliah_nama || 'Evaluasi Dosen') : item.fasilitas_nama,
+        nama: item.type === 'DOSEN' ? item.dosen_nama : item.fasilitas_kategori,
+        nip: item.dosen_nip,
+        kode: item.fasilitas_kode,
+        lokasi: item.fasilitas_lokasi,
+        rawData: item,
+      }));
       setAllData(transformedData);
     } catch (error) {
       console.error('Load riwayat error:', error);
-      Alert.alert('Error', 'Gagal memuat riwayat evaluasi');
     } finally {
       setLoading(false);
     }
@@ -79,19 +56,13 @@ const RiwayatScreen = () => {
 
   const applyFilter = () => {
     let filtered = [...allData];
+    if (activeFilter === 'dosen') filtered = filtered.filter(i => i.type === 'DOSEN');
+    else if (activeFilter === 'fasilitas') filtered = filtered.filter(i => i.type === 'FASILITAS');
 
-    if (activeFilter === 'dosen') {
-      filtered = filtered.filter((item) => item.type === 'DOSEN');
-    } else if (activeFilter === 'fasilitas') {
-      filtered = filtered.filter((item) => item.type === 'FASILITAS');
-    }
-
-    // Group by month
     const grouped = groupBy(filtered, (item) => {
       const date = new Date(item.tanggal);
       return formatDate(date, 'MMMM YYYY').toUpperCase();
     });
-
     setRiwayatData(grouped);
   };
 
@@ -101,147 +72,96 @@ const RiwayatScreen = () => {
     setRefreshing(false);
   };
 
-  const handleItemPress = (item) => {
-    const jumlahJawaban = item.rawData?.jumlah_jawaban || 0;
-
-    // Show detail dialog
-    const detailText = item.type === 'DOSEN'
-      ? `Dosen: ${item.nama}\nNIP: ${item.nip}\nMata Kuliah: ${item.subject}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${jumlahJawaban}`
-      : `Fasilitas: ${item.subject}\nKode: ${item.kode}\nLokasi: ${item.lokasi}\nKategori: ${item.nama}\nTanggal: ${formatDate(item.tanggal)}\nJumlah Jawaban: ${jumlahJawaban}`;
-
-    const komentarText = item.rawData.komentar 
-      ? `\n\nKomentar:\n${item.rawData.komentar}`
-      : '';
-
-    Alert.alert(
-      'Detail Evaluasi',
-      detailText + komentarText,
-      [{ text: 'OK' }]
-    );
-  };
-
   const renderItem = (item) => (
     <TouchableOpacity 
       key={item.id} 
       style={styles.itemCard} 
-      activeOpacity={0.7}
-      onPress={() => handleItemPress(item)}
+      activeOpacity={0.8}
+      onPress={() => {
+        Alert.alert('Detail Evaluasi', 
+          `Subjek: ${item.subject}\nOleh: ${item.nama}\nTanggal: ${formatDate(item.tanggal)}\nKomentar: ${item.rawData.komentar || '-'}`,
+          [{ text: 'Tutup' }]
+        );
+      }}
     >
-      <View style={styles.itemIndicator} />
-      <View style={styles.itemContent}>
-        <Text style={styles.itemDate}>{formatDate(item.tanggal)}</Text>
-        <View style={styles.statusBadge}>
-          <MaterialCommunityIcons name="check-circle" size={16} color={colors.success} style={styles.statusIcon} />
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-        <View style={styles.itemInfo}>
-          <View
-            style={[
-              styles.chip,
-              styles.itemInfoIcon,
-              { backgroundColor: item.type === 'DOSEN' ? '#DBECFF' : '#DBECFF' },
-            ]}
-          >
-            <Text style={styles.chipText}>{item.type}</Text>
-          </View>
-          <Text style={[styles.itemSubject, styles.itemInfoText]}>{item.subject}</Text>
-        </View>
-        <Text style={styles.itemName}>{item.nama}</Text>
+      <View style={[styles.typeIcon, { backgroundColor: item.type === 'DOSEN' ? '#EFF6FF' : '#FFF7ED' }]}>
+        <MaterialCommunityIcons 
+          name={item.type === 'DOSEN' ? 'account-tie' : 'office-building'} 
+          size={24} 
+          color={item.type === 'DOSEN' ? '#2563EB' : '#EA580C'} 
+        />
       </View>
+      <View style={styles.itemContent}>
+        <View style={styles.itemHeader}>
+          <Text style={styles.itemType}>{item.type}</Text>
+          <Text style={styles.itemDate}>{formatDate(item.tanggal, 'DD MMM')}</Text>
+        </View>
+        <Text style={styles.itemSubject} numberOfLines={1}>{item.subject}</Text>
+        <Text style={styles.itemName} numberOfLines={1}>{item.nama}</Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={20} color="#CBD5E1" />
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerSubtitle}>AKADEMIK</Text>
+        <Text style={styles.headerSubtitle}>AKTIVITAS ANDA</Text>
         <Text style={styles.headerTitle}>Riwayat Evaluasi</Text>
       </View>
 
-      {/* Filters */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          onPress={() => setActiveFilter('semua')}
-          style={[styles.filterChip, activeFilter === 'semua' && styles.filterChipActive]}
-        >
-          <Text style={[styles.filterChipText, activeFilter === 'semua' && styles.filterChipTextActive]}>
-            Semua
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setActiveFilter('dosen')}
-          style={[styles.filterChip, activeFilter === 'dosen' && styles.filterChipActive]}
-        >
-          <Text style={[styles.filterChipText, activeFilter === 'dosen' && styles.filterChipTextActive]}>
-            Dosen
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setActiveFilter('fasilitas')}
-          style={[styles.filterChip, activeFilter === 'fasilitas' && styles.filterChipActive]}
-        >
-          <Text style={[styles.filterChipText, activeFilter === 'fasilitas' && styles.filterChipTextActive]}>
-            Fasilitas
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.filterSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
+          {['semua', 'dosen', 'fasilitas'].map((f) => (
+            <TouchableOpacity
+              key={f}
+              onPress={() => setActiveFilter(f)}
+              style={[styles.chip, activeFilter === f && styles.chipActive]}
+            >
+              <Text style={[styles.chipText, activeFilter === f && styles.chipTextActive]}>
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
-      {/* Content */}
       <ScrollView
-        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
       >
         {loading ? (
-          <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Memuat riwayat...</Text>
-          </View>
+          <ActivityIndicator size="large" color="#2563EB" style={{ marginTop: 40 }} />
         ) : Object.keys(riwayatData).length > 0 ? (
           Object.keys(riwayatData).map((month) => (
-            <View key={month}>
+            <View key={month} style={styles.monthSection}>
               <Text style={styles.monthLabel}>{month}</Text>
               {riwayatData[month].map(renderItem)}
             </View>
           ))
         ) : (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="clipboard-text-outline" size={64} color={colors.textDisabled} />
-            <Text style={styles.emptyStateText}>Belum ada riwayat evaluasi</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Mulai evaluasi dosen atau fasilitas dari halaman beranda
-            </Text>
+            <MaterialCommunityIcons name="clipboard-text-outline" size={80} color="#CBD5E1" />
+            <Text style={styles.emptyText}>Belum ada riwayat evaluasi</Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Stats Summary */}
       {!loading && allData.length > 0 && (
-        <View style={[styles.statsBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+        <View style={styles.statsBar}>
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>{allData.length}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total</Text>
+            <Text style={styles.statValue}>{allData.length}</Text>
+            <Text style={styles.statLabel}>Total</Text>
           </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
-              {allData.filter((item) => item.type === 'DOSEN').length}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Dosen</Text>
+            <Text style={styles.statValue}>{allData.filter(i => i.type === 'DOSEN').length}</Text>
+            <Text style={styles.statLabel}>Dosen</Text>
           </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
-              {allData.filter((item) => item.type === 'FASILITAS').length}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Fasilitas</Text>
+            <Text style={styles.statValue}>{allData.filter(i => i.type === 'FASILITAS').length}</Text>
+            <Text style={styles.statLabel}>Fasilitas</Text>
           </View>
         </View>
       )}
@@ -250,200 +170,34 @@ const RiwayatScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.lg,
-    backgroundColor: staticColors.background,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.primary,
-    fontFamily: typography.fontFamily.medium,
-    letterSpacing: 0.5,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginTop: spacing.xs,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    backgroundColor: staticColors.background,
-  },
-  filterChip: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: staticColors.surface,
-    minWidth: 80,
-    alignItems: 'center',
-    marginRight: spacing.sm,
-  },
-  filterChipActive: {
-    backgroundColor: staticColors.primary,
-  },
-  filterChipText: {
-    color: staticColors.textPrimary,
-    fontSize: typography.fontSize.sm,
-  },
-  filterChipTextActive: {
-    color: 'white',
-    fontFamily: typography.fontFamily.medium,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.base,
-  },
-  monthLabel: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textSecondary,
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
-    marginTop: spacing.base,
-  },
-  itemCard: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: radius.md,
-    padding: spacing.base,
-    marginBottom: spacing.md,
-    elevation: 2,
-  },
-  itemIndicator: {
-    width: 4,
-    backgroundColor: staticColors.primary,
-    borderRadius: 2,
-    marginRight: spacing.md,
-  },
-  itemContent: {
-    flex: 1,
-  },
-  itemDate: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#DBECFF',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    marginBottom: spacing.sm,
-  },
-  statusIcon: {
-    marginRight: spacing.xs,
-  },
-  statusText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.success,
-    fontFamily: typography.fontFamily.medium,
-  },
-  itemInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  itemInfoIcon: {
-    marginRight: spacing.sm,
-  },
-  itemInfoText: {
-    marginRight: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    alignSelf: 'flex-start',
-  },
-  chipText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textPrimary,
-  },
-  itemSubject: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    flex: 1,
-  },
-  itemName: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxxl * 2,
-  },
-  emptyStateText: {
-    fontSize: typography.fontSize.base,
-    marginTop: spacing.base,
-    fontFamily: typography.fontFamily.medium,
-  },
-  emptyStateSubtext: {
-    fontSize: typography.fontSize.sm,
-    marginTop: spacing.sm,
-    textAlign: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  loadingState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxxl * 2,
-  },
-  loadingText: {
-    fontSize: typography.fontSize.base,
-    marginTop: spacing.base,
-  },
-  statsBar: {
-    flexDirection: 'row',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.base,
-    borderTopWidth: 1,
-    elevation: 4,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.bold,
-  },
-  statLabel: {
-    fontSize: typography.fontSize.xs,
-    marginTop: spacing.xs,
-  },
-  statDivider: {
-    width: 1,
-    marginHorizontal: spacing.sm,
-  },
-  fab: {
-    position: 'absolute',
-    right: spacing.base,
-    bottom: spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: staticColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  header: { padding: 24, backgroundColor: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: '#2563EB', fontWeight: 'bold', letterSpacing: 1 },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#0F172A', marginTop: 4 },
+  filterSection: { backgroundColor: '#FFF', paddingBottom: 16 },
+  filterList: { paddingHorizontal: 24 },
+  chip: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 99, backgroundColor: '#F1F5F9', marginRight: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  chipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+  chipText: { fontSize: 13, color: '#64748B', fontWeight: '600' },
+  chipTextActive: { color: '#FFF' },
+  scrollContent: { padding: 24, paddingBottom: 100 },
+  monthSection: { marginBottom: 24 },
+  monthLabel: { fontSize: 13, fontWeight: 'bold', color: '#94A3B8', marginBottom: 16, letterSpacing: 0.5 },
+  itemCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 20, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
+  typeIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  itemContent: { flex: 1 },
+  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  itemType: { fontSize: 10, fontWeight: 'bold', color: '#94A3B8' },
+  itemDate: { fontSize: 11, color: '#94A3B8' },
+  itemSubject: { fontSize: 15, fontWeight: 'bold', color: '#0F172A' },
+  itemName: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  emptyState: { alignItems: 'center', marginTop: 60 },
+  emptyText: { marginTop: 16, fontSize: 16, color: '#94A3B8' },
+  statsBar: { flexDirection: 'row', position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', paddingVertical: 16, borderTopWidth: 1, borderTopColor: '#E2E8F0', elevation: 20 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  statLabel: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  statDivider: { width: 1, height: 30, backgroundColor: '#E2E8F0' },
 });
 
 export default RiwayatScreen;
-

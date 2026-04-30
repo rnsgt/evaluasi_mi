@@ -58,6 +58,28 @@ const authService = {
   getProfile: async () => {
     return await api.get('/auth/profile');
   },
+
+  /**
+   * Forgot password - Check user
+   * @param {string} identifier - NIM or Email
+   */
+  forgotPassword: async (identifier) => {
+    const response = await api.post('/auth/forgot-password', { identifier });
+    return response;
+  },
+
+  /**
+   * Reset password
+   * @param {string} identifier - NIM or Email
+   * @param {string} newPassword
+   */
+  resetPassword: async (identifier, newPassword) => {
+    const response = await api.post('/auth/reset-password', { 
+      identifier, 
+      newPassword 
+    });
+    return response;
+  },
 };
 
 export default authService;

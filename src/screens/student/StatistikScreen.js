@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import evaluasiService from '../../services/evaluasiService';
 
 const StatistikScreen = () => {
-  const { user } = useAuth();
   const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,7 +22,8 @@ const StatistikScreen = () => {
     totalEvaluasi: 0,
     totalDosen: 0,
     totalFasilitas: 0,
-    periodeAktif: 'Semester Ganjil 2023/2024',
+    participationData: [],
+    periodeAktif: 'Tidak ada periode aktif',
     achievement: null,
   });
 
@@ -35,11 +35,11 @@ const StatistikScreen = () => {
     try {
       setLoading(true);
       const statsData = await evaluasiService.getStatistik();
-      
       setStats({
         totalEvaluasi: statsData.totalEvaluasi || 0,
         totalDosen: statsData.totalDosen || 0,
         totalFasilitas: statsData.totalFasilitas || 0,
+        participationData: statsData.participationData || [],
         periodeAktif: statsData.periodeAktif || 'Tidak ada periode aktif',
         achievement: statsData.achievement || null,
       });
@@ -57,191 +57,105 @@ const StatistikScreen = () => {
   };
 
   const renderStatCard = (icon, title, value, color) => (
-    <View style={[styles.statCard, { borderLeftColor: color, backgroundColor: colors.surface }]}>
-      <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
-        <MaterialCommunityIcons name={icon} size={28} color={color} />
+    <View style={[styles.statCard, { borderLeftColor: color, backgroundColor: '#FFFFFF' }]}>
+      <View style={[styles.statIconContainer, { backgroundColor: color + '15' }]}>
+        <MaterialCommunityIcons name={icon} size={24} color={color} />
       </View>
       <View style={styles.statContent}>
-        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{value}</Text>
-        <Text style={[styles.statTitle, { color: colors.textSecondary }]}>{title}</Text>
+        <Text style={styles.statTitle}>{title}</Text>
+        <Text style={styles.statValue}>{value}</Text>
       </View>
     </View>
   );
 
-  const renderProgressBar = (label, current, total, color) => {
-    const percentage = total > 0 ? (current / total) * 100 : 0;
-    return (
-      <View style={styles.progressItem}>
-        <View style={styles.progressHeader}>
-          <Text style={[styles.progressLabel, { color: colors.textPrimary }]}>{label}</Text>
-          <Text style={[styles.progressValue, { color: colors.textSecondary }]}>
-            {current} / {total}
-          </Text>
-        </View>
-        <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${percentage}%`, backgroundColor: color },
-            ]}
-          />
-        </View>
-      </View>
-    );
-  };
-
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Memuat statistik...</Text>
+          <Text style={styles.loadingText}>Memuat statistik...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.background }]}>
-          <Text style={[styles.headerSubtitle, { color: colors.primary }]}>PARTISIPASI ANDA</Text>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Statistik Evaluasi</Text>
+        <View style={styles.header}>
+          <Text style={styles.headerSubtitle}>RINGKASAN AKTIVITAS</Text>
+          <Text style={styles.headerTitle}>Statistik Anda</Text>
         </View>
 
-        {/* Achievement Badge */}
         {stats.achievement && (
-          <View
-            style={[
-              styles.achievementCard,
-              { backgroundColor: stats.achievement.color + '15' },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={stats.achievement.icon}
-              size={48}
-              color={stats.achievement.color}
-            />
+          <View style={[styles.achievementCard, { backgroundColor: stats.achievement.color + '10' }]}>
+            <View style={[styles.trophyContainer, { backgroundColor: stats.achievement.color + '20' }]}>
+              <MaterialCommunityIcons name={stats.achievement.icon} size={32} color={stats.achievement.color} />
+            </View>
             <View style={styles.achievementContent}>
-              <Text style={[styles.achievementTitle, { color: colors.textPrimary }]}>{stats.achievement.text}</Text>
-              <Text style={[styles.achievementSubtitle, { color: colors.textSecondary }]}>
-                Terima kasih atas partisipasi aktif Anda!
-              </Text>
+              <Text style={styles.achievementTitle}>{stats.achievement.text}</Text>
+              <Text style={styles.achievementSubtitle}>Terima kasih telah berkontribusi!</Text>
             </View>
           </View>
         )}
 
-        {/* Main Stats Cards */}
         <View style={styles.statsGrid}>
-          {renderStatCard(
-            'clipboard-check',
-            'Total Evaluasi',
-            stats.totalEvaluasi,
-            colors.primary
-          )}
-          {renderStatCard(
-            'school',
-            'Evaluasi Dosen',
-            stats.totalDosen,
-            '#228BE6'
-          )}
-          {renderStatCard(
-            'office-building',
-            'Evaluasi Fasilitas',
-            stats.totalFasilitas,
-            '#16A34A'
-          )}
-        </View>
-
-        {/* Periode Info */}
-        <View style={styles.periodeCard}>
-          <MaterialCommunityIcons
-            name="calendar-clock"
-            size={20}
-            color={colors.primary}
-          />
-          <Text style={[styles.periodeText, { color: colors.textPrimary }]}>Periode: {stats.periodeAktif}</Text>
-        </View>
-
-        {/* Progress Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Progress Evaluasi</Text>
-          <View style={[styles.progressContainer, { backgroundColor: colors.surface }]}>
-            {renderProgressBar(
-              'Evaluasi Dosen',
-              stats.totalDosen,
-              stats.totalDosen > 0 ? stats.totalDosen : 10,
-              '#228BE6'
-            )}
-            {renderProgressBar(
-              'Evaluasi Fasilitas',
-              stats.totalFasilitas,
-              stats.totalFasilitas > 0 ? stats.totalFasilitas : 10,
-              '#16A34A'
-            )}
+          {renderStatCard('check-circle-outline', 'Total Evaluasi', stats.totalEvaluasi, colors.primary)}
+          <View style={styles.statsRow}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              {renderStatCard('account-school-outline', 'Dosen', stats.totalDosen, '#8B5CF6')}
+            </View>
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              {renderStatCard('office-building-outline', 'Fasilitas', stats.totalFasilitas, '#EA580C')}
+            </View>
           </View>
         </View>
 
-
-
-        {/* Visual Chart - Simple Bar */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Grafik Partisipasi</Text>
-          <View style={[styles.chartContainer, { backgroundColor: colors.surface }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Grafik Partisipasi</Text>
+            <View style={styles.periodeBadge}>
+              <Text style={styles.periodeBadgeText}>{stats.periodeAktif}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.chartCard}>
             <View style={styles.chartBars}>
-              <View style={styles.barGroup}>
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: stats.totalDosen * 20 + 40,
-                      maxHeight: 200,
-                      backgroundColor: '#228BE6',
-                    },
-                  ]}
-                />
-                <Text style={[styles.barLabel, { color: colors.textSecondary }]}>Dosen</Text>
-                <Text style={[styles.barValue, { color: colors.textPrimary }]}>{stats.totalDosen}</Text>
+              {stats.participationData.map((item, idx) => {
+                const percentage = item.total > 0 ? (item.completed / item.total) : 0;
+                const barColor = item.label === 'Dosen' ? '#8B5CF6' : '#EA580C';
+                return (
+                  <View key={item.label} style={styles.barColumn}>
+                    <View style={styles.barTrack}>
+                      <View style={[styles.barFill, { height: `${Math.max(10, percentage * 100)}%`, backgroundColor: barColor }]} />
+                    </View>
+                    <Text style={styles.barLabel}>{item.label}</Text>
+                    <Text style={styles.barCount}>{item.completed}/{item.total}</Text>
+                  </View>
+                );
+              })}
+            </View>
+            
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
+                <Text style={styles.legendText}>Evaluasi Dosen</Text>
               </View>
-              <View style={styles.barGroup}>
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: stats.totalFasilitas * 20 + 40,
-                      maxHeight: 200,
-                      backgroundColor: '#16A34A',
-                    },
-                  ]}
-                />
-                <Text style={[styles.barLabel, { color: colors.textSecondary }]}>Fasilitas</Text>
-                <Text style={[styles.barValue, { color: colors.textPrimary }]}>{stats.totalFasilitas}</Text>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#EA580C' }]} />
+                <Text style={styles.legendText}>Evaluasi Fasilitas</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Info Card */}
-        <View style={styles.infoCard}>
-          <MaterialCommunityIcons
-            name="information-outline"
-            size={20}
-            color={colors.primary}
-            style={styles.infoIcon}
-          />
-          <Text style={[styles.infoText, { color: colors.textPrimary }]}>
-            Pastikan Anda menyelesaikan semua evaluasi sebelum periode berakhir.
-            Partisipasi Anda sangat berarti untuk peningkatan kualitas akademik.
+        <View style={styles.infoBox}>
+          <MaterialCommunityIcons name="lightbulb-outline" size={20} color="#0B78F0" />
+          <Text style={styles.infoBoxText}>
+            Lengkapi semua evaluasi untuk membantu kami meningkatkan kualitas layanan dan pengajaran.
           </Text>
         </View>
       </ScrollView>
@@ -250,190 +164,43 @@ const StatistikScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xl,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: typography.fontSize.base,
-    marginTop: spacing.base,
-  },
-  header: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.lg,
-  },
-  headerSubtitle: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    letterSpacing: 0.5,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-    marginTop: spacing.xs,
-  },
-  achievementCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.base,
-    padding: spacing.base,
-    borderRadius: radius.lg,
-    elevation: 2,
-  },
-  achievementContent: {
-    flex: 1,
-    marginLeft: spacing.base,
-  },
-  achievementTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-  },
-  achievementSubtitle: {
-    fontSize: typography.fontSize.sm,
-    marginTop: spacing.xs,
-  },
-  statsGrid: {
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.base,
-  },
-  statCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderRadius: radius.base,
-    marginBottom: spacing.base,
-    elevation: 2,
-    borderLeftWidth: 4,
-  },
-  statIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.base,
-  },
-  statContent: {
-    flex: 1,
-  },
-  statValue: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-  },
-  statTitle: {
-    fontSize: typography.fontSize.sm,
-    marginTop: spacing.xs,
-  },
-  periodeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DBECFF',
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.base,
-    padding: spacing.md,
-    borderRadius: radius.base,
-  },
-  periodeText: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    marginLeft: spacing.sm,
-  },
-  section: {
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.md,
-    fontFamily: typography.fontFamily.bold,
-    marginBottom: spacing.base,
-  },
-  progressContainer: {
-    padding: spacing.base,
-    borderRadius: radius.base,
-    elevation: 1,
-  },
-  progressItem: {
-    marginBottom: spacing.base,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  progressLabel: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-  },
-  progressValue: {
-    fontSize: typography.fontSize.sm,
-  },
-  progressBarBg: {
-    height: 10,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: radius.full,
-  },
-  chartContainer: {
-    padding: spacing.base,
-    borderRadius: radius.base,
-    elevation: 1,
-    minHeight: 240,
-  },
-  chartBars: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 200,
-    paddingBottom: spacing.base,
-  },
-  barGroup: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  bar: {
-    width: 60,
-    borderRadius: radius.base,
-    minHeight: 40,
-  },
-  barLabel: {
-    fontSize: typography.fontSize.sm,
-    marginTop: spacing.sm,
-    fontFamily: typography.fontFamily.medium,
-  },
-  barValue: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    marginTop: spacing.xs,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FCE9CC',
-    marginHorizontal: spacing.base,
-    padding: spacing.base,
-    borderRadius: radius.base,
-  },
-  infoIcon: {
-    marginRight: spacing.sm,
-    marginTop: 2,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: typography.fontSize.sm,
-    lineHeight: typography.lineHeight.relaxed * typography.fontSize.sm,
-  },
+  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  scrollContent: { paddingBottom: 40 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#64748B' },
+  header: { padding: 20 },
+  headerSubtitle: { color: '#2563EB', fontWeight: 'bold', letterSpacing: 1 },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#0F172A', marginTop: 4 },
+  achievementCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 20, padding: 16, borderRadius: 20 },
+  trophyContainer: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  achievementContent: { flex: 1 },
+  achievementTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  achievementSubtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  statsGrid: { paddingHorizontal: 20, marginBottom: 24 },
+  statsRow: { flexDirection: 'row', marginTop: 16 },
+  statCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderLeftWidth: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  statIconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  statContent: { flex: 1 },
+  statTitle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  statValue: { fontSize: 22, fontWeight: 'bold', color: '#0F172A', marginTop: 2 },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
+  periodeBadge: { backgroundColor: '#DBECFF', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 99 },
+  periodeBadgeText: { fontSize: 11, color: '#2563EB', fontWeight: 'bold' },
+  chartCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, elevation: 2 },
+  chartBars: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 160, marginBottom: 20 },
+  barColumn: { alignItems: 'center', width: 80 },
+  barTrack: { width: 16, height: 120, backgroundColor: '#F1F5F9', borderRadius: 8, justifyContent: 'flex-end', overflow: 'hidden' },
+  barFill: { width: '100%', borderRadius: 8 },
+  barLabel: { marginTop: 12, fontSize: 13, fontWeight: 'bold', color: '#0F172A' },
+  barCount: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  legendRow: { flexDirection: 'row', justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 10 },
+  legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  legendText: { fontSize: 11, color: '#64748B' },
+  infoBox: { flexDirection: 'row', marginHorizontal: 20, padding: 16, backgroundColor: '#E0F2FE', borderRadius: 16, alignItems: 'center' },
+  infoBoxText: { flex: 1, marginLeft: 12, fontSize: 13, color: '#0369A1', lineHeight: 18 },
 });
 
 export default StatistikScreen;
-

@@ -113,9 +113,47 @@ const evaluasiService = {
     return await evaluasiService.getRiwayat();
   },
 
-  hasEvaluatedDosen: async (mahasiswaId, dosenId, periodeId) => {
-    // This will be validated by backend duplicate check
-    return false;
+  /**
+   * Get global statistics for Admin Dashboard
+   * @returns {Promise<Object>}
+   */
+  getAdminDashboard: async () => {
+    try {
+      const response = await api.get('/admin/dashboard');
+      return response.data || {};
+    } catch (error) {
+      console.error('Get admin dashboard error:', error);
+      return {};
+    }
+  },
+
+  /**
+   * Management for statements (Admin)
+   */
+  getAdminStatements: async (type) => {
+    try {
+      const response = await api.get(`/admin/pernyataan/${type}`);
+      return response.data || [];
+    } catch (error) {
+      console.error(`Get admin statements ${type} error:`, error);
+      return [];
+    }
+  },
+
+  addAdminStatement: async (type, data) => {
+    return await api.post(`/admin/pernyataan/${type}`, data);
+  },
+
+  updateAdminStatement: async (type, id, data) => {
+    return await api.put(`/admin/pernyataan/${type}/${id}`, data);
+  },
+
+  deleteAdminStatement: async (type, id) => {
+    return await api.delete(`/admin/pernyataan/${type}/${id}`);
+  },
+
+  deletePeriode: async (id) => {
+    return await api.delete(`/periode/${id}`);
   },
 };
 

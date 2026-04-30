@@ -2,8 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../contexts/ThemeContext';
-import { colors as staticColors, typography } from '../utils/theme';
+import { Platform } from 'react-native';
 
 // Screens
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
@@ -17,112 +16,74 @@ import FasilitasManagementScreen from '../screens/admin/FasilitasManagementScree
 import FormFasilitasScreen from '../screens/admin/FormFasilitasScreen';
 import DosenManagementScreen from '../screens/admin/DosenManagementScreen';
 import FormDosenScreen from '../screens/admin/FormDosenScreen';
+import KuesionerManagementScreen from '../screens/admin/KuesionerManagementScreen';
 import ChangePasswordScreen from '../screens/student/ChangePasswordScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 const AdminTabNavigator = () => {
-  const { colors } = useTheme();
-  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
+          if (route.name === 'Beranda') iconName = focused ? 'view-dashboard' : 'view-dashboard-outline';
+          else if (route.name === 'Kelola') iconName = focused ? 'layers' : 'layers-outline';
+          else if (route.name === 'Laporan') iconName = focused ? 'file-chart' : 'file-chart-outline';
+          else if (route.name === 'Profil') iconName = focused ? 'shield-account' : 'shield-account-outline';
 
-          if (route.name === 'Beranda') {
-            iconName = focused ? 'view-dashboard' : 'view-dashboard-outline';
-          } else if (route.name === 'Laporan') {
-            iconName = focused ? 'chart-box' : 'chart-box-outline';
-          } else if (route.name === 'Periode') {
-            iconName = focused ? 'calendar' : 'calendar-outline';
-          } else if (route.name === 'Pengaturan') {
-            iconName = focused ? 'cog' : 'cog-outline';
-          }
-
-          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+          return (
+            <MaterialCommunityIcons 
+              name={iconName} 
+              size={focused ? 28 : 24} 
+              color={color} 
+              style={focused ? { marginBottom: 2 } : {}}
+            />
+          );
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarActiveTintColor: '#0F172A',
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: {
-          fontSize: typography.fontSize.xs,
-          fontFamily: typography.fontFamily.medium,
+          fontSize: 11,
+          fontWeight: 'bold',
+          marginBottom: Platform.OS === 'ios' ? 0 : 10,
         },
         tabBarStyle: {
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 0,
+          height: Platform.OS === 'ios' ? 88 : 70,
+          paddingTop: 10,
+          elevation: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
         },
       })}
     >
       <Tab.Screen name="Beranda" component={AdminDashboardScreen} />
+      <Tab.Screen name="Kelola" component={KelolaScreen} />
       <Tab.Screen name="Laporan" component={LaporanScreen} />
-      <Tab.Screen name="Periode" component={PeriodeScreen} />
-      <Tab.Screen name="Pengaturan" component={SettingsScreen} />
+      <Tab.Screen name="Profil" component={ProfileAdminScreen} />
     </Tab.Navigator>
   );
 };
 
 const AdminNavigator = () => {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AdminTabs" component={AdminTabNavigator} />
-      
-      {/* Admin Profile */}
-      <Stack.Screen 
-        name="ProfileAdmin" 
-        component={ProfileAdminScreen}
-        options={{
-          presentation: 'modal',
-        }}
-      />
-
-      {/* Change Password */}
-      <Stack.Screen 
-        name="ChangePassword" 
-        component={ChangePasswordScreen}
-        options={{
-          presentation: 'modal',
-        }}
-      />
-      
-      {/* Periode Management */}
-      <Stack.Screen 
-        name="FormPeriode" 
-        component={FormPeriodeScreen}
-        options={{
-          presentation: 'modal',
-        }}
-      />
-
-      {/* Master Data Management */}
-      <Stack.Screen name="KelolaHub" component={KelolaScreen} />
-      
-      {/* Fasilitas Management */}
-      <Stack.Screen name="FasilitasManagement" component={FasilitasManagementScreen} />
-      <Stack.Screen 
-        name="FormFasilitas" 
-        component={FormFasilitasScreen}
-        options={{
-          presentation: 'modal',
-        }}
-      />
-
-      {/* Dosen Management */}
-      <Stack.Screen name="DosenManagement" component={DosenManagementScreen} />
-      <Stack.Screen 
-        name="FormDosen" 
-        component={FormDosenScreen}
-        options={{
-          presentation: 'modal',
-        }}
-      />
+      <Stack.Screen name="Periode" component={PeriodeScreen} />
+      <Stack.Screen name="FormPeriode" component={FormPeriodeScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="Dosen" component={DosenManagementScreen} />
+      <Stack.Screen name="FormDosen" component={FormDosenScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="Fasilitas" component={FasilitasManagementScreen} />
+      <Stack.Screen name="FormFasilitas" component={FormFasilitasScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="KuesionerManagement" component={KuesionerManagementScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 };
