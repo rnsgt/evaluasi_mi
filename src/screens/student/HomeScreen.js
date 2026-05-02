@@ -9,9 +9,11 @@ import {
   Dimensions,
   Image,
   ImageBackground,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle, Path, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { formatDate } from '../../utils/helpers';
@@ -49,148 +51,170 @@ const HomeScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
+  const DecorativeBackground = () => (
+    <View style={StyleSheet.absoluteFill}>
+      <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+        <Defs>
+          <LinearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={colors.primary} stopOpacity="0.08" />
+            <Stop offset="100%" stopColor={colors.secondary} stopOpacity="0.05" />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#grad1)" />
+        <Circle cx={width * 0.9} cy="100" r="150" fill={colors.primary + '08'} />
+        <Circle cx={width * 0.1} cy="400" r="100" fill={colors.secondary + '10'} />
+        <Path
+          d="M0 600 Q 100 550 200 600 T 400 600"
+          fill="none"
+          stroke={colors.tertiary + '08'}
+          strokeWidth="40"
+        />
+      </Svg>
+    </View>
+  );
+
   const renderEvaluasiCard = (title, desc, icon, color, onPress) => (
-    <TouchableOpacity 
-      style={[styles.evaluasiCard, { backgroundColor: '#FFFFFF', borderLeftColor: color, borderLeftWidth: 6 }]}
+    <TouchableOpacity
+      style={[styles.fullCard, { backgroundColor: colors.surface }, colors.shadowMedium]}
+      activeOpacity={0.9}
       onPress={onPress}
-      activeOpacity={0.8}
     >
-      <View style={styles.cardTopRow}>
-        <View style={[styles.cardIconBox, { backgroundColor: color + '15' }]}>
-          <MaterialCommunityIcons name={icon} size={28} color={color} />
+      <View style={[styles.cardHeader, { borderLeftColor: color, borderLeftWidth: 6 }]}>
+        <View style={[styles.iconBox, { backgroundColor: color + '15' }]}>
+          <MaterialCommunityIcons name={icon} size={32} color={color} />
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={24} color="#CBD5E1" />
+        <View style={styles.cardInfo}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{title}</Text>
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>{desc}</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textDisabled} />
       </View>
-      <View style={styles.cardTextContainer}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardDescription}>{desc}</Text>
+      <View style={[styles.cardAction, { backgroundColor: color }]}>
+        <Text style={styles.actionText}>Mulai Penilaian</Text>
+        <MaterialCommunityIcons name="arrow-right" size={18} color="#FFF" />
       </View>
-      <TouchableOpacity style={[styles.cardButton, { backgroundColor: color }]} onPress={onPress}>
-        <Text style={styles.cardButtonText}>Mulai Evaluasi</Text>
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colors.statusBarStyle} />
+      <DecorativeBackground />
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#FFC107']} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
         showsVerticalScrollIndicator={false}
       >
         {/* Header Section */}
-        <ImageBackground 
-          source={require('../../../assets/gedungdipkom.png')}
-          style={styles.headerCard}
-          imageStyle={styles.headerCardImage}
-        >
-          <View style={styles.headerOverlay}>
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.greeting}>Fakultas Ilmu Komputer UNSRI</Text>
-                <Text style={styles.greeting}>Manajemen Informatika</Text>
-                <Text style={styles.userName}>{user?.nama || 'Mahasiswa'}</Text>
-              </View>
-              <View style={styles.profileCircle}>
-                <Image source={require('../../../assets/logomi.png')} style={styles.logoImage} />
+        <View style={[styles.headerWrapper, colors.shadowMedium]}>
+          <ImageBackground
+            source={require('../../../assets/gedungdipkom.png')}
+            style={styles.headerCard}
+            imageStyle={styles.headerCardImage}
+          >
+            <View style={[styles.headerOverlay, { backgroundColor: colors.glassDark }]}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerTextCol}>
+                  <Text style={styles.greeting}>PRODI MI UNSRI</Text>
+                  <Text style={styles.userName} numberOfLines={1}>{user?.nama || 'Mahasiswa'}</Text>
+                  <View style={styles.statusBadge}>
+                    <View style={styles.statusDot} />
+                    <Text style={styles.statusText}>Sesi Aktif</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[styles.profileCircle, colors.shadowSoft]}
+                  onPress={() => navigation.navigate('Profil')}
+                >
+                  <Image source={require('../../../assets/logomi.png')} style={styles.logoImage} />
+                </TouchableOpacity>
               </View>
             </View>
-          </View>
-        </ImageBackground>
+          </ImageBackground>
+        </View>
 
-        {/* Periode Info Box */}
+        {/* Periode Banner */}
         {periodeAktif && (
-          <View style={styles.periodeCard}>
-            <View style={styles.periodeIcon}>
-              <MaterialCommunityIcons name="calendar-range" size={24} color="#2563EB" />
+          <View style={[styles.periodeBanner, { backgroundColor: colors.primaryDark }, colors.shadowMedium]}>
+            <View style={styles.periodeIconCircle}>
+              <MaterialCommunityIcons name="calendar-clock" size={22} color="#FFF" />
             </View>
-            <View style={styles.periodeContent}>
-              <Text style={styles.periodeTitle}>{periodeAktif.nama}</Text>
-              <Text style={styles.periodeDeadline}>
-                Batas Akhir: {formatDate(periodeAktif.batas_akhir, 'DD MMMM YYYY')}
-              </Text>
+            <View style={styles.periodeTextWrapper}>
+              <Text style={styles.periodeLabel}>Periode Aktif</Text>
+              <Text style={styles.periodeValue}>{periodeAktif.nama}</Text>
             </View>
-            <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>AKTIF</Text>
+            <View style={styles.deadlineBadge}>
+              <Text style={styles.deadlineText}>Hingga {formatDate(periodeAktif.batas_akhir, 'DD MMM')}</Text>
             </View>
           </View>
         )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Evaluasi Semester</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Statistik')}>
-            <Text style={styles.sectionLink}>Lihat Statistik</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Evaluasi Semester</Text>
 
-        {/* Evaluasi Cards Grid */}
-        <View style={styles.cardsGrid}>
+        {/* Uniform Cards */}
+        <View style={styles.cardsContainer}>
           {renderEvaluasiCard(
             'Evaluasi Dosen',
-            'Berikan penilaian kualitas pengajaran dosen pengampu.',
-            'account-tie-voice-outline',
-            colors.primary, // Navy Blue
+            'Berikan penilaian kualitas pengajaran dosen pengampu semester ini.',
+            'account-tie-voice',
+            colors.primary,
             () => navigation.navigate('PilihDosen')
           )}
-          
+
           {renderEvaluasiCard(
             'Evaluasi Fasilitas',
             'Sampaikan aspirasi mengenai sarana dan layanan kampus.',
-            'office-building-cog-outline',
-            colors.tertiary, // MI Red
+            'office-building-cog',
+            colors.tertiary,
             () => navigation.navigate('PilihFasilitas')
           )}
         </View>
 
-        {/* Quick Info Section */}
-        <View style={styles.infoSection}>
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons name="shield-check-outline" size={20} color="#10B981" />
-            <Text style={styles.infoText}>Anonimitas Anda terjamin sepenuhnya.</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <MaterialCommunityIcons name="lightbulb-on-outline" size={20} color="#F59E0B" />
-            <Text style={styles.infoText}>Masukan Anda sangat berarti bagi prodi.</Text>
-          </View>
-        </View>
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F1F5F9' },
-  scrollContent: { padding: 24, paddingTop: 16 },
-  headerCard: { width: '100%', minHeight: 140, marginBottom: 32, borderRadius: 28, overflow: 'hidden', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+  container: { flex: 1 },
+  scrollContent: { padding: 20 },
+  headerWrapper: { marginBottom: 24, borderRadius: 32, overflow: 'hidden' },
+  headerCard: { width: '100%', minHeight: 160 },
   headerCardImage: { resizeMode: 'cover' },
-  headerOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 60, 89, 0.8)', padding: 24, justifyContent: 'center' },
+  headerOverlay: { flex: 1, padding: 24, justifyContent: 'center' },
   headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  greeting: { fontSize: 13, color: '#E2E8F0', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  userName: { fontSize: 26, fontWeight: 'bold', color: '#FFFFFF', marginTop: 4 },
-  profileCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  headerTextCol: { flex: 1, marginRight: 16 },
+  greeting: { fontSize: 12, color: '#E2E8F0', fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
+  userName: { fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', letterSpacing: -0.5 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, marginTop: 12 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#4ADE80', marginRight: 6 },
+  statusText: { fontSize: 10, color: '#FFFFFF', fontWeight: 'bold', textTransform: 'uppercase' },
+  profileCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
   logoImage: { width: 40, height: 40, resizeMode: 'contain' },
-  periodeCard: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 32, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
-  periodeIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#FFF8E1', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  periodeContent: { flex: 1 },
-  periodeTitle: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
-  periodeDeadline: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  activeBadge: { backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
-  activeBadgeText: { fontSize: 10, color: '#166534', fontWeight: 'bold' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F3C59' },
-  sectionLink: { fontSize: 14, color: '#B91C1C', fontWeight: '600' },
-  cardsGrid: { gap: 20 },
-  evaluasiCard: { borderRadius: 28, padding: 24, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12 },
-  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  cardIconBox: { width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  cardTextContainer: { marginBottom: 24 },
-  cardTitle: { fontSize: 20, fontWeight: 'bold', color: '#0F172A' },
-  cardDescription: { fontSize: 13, color: '#64748B', marginTop: 6, lineHeight: 20 },
-  cardButton: { height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  cardButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
-  infoSection: { marginTop: 40, gap: 12 },
-  infoItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 16 },
-  infoText: { fontSize: 12, color: '#64748B', marginLeft: 12 },
+
+  sectionTitle: { fontSize: 18, fontWeight: '900', marginBottom: 16, marginLeft: 4 },
+  cardsContainer: { gap: 20, marginBottom: 24 },
+  fullCard: { borderRadius: 32, overflow: 'hidden' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 },
+  iconBox: { width: 60, height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  cardInfo: { flex: 1 },
+  cardTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
+  cardDesc: { fontSize: 12, marginTop: 4, lineHeight: 18 },
+  cardAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, gap: 8 },
+  actionText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+
+  periodeBanner: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 24, marginBottom: 32 },
+  periodeIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  periodeTextWrapper: { flex: 1 },
+  periodeLabel: { fontSize: 10, color: '#94A3B8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
+  periodeValue: { fontSize: 15, color: '#FFFFFF', fontWeight: 'bold', marginTop: 1 },
+  deadlineBadge: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  deadlineText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
+
+  footerInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 8 },
+  footerText: { flex: 1, fontSize: 12, fontWeight: '600' },
 });
 
 export default HomeScreen;

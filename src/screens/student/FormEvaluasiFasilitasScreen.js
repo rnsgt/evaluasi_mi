@@ -10,18 +10,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import LikertScale from '../../components/LikertScale';
 import ToastNotification from '../../components/ToastNotification';
 import evaluasiService from '../../services/evaluasiService';
 import { getActivePeriode } from '../../services/periodeService';
 
 const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
-  const { fasilitasId, namaFasilitas, kodeFasilitas, kategoriFasilitas, lokasi } = route.params;
+  const { fasilitasId, namaFasilitas, kodeFasilitas } = route.params;
   const { colors } = useTheme();
   const scrollViewRef = useRef(null);
 
@@ -78,7 +78,7 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
       e.preventDefault();
       Alert.alert(
         'Batalkan Evaluasi?',
-        'Anda memiliki perubahan yang belum disimpan. Yakin ingin keluar?',
+        'Data Anda belum disimpan. Yakin ingin keluar?',
         [
           { text: 'Tetap di sini', style: 'cancel' },
           {
@@ -104,7 +104,7 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
     questions.forEach((q) => {
       if (!answers[q.id]) {
-        newErrors[q.id] = 'Pertanyaan wajib diisi';
+        newErrors[q.id] = 'Wajib diisi';
         isValid = false;
       }
     });
@@ -118,15 +118,15 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
   const handleSubmit = () => {
     if (!validateForm()) {
-      Alert.alert('Form Belum Lengkap', 'Mohon lengkapi semua pertanyaan.');
+      Alert.alert('Belum Lengkap', 'Mohon isi semua pertanyaan.');
       return;
     }
     Alert.alert(
-      'Kirim Evaluasi?',
-      'Apakah Anda yakin ingin mengirim evaluasi ini?',
+      'Kirim Penilaian?',
+      'Terima kasih telah memberikan masukan yang jujur.',
       [
         { text: 'Batal', style: 'cancel' },
-        { text: 'Kirim', onPress: submitEvaluasi },
+        { text: 'Kirim Sekarang', onPress: submitEvaluasi },
       ]
     );
   };
@@ -135,7 +135,7 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
     try {
       setSubmitting(true);
       if (!activePeriode) {
-        showToast('Tidak ada periode evaluasi aktif', 'error');
+        showToast('Periode tidak aktif', 'error');
         return;
       }
 
@@ -153,10 +153,10 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
       await evaluasiService.submitEvaluasiFasilitas(evaluasiData);
       setHasUnsavedChanges(false);
-      showToast('Evaluasi berhasil dikirim!', 'success');
-      setTimeout(() => navigation.navigate('HomeMain'), 2000);
+      showToast('Berhasil dikirim!', 'success');
+      setTimeout(() => navigation.navigate('HomeMain'), 1500);
     } catch (error) {
-      showToast(error?.message || 'Gagal mengirim evaluasi', 'error');
+      showToast(error?.message || 'Gagal mengirim', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -165,116 +165,108 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
   const groupedQuestions = useMemo(() => {
     const groups = {};
     questions.forEach(q => {
-      const cat = (q.kategori || 'Lainnya').trim().replace(/\s+/g, ' ');
-      const existingKey = Object.keys(groups).find(k => k.toLowerCase() === cat.toLowerCase());
-      const key = existingKey || cat;
-      
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(q);
+      const cat = (q.kategori || 'Aspek Penilaian');
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(q);
     });
     return groups;
   }, [questions]);
 
-  const renderKategori = (kategoriNama, questionsInGroup) => (
-    <View key={kategoriNama} style={styles.kategoriContainer}>
-      <View style={styles.kategoriHeader}>
-        <View style={styles.kategoriIconContainer}>
-          <MaterialCommunityIcons name="clipboard-text-outline" size={20} color={colors.primary} />
-        </View>
-        <Text style={styles.kategoriTitle}>{kategoriNama}</Text>
-      </View>
-      {questionsInGroup.map((q) => (
-        <View key={q.id} style={styles.pertanyaanContainer}>
-          <Text style={styles.pertanyaanNumber}>Pertanyaan {questions.indexOf(q) + 1}</Text>
-          <LikertScale
-            question={q.pernyataan}
-            value={answers[q.id]}
-            onValueChange={(val) => handleAnswerChange(q.id, val)}
-            required={true}
-            error={errors[q.id]}
-          />
-        </View>
-      ))}
-    </View>
-  );
-
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Memuat formulir...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colors.statusBarStyle} />
       <ToastNotification visible={toastVisible} message={toastMessage} type={toastType} onHide={hideToast} colors={colors} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
+      
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.surface }, colors.shadowSoft]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
+            <MaterialCommunityIcons name="chevron-left" size={32} color={colors.textPrimary} />
           </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Evaluasi Fasilitas</Text>
-            <Text style={styles.headerSubtitle} numberOfLines={1}>{namaFasilitas}</Text>
+          <View style={styles.headerInfo}>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Evaluasi Layanan</Text>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{namaFasilitas}</Text>
           </View>
-          <View style={styles.backButton} />
+          <View style={styles.iconButton} />
         </View>
 
-        <View style={styles.fasilitasInfoCard}>
-          <View style={styles.fasilitasIcon}>
-            <MaterialCommunityIcons name="office-building" size={32} color={colors.primary} />
+        {/* Progress Sticky */}
+        <View style={[styles.stickyProgress, { backgroundColor: colors.surface }]}>
+          <View style={styles.progressTextRow}>
+            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Kelengkapan Data</Text>
+            <Text style={[styles.progressVal, { color: colors.primary }]}>{Math.round(progress)}%</Text>
           </View>
-          <View style={styles.fasilitasInfo}>
-            <Text style={styles.fasilitasNama}>{namaFasilitas}</Text>
-            <Text style={styles.fasilitasKode}>{kodeFasilitas}</Text>
-          </View>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressText}>Progress: {answeredCount} / {totalPertanyaan}</Text>
-            <Text style={styles.progressPercentage}>{Math.round(progress)}%</Text>
-          </View>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+          <View style={[styles.progressBase, { backgroundColor: colors.surfaceLight }]}>
+            <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
           </View>
         </View>
 
         <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.instructionCard}>
-            <MaterialCommunityIcons name="information" size={20} color={colors.primary} style={styles.instructionIcon} />
-            <Text style={styles.instructionText}>Berikan penilaian objektif untuk fasilitas ini demi peningkatan kualitas layanan.</Text>
+          <View style={[styles.infoCard, { backgroundColor: colors.primaryLight }]}>
+            <MaterialCommunityIcons name="shield-check" size={24} color={colors.primary} />
+            <Text style={[styles.infoText, { color: colors.primary }]}>Identitas Anda 100% anonim. Berikan penilaian sejujur mungkin.</Text>
           </View>
 
-          {Object.entries(groupedQuestions).map(([name, list]) => renderKategori(name, list))}
+          {Object.entries(groupedQuestions).map(([cat, list]) => (
+            <View key={cat} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionDot, { backgroundColor: colors.primary }]} />
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{cat}</Text>
+              </View>
+              {list.map((q, i) => (
+                <View key={q.id} style={[styles.card, { backgroundColor: colors.surface }, colors.shadowSoft]}>
+                  <Text style={[styles.questionNo, { color: colors.textDisabled }]}>PERTANYAAN {questions.indexOf(q) + 1}</Text>
+                  <LikertScale
+                    question={q.pernyataan}
+                    value={answers[q.id]}
+                    onValueChange={(val) => handleAnswerChange(q.id, val)}
+                    required={true}
+                    error={errors[q.id]}
+                  />
+                </View>
+              ))}
+            </View>
+          ))}
 
-          <View style={styles.komentarContainer}>
-            <Text style={styles.komentarLabel}>Komentar / Saran (Opsional)</Text>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>Saran Perbaikan</Text>
             <TextInput
-              style={styles.komentarInput}
-              placeholder="Tuliskan masukan Anda..."
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="Apa yang perlu diperbaiki dari fasilitas ini?"
               value={komentar}
               onChangeText={(text) => { setKomentar(text); setHasUnsavedChanges(true); }}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={colors.textDisabled}
             />
           </View>
-          <View style={{ height: 100 }} />
+          
+          <View style={{ height: 40 }} />
         </ScrollView>
 
-        <View style={styles.submitContainer}>
+        <View style={[styles.footer, { backgroundColor: colors.surface }, colors.shadowLarge]}>
           <TouchableOpacity
-            style={[styles.submitButton, (submitting || progress < 100) && styles.submitButtonDisabled]}
+            style={[styles.btnSubmit, { backgroundColor: colors.primary }, (submitting || progress < 100) && styles.btnDisabled]}
             onPress={handleSubmit}
             disabled={submitting || progress < 100}
           >
-            {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.submitButtonText}>Kirim Evaluasi</Text>}
+            {submitting ? <ActivityIndicator color="#FFF" /> : (
+              <>
+                <Text style={styles.btnText}>Kirim Penilaian</Text>
+                <MaterialCommunityIcons name="send" size={18} color="#FFF" style={{ marginLeft: 8 }} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -283,44 +275,41 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  keyboardView: { flex: 1 },
+  container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, color: '#64748B' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitleContainer: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  headerSubtitle: { fontSize: 12, color: '#64748B' },
-  fasilitasInfoCard: { flexDirection: 'row', padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  fasilitasIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  fasilitasInfo: { justifyContent: 'center' },
-  fasilitasNama: { fontSize: 16, fontWeight: 'bold' },
-  fasilitasKode: { fontSize: 12, color: '#64748B' },
-  progressContainer: { padding: 16, backgroundColor: '#FFF' },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  progressText: { fontSize: 14, fontWeight: '500' },
-  progressPercentage: { fontSize: 14, color: '#2563EB', fontWeight: 'bold' },
-  progressBarBg: { height: 8, backgroundColor: '#F1F5F9', borderRadius: 4 },
-  progressBarFill: { height: '100%', backgroundColor: '#2563EB', borderRadius: 4 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingBottom: 20 },
+  iconButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
+  headerInfo: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '800' },
+  headerSubtitle: { fontSize: 13, fontWeight: '600', marginTop: 2 },
+  
+  stickyProgress: { padding: 20, paddingTop: 0 },
+  progressTextRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  progressLabel: { fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  progressVal: { fontSize: 14, fontWeight: '900' },
+  progressBase: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3 },
+  
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16 },
-  instructionCard: { flexDirection: 'row', padding: 16, backgroundColor: '#E0F2FE', borderRadius: 12, marginBottom: 24 },
-  instructionIcon: { marginRight: 12 },
-  instructionText: { flex: 1, fontSize: 14, color: '#0369A1' },
-  kategoriContainer: { marginBottom: 32 },
-  kategoriHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  kategoriIconContainer: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  kategoriTitle: { fontSize: 16, fontWeight: 'bold' },
-  pertanyaanContainer: { backgroundColor: '#FFF', padding: 16, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F1F5F9' },
-  pertanyaanNumber: { fontSize: 12, color: '#94A3B8', marginBottom: 8 },
-  komentarContainer: { padding: 16, backgroundColor: '#FFF', borderRadius: 16 },
-  komentarLabel: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  komentarInput: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, minHeight: 120, backgroundColor: '#F8FAFC' },
-  submitContainer: { padding: 16, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  submitButton: { backgroundColor: '#2563EB', height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  submitButtonDisabled: { backgroundColor: '#94A3B8' },
-  submitButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  scrollContent: { padding: 20 },
+  
+  infoCard: { flexDirection: 'row', padding: 16, borderRadius: 20, gap: 12, alignItems: 'center', marginBottom: 32 },
+  infoText: { flex: 1, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  
+  section: { marginBottom: 32 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  sectionDot: { width: 8, height: 8, borderRadius: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: '800' },
+  
+  card: { padding: 20, borderRadius: 24, marginBottom: 16 },
+  questionNo: { fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 12 },
+  
+  input: { borderWidth: 1, borderRadius: 20, padding: 20, minHeight: 120, fontSize: 15 },
+  
+  footer: { padding: 20, paddingBottom: Platform.OS === 'ios' ? 10 : 20 },
+  btnSubmit: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  btnDisabled: { opacity: 0.5 },
+  btnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });
 
 export default FormEvaluasiFasilitasScreen;
