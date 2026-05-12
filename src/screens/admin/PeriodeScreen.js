@@ -50,9 +50,12 @@ const PeriodeScreen = ({ navigation }) => {
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === 'aktif' ? 'tidak_aktif' : 'aktif';
     try {
-      await periodeService.updatePeriodeStatus(id, newStatus);
+      if (currentStatus === 'aktif') {
+        await periodeService.deactivatePeriode(id);
+      } else {
+        await periodeService.activatePeriode(id);
+      }
       loadPeriodes();
     } catch (error) {
       Alert.alert('Gagal', 'Terjadi kesalahan saat memperbarui status periode.');
@@ -98,7 +101,7 @@ const PeriodeScreen = ({ navigation }) => {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => navigation.navigate('FormPeriode', { periode: item })} style={[styles.iconAction, { backgroundColor: colors.primary + '10' }]}>
+          <TouchableOpacity onPress={() => navigation.navigate('FormPeriode', { mode: 'edit', periode: item })} style={[styles.iconAction, { backgroundColor: colors.primary + '10' }]}>
             <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDelete(item.id, item.nama, item.status)} style={[styles.iconAction, { backgroundColor: colors.error + '10', marginLeft: 10 }]}>
