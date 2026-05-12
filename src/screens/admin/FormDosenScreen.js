@@ -8,12 +8,17 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  StatusBar,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import dosenService, { MATA_KULIAH_LIST } from '../../services/dosenService';
+
+const { width } = Dimensions.get('window');
 
 const FormDosenScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -24,9 +29,7 @@ const FormDosenScreen = ({ route, navigation }) => {
   const [formData, setFormData] = useState({
     nip: '',
     nama: '',
-    email: '',
     mata_kuliah: [],
-    bio: '',
   });
 
   const [mataKuliahInput, setMataKuliahInput] = useState('');
@@ -34,57 +37,29 @@ const FormDosenScreen = ({ route, navigation }) => {
     MATA_KULIAH_LIST.slice(0, 8)
   );
   const [errors, setErrors] = useState({});
-  const [hasChanges, setHasChanges] = useState(false);
-
-  const getMataKuliahName = (mk) => {
-    if (typeof mk === 'string') return mk;
-    if (mk && typeof mk === 'object') return mk.nama || mk.kode || '';
-    return '';
-  };
-
-  const normalizeMataKuliah = (list = []) =>
-    list
-      .map((mk) => getMataKuliahName(mk))
-      .filter((name) => name);
 
   useEffect(() => {
-    console.log('FormDosenScreen mounted - route.params:', route.params);
-    console.log('Mode:', mode, 'EditData:', editData, 'isEdit:', isEdit);
-    
     if (isEdit && editData) {
-      console.log('Setting form data with editData');
       setFormData({
         nip: editData.nip || '',
         nama: editData.nama || '',
-        email: editData.email || '',
         mata_kuliah: editData.mata_kuliah || [],
-        bio: editData.bio || '',
       });
     }
   }, [isEdit, editData, mode]);
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    setHasChanges(true);
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }));
-    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
   };
 
   const handleMataKuliahInputChange = (value) => {
     setMataKuliahInput(value);
-    setHasChanges(true);
-
     const query = value.trim().toLowerCase();
     if (!query) {
       setMataKuliahSuggestions(MATA_KULIAH_LIST.slice(0, 8));
       return;
     }
-
     const filtered = MATA_KULIAH_LIST.filter((item) =>
       item.nama.toLowerCase().includes(query) || item.kode.toLowerCase().includes(query)
     );
@@ -93,442 +68,208 @@ const FormDosenScreen = ({ route, navigation }) => {
 
   const handleAddMataKuliah = (mataKuliahValue) => {
     const normalized = mataKuliahValue.trim();
-    if (!normalized) {
-      return;
-    }
-
+    if (!normalized) return;
     setFormData((prev) => {
-      if (prev.mata_kuliah.includes(normalized)) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        mata_kuliah: [...prev.mata_kuliah, normalized],
-      };
+      if (prev.mata_kuliah.includes(normalized)) return prev;
+      return { ...prev, mata_kuliah: [...prev.mata_kuliah, normalized] };
     });
-
     setMataKuliahInput('');
-    setMataKuliahSuggestions(MATA_KULIAH_LIST.slice(0, 8));
-    setHasChanges(true);
-
-    if (errors.mata_kuliah) {
-      setErrors((prev) => ({ ...prev, mata_kuliah: null }));
-    }
   };
 
-  const handleRemoveMataKuliah = (mataKuliah) => {
+  const handleRemoveMataKuliah = (mkName) => {
     setFormData((prev) => ({
       ...prev,
-      mata_kuliah: prev.mata_kuliah.filter((mk) => mk !== mataKuliah),
+      mata_kuliah: prev.mata_kuliah.filter((mk) => mk !== mkName),
     }));
-    setHasChanges(true);
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Validate NIP
-    if (!formData.nip.trim()) {
-      newErrors.nip = 'NIP wajib diisi';
-    } else if (!dosenService.validateNIP(formData.nip)) {
-      newErrors.nip = 'NIP harus 18 digit angka';
-    }
-
-    // Validate Nama
-    if (!formData.nama.trim()) {
-      newErrors.nama = 'Nama dosen wajib diisi';
-    }
-
-    // Validate Email
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email wajib diisi';
-    } else if (!dosenService.validateEmail(formData.email)) {
-      newErrors.email = 'Format email tidak valid';
-    }
-
-    // Validate Mata Kuliah
-    if (formData.mata_kuliah.length === 0) {
-      newErrors.mata_kuliah = 'Pilih minimal 1 mata kuliah';
-    }
-
+    if (!formData.nip.trim()) newErrors.nip = 'NIP wajib diisi';
+    if (!formData.nama.trim()) newErrors.nama = 'Nama wajib diisi';
+    if (formData.mata_kuliah.length === 0) newErrors.mata_kuliah = 'Pilih minimal 1 MK';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      Alert.alert('Validasi Gagal', 'Mohon lengkapi semua field yang wajib diisi');
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     try {
-      const submitData = { ...formData };
-
       if (isEdit) {
-        await dosenService.updateDosen(editData.id, submitData);
-        Alert.alert('Berhasil', 'Data dosen berhasil diperbarui', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        await dosenService.updateDosen(editData.id, formData);
+        Alert.alert('Berhasil', 'Data dosen diperbarui');
       } else {
-        await dosenService.createDosen(submitData);
-        Alert.alert('Berhasil', 'Dosen baru berhasil ditambahkan', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        await dosenService.createDosen(formData);
+        Alert.alert('Berhasil', 'Dosen berhasil ditambahkan');
       }
-      setHasChanges(false);
+      navigation.goBack();
     } catch (error) {
-      console.error('Submit dosen error:', error);
-      Alert.alert('Error', error.message || 'Gagal menyimpan data dosen');
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    if (hasChanges) {
-      Alert.alert(
-        'Batalkan Perubahan?',
-        'Perubahan yang Anda buat belum disimpan. Yakin ingin membatalkan?',
-        [
-          { text: 'Tidak', style: 'cancel' },
-          { text: 'Ya', style: 'destructive', onPress: () => navigation.goBack() },
-        ]
-      );
-    } else {
-      navigation.goBack();
-    }
-  };
+  const renderInput = (label, field, icon, placeholder, keyboardType = 'default', multiline = false) => (
+    <View style={styles.inputWrapper}>
+      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={[styles.inputContainer, errors[field] && styles.inputError, { backgroundColor: colors.surface }]}>
+        <MaterialCommunityIcons name={icon} size={20} color={colors.primary} style={styles.inputIcon} />
+        <TextInput
+          style={[styles.textInput, multiline && styles.textArea, { color: colors.textPrimary }]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textDisabled}
+          value={formData[field]}
+          onChangeText={(val) => handleChange(field, val)}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          numberOfLines={multiline ? 4 : 1}
+        />
+      </View>
+      {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-          <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{isEdit ? 'Edit Dosen' : 'Tambah Dosen'}</Text>
-        </View>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* NIP */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            NIP <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.nip && styles.inputError]}
-            placeholder="18 digit NIP"
-            value={formData.nip}
-            onChangeText={(value) => handleChange('nip', value.replace(/[^0-9]/g, ''))}
-            keyboardType="number-pad"
-            maxLength={18}
-          />
-          {errors.nip && <Text style={styles.errorText}>{errors.nip}</Text>}
-          <Text style={styles.hint}>
-            {formData.nip.length}/18 digit • Nomor Induk Pegawai (NIP) unik
-          </Text>
-        </View>
-
-        {/* Nama */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Nama Lengkap <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.nama && styles.inputError]}
-            placeholder="Contoh: Dr. Ahmad Fauzi, M.Kom"
-            value={formData.nama}
-            onChangeText={(value) => handleChange('nama', value)}
-          />
-          {errors.nama && <Text style={styles.errorText}>{errors.nama}</Text>}
-          <Text style={styles.hint}>Sertakan gelar akademik jika ada</Text>
-        </View>
-
-        {/* Email */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Email <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder="contoh@email.com"
-            value={formData.email}
-            onChangeText={(value) => handleChange('email', value.toLowerCase())}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-        </View>
-
-        {/* Mata Kuliah */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Mata Kuliah <Text style={styles.required}>*</Text>
-          </Text>
-          <View style={[styles.mataKuliahInputRow, errors.mata_kuliah && styles.inputError]}>
-            <TextInput
-              style={styles.mataKuliahInput}
-              placeholder="Ketik nama mata kuliah"
-              value={mataKuliahInput}
-              onChangeText={handleMataKuliahInputChange}
-              onSubmitEditing={() => handleAddMataKuliah(mataKuliahInput)}
-              returnKeyType="done"
-            />
-            <TouchableOpacity
-              style={styles.mataKuliahAddButton}
-              onPress={() => handleAddMataKuliah(mataKuliahInput)}
-            >
-              <MaterialCommunityIcons name="plus" size={18} color="#fff" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" />
+      
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={[styles.headerArea, { backgroundColor: colors.primaryDark }]}>
+          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+            <Circle cx={width} cy="0" r="100" fill="rgba(255,255,255,0.05)" />
+            <Circle cx="0" cy="80" r="60" fill="rgba(255,255,255,0.03)" />
+          </Svg>
+          
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
             </TouchableOpacity>
-          </View>
-          {errors.mata_kuliah && <Text style={styles.errorText}>{errors.mata_kuliah}</Text>}
-
-          <View style={styles.suggestionSection}>
-            <Text style={styles.hint}>Saran cepat</Text>
-            <View style={styles.mataKuliahSuggestions}>
-              {mataKuliahSuggestions.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.suggestionChip}
-                  onPress={() => handleAddMataKuliah(item.nama)}
-                >
-                  <Text style={styles.suggestionChipText}>{item.nama}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.headerTitleBox}>
+              <Text style={styles.headerTitle}>{isEdit ? 'Update Dosen' : 'Dosen Baru'}</Text>
+              <Text style={styles.headerSubtitle}>Manajemen Sumber Daya</Text>
             </View>
           </View>
 
-          {formData.mata_kuliah.length > 0 && (
-            <View style={styles.mataKuliahChips}>
-              {formData.mata_kuliah.map((mk, index) => (
-                <View key={index} style={styles.mataKuliahChip}>
-                  <Text style={styles.mataKuliahChipText}>{getMataKuliahName(mk)}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveMataKuliah(getMataKuliahName(mk))}>
-                    <MaterialCommunityIcons
-                      name="close-circle"
-                      size={16}
-                      color={colors.primary}
-                    />
+          <View style={styles.profilePreviewCard}>
+             <View style={[styles.avatarCircle, { backgroundColor: colors.surface }]}>
+                <MaterialCommunityIcons name="account-tie" size={40} color={colors.primary} />
+             </View>
+             <View style={styles.profileInfoText}>
+                <Text style={styles.previewName}>{formData.nama || 'Nama Lengkap'}</Text>
+                <Text style={styles.previewNip}>{formData.nip || 'NIP - Belum Diisi'}</Text>
+             </View>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, paddingTop: 30 }}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            {renderInput('NIP', 'nip', 'card-account-details-outline', '18 digit NIP', 'numeric')}
+            {renderInput('Nama Lengkap', 'nama', 'account-edit-outline', 'Sertakan gelar akademik')}
+          </View>
+
+          <View style={[styles.mkCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 12 }]}>Pengampu Mata Kuliah</Text>
+            <View style={styles.mkInputRow}>
+              <TextInput
+                style={[styles.mkInput, { color: colors.textPrimary, borderBottomColor: colors.border }]}
+                placeholder="Cari atau ketik Mata Kuliah"
+                value={mataKuliahInput}
+                onChangeText={handleMataKuliahInputChange}
+              />
+              <TouchableOpacity onPress={() => handleAddMataKuliah(mataKuliahInput)} style={[styles.addMkBtn, { backgroundColor: colors.primary }]}>
+                <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionRow}>
+              {mataKuliahSuggestions.map((item) => (
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={[styles.suggestionChip, { backgroundColor: colors.primary + '08' }]}
+                  onPress={() => handleAddMataKuliah(item.nama)}
+                >
+                  <Text style={[styles.suggestionText, { color: colors.primary }]}>{item.nama}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.tagGrid}>
+              {formData.mata_kuliah.map((mk, idx) => (
+                <View key={idx} style={[styles.tagChip, { backgroundColor: colors.primary + '10' }]}>
+                  <Text style={[styles.tagText, { color: colors.primary }]}>{typeof mk === 'object' ? mk.nama : mk}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveMataKuliah(typeof mk === 'object' ? mk.nama : mk)}>
+                    <MaterialCommunityIcons name="close-circle" size={16} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
               ))}
             </View>
-          )}
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color="#FFF" /> : (
+              <>
+                <Text style={styles.saveBtnText}>{isEdit ? 'Update Data Sekarang' : 'Simpan Dosen'}</Text>
+                <MaterialCommunityIcons name="content-save-check" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Bio */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Bio / Deskripsi</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Deskripsi singkat tentang dosen (opsional)"
-            value={formData.bio}
-            onChangeText={(value) => handleChange('bio', value)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-          <Text style={styles.hint}>Misal: bidang keahlian, pengalaman mengajar, dll</Text>
-        </View>
-
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
-          onPress={handleCancel}
-          disabled={loading}
-        >
-          <Text style={styles.cancelButtonText}>Batal</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.submitButton]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.submitButtonText}>
-              {isEdit ? 'Simpan Perubahan' : 'Tambah Dosen'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.base,
-  },
-  formGroup: {
-    marginBottom: spacing.base,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  required: {
-    color: staticColors.danger,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  inputError: {
-    borderColor: staticColors.danger,
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  errorText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.danger,
-    marginTop: 4,
-  },
-  hint: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textDisabled,
-    marginTop: 4,
-  },
-  mataKuliahInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: radius.base,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  mataKuliahInput: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  mataKuliahAddButton: {
-    width: 46,
-    height: 46,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: staticColors.primary,
-  },
-  suggestionSection: {
-    marginTop: spacing.sm,
-  },
-  mataKuliahChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  suggestionChip: {
-    backgroundColor: '#F3F7FB',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.full,
-  },
-  suggestionChipText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-  },
-  mataKuliahChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: staticColors.primary + '10',
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.full,
-  },
-  mataKuliahChipText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.primary,
-  },
-  bottomActions: {
-    flexDirection: 'row',
-    padding: spacing.base,
-    gap: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  cancelButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textSecondary,
-  },
-  submitButton: {
-    backgroundColor: staticColors.primary,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: '#fff',
-  },
+  container: { flex: 1 },
+  headerArea: { padding: 24, paddingTop: 50, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
+  backBtn: { width: 42, height: 42, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerTitleBox: { flex: 1, marginLeft: 15 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  
+  profilePreviewCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', padding: 15, borderRadius: 25 },
+  avatarCircle: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
+  profileInfoText: { marginLeft: 15, flex: 1 },
+  previewName: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  previewNip: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 40 },
+  
+  formCard: { padding: 24, borderRadius: 30, marginBottom: 20 },
+  inputWrapper: { marginBottom: 20 },
+  inputLabel: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, marginLeft: 4 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 15 },
+  inputIcon: { marginRight: 12 },
+  textInput: { flex: 1, paddingVertical: 14, fontSize: 15, fontWeight: '500' },
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
+  inputError: { borderColor: '#EF4444' },
+  errorText: { color: '#EF4444', fontSize: 11, marginTop: 4, marginLeft: 4 },
+
+  mkCard: { padding: 24, borderRadius: 30, marginBottom: 30 },
+  mkInputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 15 },
+  mkInput: { flex: 1, borderBottomWidth: 1, paddingVertical: 8, fontSize: 15 },
+  addMkBtn: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  suggestionRow: { marginBottom: 20 },
+  suggestionChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, marginRight: 8, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' },
+  suggestionText: { fontSize: 12, fontWeight: '600' },
+  tagGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, gap: 6 },
+  tagText: { fontSize: 13, fontWeight: '600' },
+
+  saveBtn: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  shadowSoft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 },
 });
 
 export default FormDosenScreen;

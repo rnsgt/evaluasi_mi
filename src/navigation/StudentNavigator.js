@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Platform } from 'react-native';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 // Screens
 import HomeScreen from '../screens/student/HomeScreen';
@@ -40,6 +41,13 @@ const ProfileStack = () => {
   );
 };
 
+const getTabBarVisibility = (route) => {
+  const routeName = getFocusedRouteNameFromRoute(route) ?? 'HomeMain';
+  const hideOnScreens = ['FormEvaluasiDosen', 'FormEvaluasiFasilitas'];
+  if (hideOnScreens.includes(routeName)) return 'none';
+  return 'flex';
+};
+
 const StudentNavigator = () => {
   const { colors } = useTheme();
   
@@ -47,22 +55,6 @@ const StudentNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === 'Beranda') iconName = focused ? 'home-variant' : 'home-variant-outline';
-          else if (route.name === 'Riwayat') iconName = focused ? 'clipboard-text-clock' : 'clipboard-text-clock-outline';
-          else if (route.name === 'Statistik') iconName = focused ? 'chart-box' : 'chart-box-outline';
-          else if (route.name === 'Profil') iconName = focused ? 'account-circle' : 'account-circle-outline';
-
-          return (
-            <MaterialCommunityIcons 
-              name={iconName} 
-              size={focused ? 28 : 24} 
-              color={color} 
-              style={focused ? { marginBottom: 2 } : {}}
-            />
-          );
-        },
         tabBarActiveTintColor: '#2563EB',
         tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: {
@@ -80,6 +72,23 @@ const StudentNavigator = () => {
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.05,
           shadowRadius: 10,
+          display: getTabBarVisibility(route),
+        },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          if (route.name === 'Beranda') iconName = focused ? 'home-variant' : 'home-variant-outline';
+          else if (route.name === 'Riwayat') iconName = focused ? 'clipboard-text-clock' : 'clipboard-text-clock-outline';
+          else if (route.name === 'Statistik') iconName = focused ? 'chart-box' : 'chart-box-outline';
+          else if (route.name === 'Profil') iconName = focused ? 'account-circle' : 'account-circle-outline';
+
+          return (
+            <MaterialCommunityIcons 
+              name={iconName} 
+              size={focused ? 28 : 24} 
+              color={color} 
+              style={focused ? { marginBottom: 2 } : {}}
+            />
+          );
         },
       })}
     >

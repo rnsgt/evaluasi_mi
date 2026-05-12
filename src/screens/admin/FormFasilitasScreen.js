@@ -10,12 +10,17 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  StatusBar,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import fasilitasService, { KATEGORI_FASILITAS, ICON_OPTIONS } from '../../services/fasilitasService';
+
+const { width } = Dimensions.get('window');
 
 const FormFasilitasScreen = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -29,7 +34,6 @@ const FormFasilitasScreen = ({ route, navigation }) => {
     kategori: '',
     lokasi: '',
     kapasitas: '',
-    deskripsi: '',
     icon: 'office-building',
     fasilitas: [],
   });
@@ -38,21 +42,15 @@ const FormFasilitasScreen = ({ route, navigation }) => {
   const [showKategoriPicker, setShowKategoriPicker] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [errors, setErrors] = useState({});
-  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    console.log('FormFasilitasScreen mounted - route.params:', route.params);
-    console.log('Mode:', mode, 'EditData:', editData, 'isEdit:', isEdit);
-    
     if (isEdit && editData) {
-      console.log('Setting form data with editData');
       setFormData({
         kode: editData.kode || '',
         nama: editData.nama || '',
         kategori: editData.kategori || '',
         lokasi: editData.lokasi || '',
         kapasitas: editData.kapasitas?.toString() || '',
-        deskripsi: editData.deskripsi || '',
         icon: editData.icon || 'office-building',
         fasilitas: editData.fasilitas || [],
       });
@@ -64,11 +62,7 @@ const FormFasilitasScreen = ({ route, navigation }) => {
       ...prev,
       [field]: field === 'kode' ? value.toUpperCase() : value,
     }));
-    setHasChanges(true);
-    // Clear error for this field
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: null }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
   };
 
   const handleKapasitasChange = (delta) => {
@@ -85,7 +79,6 @@ const FormFasilitasScreen = ({ route, navigation }) => {
         fasilitas: [...prev.fasilitas, trimmed],
       }));
       setFasilitasInput('');
-      setHasChanges(true);
     }
   };
 
@@ -94,378 +87,184 @@ const FormFasilitasScreen = ({ route, navigation }) => {
       ...prev,
       fasilitas: prev.fasilitas.filter((_, i) => i !== index),
     }));
-    setHasChanges(true);
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.kode.trim()) {
-      newErrors.kode = 'Kode fasilitas wajib diisi';
-    } else if (formData.kode.length < 2) {
-      newErrors.kode = 'Kode minimal 2 karakter';
-    }
-
-    if (!formData.nama.trim()) {
-      newErrors.nama = 'Nama fasilitas wajib diisi';
-    }
-
-    if (!formData.kategori) {
-      newErrors.kategori = 'Kategori wajib dipilih';
-    }
-
-    if (!formData.lokasi.trim()) {
-      newErrors.lokasi = 'Lokasi wajib diisi';
-    }
-
+    if (!formData.kode.trim()) newErrors.kode = 'Kode wajib diisi';
+    if (!formData.nama.trim()) newErrors.nama = 'Nama wajib diisi';
+    if (!formData.kategori) newErrors.kategori = 'Kategori wajib dipilih';
+    if (!formData.lokasi.trim()) newErrors.lokasi = 'Lokasi wajib diisi';
     const kapasitasNum = parseInt(formData.kapasitas);
-    if (!formData.kapasitas || isNaN(kapasitasNum) || kapasitasNum <= 0) {
-      newErrors.kapasitas = 'Kapasitas harus lebih dari 0';
-    }
-
+    if (!formData.kapasitas || isNaN(kapasitasNum) || kapasitasNum <= 0) newErrors.kapasitas = 'Kapasitas tidak valid';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      Alert.alert('Validasi Gagal', 'Mohon lengkapi semua field yang wajib diisi');
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     try {
-      const submitData = {
-        ...formData,
-        kapasitas: parseInt(formData.kapasitas),
-      };
-
+      const submitData = { ...formData, kapasitas: parseInt(formData.kapasitas) };
       if (isEdit) {
         await fasilitasService.updateFasilitas(editData.id, submitData);
-        Alert.alert('Berhasil', 'Data fasilitas berhasil diperbarui', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert('Berhasil', 'Fasilitas diperbarui');
       } else {
         await fasilitasService.createFasilitas(submitData);
-        Alert.alert('Berhasil', 'Fasilitas baru berhasil ditambahkan', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert('Berhasil', 'Fasilitas ditambahkan');
       }
-      setHasChanges(false);
+      navigation.goBack();
     } catch (error) {
-      console.error('Submit fasilitas error:', error);
-      Alert.alert('Error', error.message || 'Gagal menyimpan data fasilitas');
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    if (hasChanges) {
-      Alert.alert(
-        'Batalkan Perubahan?',
-        'Perubahan yang Anda buat belum disimpan. Yakin ingin membatalkan?',
-        [
-          { text: 'Tidak', style: 'cancel' },
-          { text: 'Ya', style: 'destructive', onPress: () => navigation.goBack() },
-        ]
-      );
-    } else {
-      navigation.goBack();
-    }
-  };
+  const renderInput = (label, field, icon, placeholder, keyboardType = 'default', multiline = false) => (
+    <View style={styles.inputWrapper}>
+      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={[styles.inputContainer, errors[field] && styles.inputError, { backgroundColor: colors.surface }]}>
+        <MaterialCommunityIcons name={icon} size={20} color={colors.tertiary} style={styles.inputIcon} />
+        <TextInput
+          style={[styles.textInput, multiline && styles.textArea, { color: colors.textPrimary }]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textDisabled}
+          value={formData[field]}
+          onChangeText={(val) => handleChange(field, val)}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          numberOfLines={multiline ? 4 : 1}
+        />
+      </View>
+      {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-          <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{isEdit ? 'Edit Fasilitas' : 'Tambah Fasilitas'}</Text>
-        </View>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Kode */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Kode Fasilitas <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.kode && styles.inputError]}
-            placeholder="Contoh: LAB01"
-            value={formData.kode}
-            onChangeText={(value) => handleChange('kode', value)}
-            autoCapitalize="characters"
-            maxLength={20}
-          />
-          {errors.kode && <Text style={styles.errorText}>{errors.kode}</Text>}
-          <Text style={styles.hint}>Kode unik untuk identifikasi fasilitas</Text>
-        </View>
-
-        {/* Nama */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Nama Fasilitas <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.nama && styles.inputError]}
-            placeholder="Contoh: Laboratorium Komputer 1"
-            value={formData.nama}
-            onChangeText={(value) => handleChange('nama', value)}
-          />
-          {errors.nama && <Text style={styles.errorText}>{errors.nama}</Text>}
-        </View>
-
-        {/* Kategori */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Kategori <Text style={styles.required}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={[styles.pickerButton, errors.kategori && styles.inputError]}
-            onPress={() => setShowKategoriPicker(true)}
-          >
-            <Text
-              style={[styles.pickerButtonText, !formData.kategori && styles.pickerPlaceholder]}
-            >
-              {formData.kategori || 'Pilih Kategori'}
-            </Text>
-            <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          {errors.kategori && <Text style={styles.errorText}>{errors.kategori}</Text>}
-        </View>
-
-        {/* Icon */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Icon</Text>
-          <TouchableOpacity
-            style={styles.iconPickerButton}
-            onPress={() => setShowIconPicker(true)}
-          >
-            <View style={styles.iconPreview}>
-              <MaterialCommunityIcons
-                name={formData.icon}
-                size={32}
-                color={colors.primary}
-              />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" />
+      
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={[styles.headerArea, { backgroundColor: colors.tertiary }]}>
+          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+            <Circle cx={width} cy="0" r="100" fill="rgba(255,255,255,0.05)" />
+            <Circle cx="0" cy="80" r="60" fill="rgba(255,255,255,0.03)" />
+          </Svg>
+          
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={styles.headerTitleBox}>
+              <Text style={styles.headerTitle}>{isEdit ? 'Update Fasilitas' : 'Fasilitas Baru'}</Text>
+              <Text style={styles.headerSubtitle}>Manajemen Master Data</Text>
             </View>
-            <View style={styles.iconPickerTextContainer}>
-              <Text style={styles.iconPickerLabel}>
-                {ICON_OPTIONS.find((opt) => opt.name === formData.icon)?.label || 'Pilih Icon'}
-              </Text>
-              <Text style={styles.iconPickerHint}>Tap untuk mengubah icon</Text>
+          </View>
+
+          <View style={styles.iconPreviewCard}>
+             <View style={[styles.mainIconCircle, { backgroundColor: colors.surface }]}>
+                <MaterialCommunityIcons name={formData.icon} size={40} color={colors.tertiary} />
+             </View>
+             <View style={styles.iconInfoText}>
+                <Text style={styles.previewName}>{formData.nama || 'Nama Fasilitas'}</Text>
+                <Text style={styles.previewCode}>{formData.kode || 'KODE-000'}</Text>
+             </View>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, paddingTop: 30 }}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            {renderInput('Kode Fasilitas', 'kode', 'barcode-scan', 'Contoh: R-101')}
+            {renderInput('Nama Fasilitas', 'nama', 'office-building', 'Contoh: Ruang Kelas A')}
+            
+            <View style={styles.inputWrapper}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Kategori Fasilitas</Text>
+              <TouchableOpacity style={[styles.inputContainer, { backgroundColor: colors.surface }]} onPress={() => setShowKategoriPicker(true)}>
+                <MaterialCommunityIcons name="shape-outline" size={20} color={colors.tertiary} style={styles.inputIcon} />
+                <Text style={[styles.textInput, { color: formData.kategori ? colors.textPrimary : colors.textDisabled }]}>{formData.kategori || 'Pilih Kategori'}</Text>
+                <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textDisabled} />
+              </TouchableOpacity>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
 
-        {/* Lokasi */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Lokasi <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.lokasi && styles.inputError]}
-            placeholder="Contoh: Gedung A Lantai 2"
-            value={formData.lokasi}
-            onChangeText={(value) => handleChange('lokasi', value)}
-          />
-          {errors.lokasi && <Text style={styles.errorText}>{errors.lokasi}</Text>}
-        </View>
+            <View style={styles.inputWrapper}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Visual Icon</Text>
+              <TouchableOpacity style={[styles.inputContainer, { backgroundColor: colors.surface }]} onPress={() => setShowIconPicker(true)}>
+                <MaterialCommunityIcons name={formData.icon} size={20} color={colors.tertiary} style={styles.inputIcon} />
+                <Text style={[styles.textInput, { color: colors.textPrimary }]}>Ganti Icon</Text>
+                <MaterialCommunityIcons name="image-edit-outline" size={20} color={colors.textDisabled} />
+              </TouchableOpacity>
+            </View>
 
-        {/* Kapasitas */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Kapasitas <Text style={styles.required}>*</Text>
-          </Text>
-          <View style={styles.kapasitasContainer}>
-            <TouchableOpacity
-              style={styles.kapasitasButton}
-              onPress={() => handleKapasitasChange(-5)}
-            >
-              <MaterialCommunityIcons name="minus" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            <TextInput
-              style={[styles.kapasitasInput, errors.kapasitas && styles.inputError]}
-              value={formData.kapasitas}
-              onChangeText={(value) => handleChange('kapasitas', value)}
-              keyboardType="number-pad"
-              maxLength={4}
-            />
-            <Text style={styles.kapasitasUnit}>orang</Text>
-            <TouchableOpacity
-              style={styles.kapasitasButton}
-              onPress={() => handleKapasitasChange(5)}
-            >
-              <MaterialCommunityIcons name="plus" size={20} color={colors.primary} />
-            </TouchableOpacity>
+            {renderInput('Lokasi', 'lokasi', 'map-marker-radius', 'Gedung, Lantai, No. Ruang')}
+            
+            <View style={styles.inputWrapper}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Kapasitas (Orang)</Text>
+              <View style={styles.kapasitasControl}>
+                <TouchableOpacity onPress={() => handleKapasitasChange(-5)} style={[styles.stepBtn, { backgroundColor: colors.tertiary + '15' }]}><MaterialCommunityIcons name="minus" size={20} color={colors.tertiary} /></TouchableOpacity>
+                <TextInput style={[styles.kapasitasInput, { color: colors.textPrimary, borderBottomColor: colors.tertiary }]} value={formData.kapasitas} onChangeText={(val) => handleChange('kapasitas', val)} keyboardType="numeric" />
+                <TouchableOpacity onPress={() => handleKapasitasChange(5)} style={[styles.stepBtn, { backgroundColor: colors.tertiary + '15' }]}><MaterialCommunityIcons name="plus" size={20} color={colors.tertiary} /></TouchableOpacity>
+              </View>
+            </View>
           </View>
-          {errors.kapasitas && <Text style={styles.errorText}>{errors.kapasitas}</Text>}
-        </View>
 
-        {/* Deskripsi */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Deskripsi</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Deskripsi singkat tentang fasilitas..."
-            value={formData.deskripsi}
-            onChangeText={(value) => handleChange('deskripsi', value)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-        </View>
-
-        {/* Fasilitas (Tags) */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Fasilitas yang Tersedia</Text>
-          <View style={styles.fasilitasInputContainer}>
-            <TextInput
-              style={styles.fasilitasInput}
-              placeholder="Contoh: Proyektor"
-              value={fasilitasInput}
-              onChangeText={setFasilitasInput}
-              onSubmitEditing={handleAddFasilitas}
-            />
-            <TouchableOpacity
-              style={styles.fasilitasAddButton}
-              onPress={handleAddFasilitas}
-              disabled={!fasilitasInput.trim()}
-            >
-              <MaterialCommunityIcons
-                name="plus"
-                size={20}
-                color={fasilitasInput.trim() ? colors.primary : colors.textDisabled}
-              />
-            </TouchableOpacity>
-          </View>
-          {formData.fasilitas.length > 0 && (
-            <View style={styles.fasilitasChips}>
-              {formData.fasilitas.map((item, index) => (
-                <View key={index} style={styles.fasilitasChip}>
-                  <Text style={styles.fasilitasChipText}>{item}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveFasilitas(index)}>
-                    <MaterialCommunityIcons name="close-circle" size={16} color={colors.danger} />
-                  </TouchableOpacity>
+          <View style={[styles.tagCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 12 }]}>Kelengkapan Fasilitas</Text>
+            <View style={styles.tagInputRow}>
+              <TextInput style={[styles.tagInput, { color: colors.textPrimary, borderBottomColor: colors.border }]} placeholder="Tambah item (e.g. AC, Wifi)" value={fasilitasInput} onChangeText={setFasilitasInput} />
+              <TouchableOpacity onPress={handleAddFasilitas} style={[styles.addTagBtn, { backgroundColor: colors.tertiary }]}><MaterialCommunityIcons name="plus" size={24} color="#FFF" /></TouchableOpacity>
+            </View>
+            <View style={styles.tagGrid}>
+              {formData.fasilitas.map((item, idx) => (
+                <View key={idx} style={[styles.tagChip, { backgroundColor: colors.tertiary + '10' }]}>
+                  <Text style={[styles.tagText, { color: colors.tertiary }]}>{item}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveFasilitas(idx)}><MaterialCommunityIcons name="close-circle" size={16} color={colors.tertiary} /></TouchableOpacity>
                 </View>
               ))}
             </View>
-          )}
-          <Text style={styles.hint}>Tekan Enter atau tap + untuk menambahkan</Text>
+          </View>
+
+          <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.tertiary }]} onPress={handleSubmit} disabled={loading}>
+            {loading ? <ActivityIndicator color="#FFF" /> : (
+              <>
+                <Text style={styles.saveBtnText}>{isEdit ? 'Update Data Sekarang' : 'Simpan Fasilitas'}</Text>
+                <MaterialCommunityIcons name="check-decagram" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
-          onPress={handleCancel}
-          disabled={loading}
-        >
-          <Text style={styles.cancelButtonText}>Batal</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.submitButton]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.submitButtonText}>
-              {isEdit ? 'Simpan Perubahan' : 'Tambah Fasilitas'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Kategori Picker Modal */}
-      <Modal
-        visible={showKategoriPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowKategoriPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+      {/* Picker Modals */}
+      <Modal visible={showKategoriPicker} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+           <View style={[styles.modalBox, { backgroundColor: colors.surface }]}>
               <Text style={styles.modalTitle}>Pilih Kategori</Text>
-              <TouchableOpacity onPress={() => setShowKategoriPicker(false)}>
-                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={KATEGORI_FASILITAS}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.modalItem}
-                  onPress={() => {
-                    handleChange('kategori', item);
-                    setShowKategoriPicker(false);
-                  }}
-                >
-                  <Text style={styles.modalItemText}>{item}</Text>
-                  {formData.kategori === item && (
-                    <MaterialCommunityIcons name="check" size={24} color={colors.primary} />
-                  )}
+              {KATEGORI_FASILITAS.map(cat => (
+                <TouchableOpacity key={cat} style={[styles.modalOption, formData.kategori === cat && { backgroundColor: colors.tertiary + '10' }]} onPress={() => { handleChange('kategori', cat); setShowKategoriPicker(false); }}>
+                  <Text style={[styles.optionText, { color: formData.kategori === cat ? colors.tertiary : colors.textPrimary }]}>{cat}</Text>
+                  {formData.kategori === cat && <MaterialCommunityIcons name="check" size={20} color={colors.tertiary} />}
                 </TouchableOpacity>
-              )}
-            />
-          </View>
+              ))}
+              <TouchableOpacity style={styles.closeModal} onPress={() => setShowKategoriPicker(false)}><Text style={{ color: colors.danger, fontWeight: 'bold' }}>BATAL</Text></TouchableOpacity>
+           </View>
         </View>
       </Modal>
 
-      {/* Icon Picker Modal */}
-      <Modal
-        visible={showIconPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowIconPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Pilih Icon</Text>
-              <TouchableOpacity onPress={() => setShowIconPicker(false)}>
-                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={ICON_OPTIONS}
-              keyExtractor={(item) => item.name}
-              numColumns={3}
-              columnWrapperStyle={styles.iconGrid}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.iconOption,
-                    formData.icon === item.name && styles.iconOptionSelected,
-                  ]}
-                  onPress={() => {
-                    handleChange('icon', item.name);
-                    setShowIconPicker(false);
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name={item.name}
-                    size={36}
-                    color={formData.icon === item.name ? colors.primary : colors.textSecondary}
-                  />
-                  <Text style={styles.iconOptionLabel} numberOfLines={2}>
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+      <Modal visible={showIconPicker} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+           <View style={{ flex: 1 }} /><View style={[styles.iconModalBox, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeaderRow}><Text style={styles.modalTitle}>Visual Icon</Text><TouchableOpacity onPress={() => setShowIconPicker(false)}><MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} /></TouchableOpacity></View>
+              <FlatList data={ICON_OPTIONS} numColumns={4} keyExtractor={item => item.name} renderItem={({ item }) => (
+                  <TouchableOpacity style={[styles.iconItem, formData.icon === item.name && { borderColor: colors.tertiary, backgroundColor: colors.tertiary + '05' }]} onPress={() => { handleChange('icon', item.name); setShowIconPicker(false); }}>
+                    <MaterialCommunityIcons name={item.name} size={30} color={formData.icon === item.name ? colors.tertiary : colors.textSecondary} />
+                    <Text style={[styles.iconLabel, { color: colors.textSecondary }]} numberOfLines={1}>{item.label}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+           </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -473,293 +272,60 @@ const FormFasilitasScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.base,
-  },
-  formGroup: {
-    marginBottom: spacing.base,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  required: {
-    color: staticColors.danger,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  inputError: {
-    borderColor: staticColors.danger,
-  },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  errorText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.danger,
-    marginTop: 4,
-  },
-  hint: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textDisabled,
-    marginTop: 4,
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  pickerButtonText: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  pickerPlaceholder: {
-    color: staticColors.textDisabled,
-  },
-  iconPickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    padding: spacing.base,
-  },
-  iconPreview: {
-    width: 56,
-    height: 56,
-    borderRadius: radius.base,
-    backgroundColor: staticColors.primary + '10',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconPickerTextContainer: {
-    flex: 1,
-    marginLeft: spacing.base,
-  },
-  iconPickerLabel: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textPrimary,
-  },
-  iconPickerHint: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textDisabled,
-    marginTop: 2,
-  },
-  kapasitasContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  kapasitasButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.base,
-    backgroundColor: staticColors.primary + '10',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  kapasitasInput: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    textAlign: 'center',
-  },
-  kapasitasUnit: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textSecondary,
-  },
-  fasilitasInputContainer: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  fasilitasInput: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  fasilitasAddButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.base,
-    backgroundColor: staticColors.primary + '10',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fasilitasChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  fasilitasChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: staticColors.primary + '10',
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.full,
-  },
-  fasilitasChipText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.primary,
-  },
-  bottomActions: {
-    flexDirection: 'row',
-    padding: spacing.base,
-    gap: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderTopWidth: 1,
-    borderTopColor: staticColors.border,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-  },
-  cancelButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textSecondary,
-  },
-  submitButton: {
-    backgroundColor: staticColors.primary,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: '#fff',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    maxHeight: '70%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  modalItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.base,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  modalItemText: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  iconGrid: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.base,
-  },
-  iconOption: {
-    flex: 1,
-    aspectRatio: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: radius.base,
-    padding: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: spacing.xs,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  iconOptionSelected: {
-    backgroundColor: staticColors.primary + '10',
-    borderColor: staticColors.primary,
-  },
-  iconOptionLabel: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    textAlign: 'center',
-    marginTop: 4,
-  },
+  container: { flex: 1 },
+  headerArea: { padding: 24, paddingTop: 50, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 },
+  backBtn: { width: 42, height: 42, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerTitleBox: { flex: 1, marginLeft: 15 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  
+  iconPreviewCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', padding: 15, borderRadius: 25 },
+  mainIconCircle: { width: 70, height: 70, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
+  iconInfoText: { marginLeft: 15, flex: 1 },
+  previewName: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  previewCode: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4, letterSpacing: 1 },
+
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 40 },
+  
+  formCard: { padding: 24, borderRadius: 30, marginBottom: 20 },
+  inputWrapper: { marginBottom: 20 },
+  inputLabel: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, marginLeft: 4 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 15 },
+  inputIcon: { marginRight: 12 },
+  textInput: { flex: 1, paddingVertical: 14, fontSize: 15, fontWeight: '500' },
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
+  inputError: { borderColor: '#EF4444' },
+  errorText: { color: '#EF4444', fontSize: 11, marginTop: 4, marginLeft: 4 },
+
+  kapasitasControl: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  stepBtn: { width: 45, height: 45, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  kapasitasInput: { flex: 1, textAlign: 'center', fontSize: 20, fontWeight: 'bold', borderBottomWidth: 2, paddingBottom: 5 },
+
+  tagCard: { padding: 24, borderRadius: 30, marginBottom: 30 },
+  tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 15 },
+  tagInput: { flex: 1, borderBottomWidth: 1, paddingVertical: 8, fontSize: 15 },
+  addTagBtn: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  tagGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, gap: 6 },
+  tagText: { fontSize: 13, fontWeight: '600' },
+
+  saveBtn: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalBox: { borderRadius: 30, padding: 25 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  modalOption: { flexDirection: 'row', justifyContent: 'space-between', padding: 18, borderRadius: 15, marginBottom: 8 },
+  optionText: { fontSize: 16, fontWeight: '600' },
+  closeModal: { marginTop: 15, alignSelf: 'center', padding: 10 },
+  iconModalBox: { borderRadius: 35, padding: 25, maxHeight: '80%' },
+  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  iconItem: { flex: 1/4, aspectRatio: 1, justifyContent: 'center', alignItems: 'center', margin: 5, borderRadius: 15, borderWidth: 1, borderColor: '#F3F4F6' },
+  iconLabel: { fontSize: 9, marginTop: 4, fontWeight: '500' },
+
+  shadowSoft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 },
 });
 
 export default FormFasilitasScreen;

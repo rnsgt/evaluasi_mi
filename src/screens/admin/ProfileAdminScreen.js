@@ -70,7 +70,7 @@ const ProfileAdminScreen = ({ navigation }) => {
           <Text style={styles.userName}>{user?.nama || 'Administrator'}</Text>
           <Text style={styles.userEmail}>{user?.email || 'admin@unsri.ac.id'}</Text>
           <View style={[styles.adminTag, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-            <Text style={styles.adminTagText}>SUPER ADMIN PANEL</Text>
+            <Text style={styles.adminTagText}>UNIT PENJAMINAN MUTU (UPM)</Text>
           </View>
         </View>
 
@@ -89,28 +89,33 @@ const ProfileAdminScreen = ({ navigation }) => {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionDot, { backgroundColor: colors.tertiary }]} />
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>PENGATURAN & KEAMANAN</Text>
-            </View>
-            <View style={[styles.infoContainer, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-              <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('ChangePassword')}>
-                <View style={[styles.infoIconBox, { backgroundColor: colors.background }]}>
-                  <MaterialCommunityIcons name="lock-reset" size={22} color={colors.textSecondary} />
-                </View>
-                <Text style={[styles.actionLabel, { color: colors.textPrimary }]}>Ubah Password</Text>
-                <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textDisabled} />
-              </TouchableOpacity>
+          <View style={styles.menuContainer}>
+
+            <TouchableOpacity 
+              style={[styles.menuItem, { backgroundColor: colors.surface }]}
+              onPress={() => navigation.navigate('ChangePassword')}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: colors.secondary + '10' }]}>
+                <MaterialCommunityIcons name="lock-outline" size={24} color={colors.secondary} />
+              </View>
+              <Text style={[styles.menuText, { color: colors.textPrimary }]}>Ubah Password</Text>
+              <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textDisabled} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.menuItem, { backgroundColor: colors.surface }]}
+              onPress={handleLogout}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: colors.error + '10' }]}>
+                <MaterialCommunityIcons name="logout" size={24} color={colors.error} />
+              </View>
+              <Text style={[styles.logoutText, { color: colors.error }]}>Keluar Akun UPM</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.footer}>
+              <Text style={[styles.versionText, { color: colors.textDisabled }]}>Panel UPM Versi 1.0.0 (Building Layout)</Text>
             </View>
           </View>
-
-          <TouchableOpacity style={[styles.logoutButton, { backgroundColor: colors.error + '10' }]} onPress={handleLogout}>
-            <MaterialCommunityIcons name="logout" size={22} color={colors.error} />
-            <Text style={[styles.logoutText, { color: colors.error }]}>Keluar Admin</Text>
-          </TouchableOpacity>
-          
-          <Text style={[styles.versionText, { color: colors.textDisabled }]}>Panel Admin Versi 1.0.0 (Premium Layout)</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -146,6 +151,36 @@ const styles = StyleSheet.create({
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 20, borderRadius: 24, marginTop: 8 },
   logoutText: { fontSize: 16, fontWeight: 'bold', marginLeft: 12 },
   versionText: { textAlign: 'center', fontSize: 11, marginTop: 40, fontWeight: '600' },
+  menuContainer: { marginTop: 8 },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  menuIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuText: {
+    flex: 1,
+    marginLeft: 16,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  logoutText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginLeft: 16,
+  },
+  footer: {
+    marginTop: 20,
+    paddingBottom: 20,
+  },
 });
 
 export default ProfileAdminScreen;

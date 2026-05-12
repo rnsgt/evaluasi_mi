@@ -9,23 +9,40 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+  ImageBackground,
+  Dimensions,
+  StatusBar,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import authService from '../../services/authService';
+import { useTheme } from '../../contexts/ThemeContext';
+import ToastNotification from '../../components/ToastNotification';
+
+const { width, height } = Dimensions.get('window');
 
 const ForgotPasswordScreen = ({ navigation }) => {
+  const { colors } = useTheme();
   const [identifier, setIdentifier] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [step, setStep] = useState(1); // 1: Check User, 2: Reset Password
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
 
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('error');
+
+  const showToast = (message, type = 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
   const handleCheckUser = async () => {
     if (!identifier) {
-      Alert.alert('Error', 'Silakan masukkan NIM atau Email');
+      showToast('Masukkan NIM atau Email', 'warning');
       return;
     }
 
@@ -35,11 +52,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
       if (result.success) {
         setUserData(result.data);
         setStep(2);
+        showToast('Akun ditemukan!', 'success');
       } else {
-        Alert.alert('Gagal', result.message || 'Pengguna tidak ditemukan');
+        showToast(result.message || 'Pengguna tidak ditemukan', 'error');
       }
     } catch (error) {
-      Alert.alert('Error', error?.response?.data?.message || 'Terjadi kesalahan sistem');
+      showToast(error?.response?.data?.message || 'Terjadi kesalahan sistem', 'error');
     } finally {
       setLoading(false);
     }
@@ -47,11 +65,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const handleResetPassword = async () => {
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password minimal 6 karakter');
+      showToast('Minimal 6 karakter', 'warning');
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Konfirmasi password tidak cocok');
+      showToast('Password tidak cocok', 'error');
       return;
     }
 
@@ -59,129 +77,130 @@ const ForgotPasswordScreen = ({ navigation }) => {
       setLoading(true);
       const result = await authService.resetPassword(identifier, newPassword);
       if (result.success) {
-        Alert.alert('Berhasil', result.message, [
-          { text: 'Login Sekarang', onPress: () => navigation.navigate('Login') }
-        ]);
+        showToast('Password diperbarui!', 'success');
+        setTimeout(() => navigation.navigate('Login'), 1500);
       } else {
-        Alert.alert('Gagal', result.message || 'Gagal mereset password');
+        showToast(result.message || 'Gagal reset password', 'error');
       }
     } catch (error) {
-      Alert.alert('Error', error?.response?.data?.message || 'Terjadi kesalahan sistem');
+      showToast(error?.response?.data?.message || 'Terjadi kesalahan sistem', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#0F172A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Lupa Password</Text>
-        </View>
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <ImageBackground source={require('../../../assets/gedung diklat.jpg')} style={styles.background}>
+        <View style={styles.overlay}>
+          <SafeAreaView style={styles.container}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+              <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                  <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Lupa Password</Text>
+                <View style={{ width: 44 }} />
+              </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.iconCircle}>
-            <MaterialCommunityIcons 
-              name={step === 1 ? "lock-reset" : "shield-key-outline"} 
-              size={50} 
-              color="#2563EB" 
-            />
-          </View>
-
-          <Text style={styles.title}>{step === 1 ? 'Cari Akun Anda' : 'Reset Password'}</Text>
-          <Text style={styles.subtitle}>
-            {step === 1 
-              ? 'Masukkan NIM atau Email yang terdaftar untuk memulihkan akun Anda.' 
-              : `Halo ${userData?.nama}, silakan masukkan password baru untuk akun Anda.`}
-          </Text>
-
-          <View style={styles.card}>
-            {step === 1 ? (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>NIM / Email</Text>
-                <View style={styles.inputWrapper}>
-                  <MaterialCommunityIcons name="account-search-outline" size={22} color="#64748B" />
-                  <TextInput
-                    value={identifier}
-                    onChangeText={setIdentifier}
-                    placeholder="Contoh: 21010101"
-                    style={styles.input}
-                    placeholderTextColor="#94A3B8"
-                    autoCapitalize="none"
+              <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <View style={styles.iconCircle}>
+                  <MaterialCommunityIcons 
+                    name={step === 1 ? "lock-reset" : "shield-key-outline"} 
+                    size={45} 
+                    color={colors.primary} 
                   />
                 </View>
-              </View>
-            ) : (
-              <>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Password Baru</Text>
-                  <View style={styles.inputWrapper}>
-                    <MaterialCommunityIcons name="lock-outline" size={22} color="#64748B" />
-                    <TextInput
-                      value={newPassword}
-                      onChangeText={setNewPassword}
-                      placeholder="Minimal 6 karakter"
-                      style={styles.input}
-                      secureTextEntry
-                      placeholderTextColor="#94A3B8"
-                    />
-                  </View>
-                </View>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Konfirmasi Password</Text>
-                  <View style={styles.inputWrapper}>
-                    <MaterialCommunityIcons name="lock-check-outline" size={22} color="#64748B" />
-                    <TextInput
-                      value={confirmPassword}
-                      onChangeText={setConfirmPassword}
-                      placeholder="Ulangi password baru"
-                      style={styles.input}
-                      secureTextEntry
-                      placeholderTextColor="#94A3B8"
-                    />
-                  </View>
-                </View>
-              </>
-            )}
 
-            <TouchableOpacity
-              onPress={loading ? null : (step === 1 ? handleCheckUser : handleResetPassword)}
-              style={[styles.button, loading && styles.buttonDisabled]}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>{step === 1 ? 'Lanjutkan' : 'Perbarui Password'}</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+                <Text style={styles.title}>{step === 1 ? 'Cari Akun' : 'Reset Password'}</Text>
+                <Text style={styles.subtitle}>
+                  {step === 1 
+                    ? 'Masukkan identitas akun untuk pemulihan.' 
+                    : `Halo ${userData?.nama}, masukkan password baru.`}
+                </Text>
+
+                <View style={[styles.card, styles.shadowLarge]}>
+                  {step === 1 ? (
+                    <View style={styles.inputGroup}>
+                      <View style={styles.inputContainer}>
+                        <MaterialCommunityIcons name="account-search-outline" size={20} color={colors.primary} />
+                        <TextInput
+                          value={identifier}
+                          onChangeText={setIdentifier}
+                          placeholder="NIM atau Email"
+                          style={styles.input}
+                          placeholderTextColor="#94A3B8"
+                          autoCapitalize="none"
+                        />
+                      </View>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.inputGroup}>
+                        <View style={styles.inputContainer}>
+                          <MaterialCommunityIcons name="lock-outline" size={20} color={colors.primary} />
+                          <TextInput
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                            placeholder="Password Baru"
+                            style={styles.input}
+                            secureTextEntry
+                            placeholderTextColor="#94A3B8"
+                          />
+                        </View>
+                      </View>
+                      <View style={styles.inputGroup}>
+                        <View style={styles.inputContainer}>
+                          <MaterialCommunityIcons name="lock-check-outline" size={20} color={colors.primary} />
+                          <TextInput
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            placeholder="Konfirmasi Password"
+                            style={styles.input}
+                            secureTextEntry
+                            placeholderTextColor="#94A3B8"
+                          />
+                        </View>
+                      </View>
+                    </>
+                  )}
+
+                  <TouchableOpacity
+                    onPress={loading ? null : (step === 1 ? handleCheckUser : handleResetPassword)}
+                    style={[styles.btnAction, { backgroundColor: colors.primary }]}
+                  >
+                    {loading ? <ActivityIndicator color="white" /> : <Text style={styles.btnText}>Lanjutkan</Text>}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </View>
+      </ImageBackground>
+      <ToastNotification visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F1F5F9' },
-  keyboardView: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 20 },
-  backButton: { width: 40, height: 40, backgroundColor: '#FFF', borderRadius: 12, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 16, color: '#0F172A' },
-  scrollContent: { padding: 24, alignItems: 'center' },
-  iconCircle: { width: 100, height: 100, backgroundColor: '#DBECFF', borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#0F172A', textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#64748B', textAlign: 'center', marginTop: 8, marginBottom: 32, lineHeight: 20 },
-  card: { backgroundColor: '#FFF', width: '100%', borderRadius: 24, padding: 24, elevation: 4 },
-  inputGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, height: 56 },
-  input: { flex: 1, marginLeft: 12, fontSize: 16, color: '#0F172A' },
-  button: { backgroundColor: '#2563EB', height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginTop: 12, elevation: 4 },
-  buttonDisabled: { backgroundColor: '#94A3B8' },
-  buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  background: { flex: 1 },
+  overlay: { flex: 1, backgroundColor: 'rgba(15, 60, 89, 0.75)' },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10 },
+  backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  scrollContent: { padding: 20, alignItems: 'center', paddingTop: height * 0.05 },
+  iconCircle: { width: 90, height: 90, backgroundColor: '#FFF', borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 20, elevation: 8 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 8, marginBottom: 25 },
+  card: { backgroundColor: '#FFF', width: '100%', borderRadius: 28, padding: 20 },
+  inputGroup: { marginBottom: 15 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, paddingHorizontal: 12, height: 50, borderWidth: 1, borderColor: '#F1F5F9' },
+  input: { flex: 1, marginLeft: 10, fontSize: 15, color: '#1E293B', fontWeight: '600' },
+  btnAction: { height: 54, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginTop: 10, elevation: 4 },
+  btnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  shadowLarge: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
 });
 
 export default ForgotPasswordScreen;

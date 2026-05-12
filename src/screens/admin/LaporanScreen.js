@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// UI Updated: 2026-05-13 03:07
 import {
   View,
   Text,
@@ -33,6 +34,8 @@ const LaporanScreen = () => {
   const [selectedTipe, setSelectedTipe] = useState('semua');
   const [periodeList, setPeriodeList] = useState([]);
   const [showPeriodeModal, setShowPeriodeModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -71,7 +74,9 @@ const LaporanScreen = () => {
             subnama: item.type === 'dosen' ? item.nip : item.kode,
             rataRata: evaluasi.rata_rata,
             komentar: evaluasi.komentar,
-            submittedAt: evaluasi.submitted_at
+            mataKuliah: item.type === 'dosen' ? (evaluasi.mata_kuliah || 'Umum') : null,
+            submittedAt: evaluasi.submitted_at,
+            detail_kategori: evaluasi.detail_kategori || []
           });
         });
       });
@@ -90,9 +95,10 @@ const LaporanScreen = () => {
       Alert.alert('Info', 'Tidak ada data untuk diunduh');
       return;
     }
-    let csv = 'Tanggal,Tipe,Subjek,Nilai,Komentar\n';
+    let csv = 'Tanggal,Tipe,Subjek,Mata Kuliah,Nilai,Kategori,Komentar\n';
     flatData.forEach(row => {
-      csv += `${new Date(row.submittedAt).toLocaleDateString()},${row.type.toUpperCase()},"${row.nama}",${row.rataRata},"${row.komentar || '-'}"\n`;
+      const category = getScoreCategory(row.rataRata);
+      csv += `${new Date(row.submittedAt).toLocaleDateString()},${row.type.toUpperCase()},"${row.nama}","${row.mataKuliah || '-'}",${row.rataRata},"${category.label}","${row.komentar || '-'}"\n`;
     });
 
     const fileUri = `${FileSystem.cacheDirectory}Laporan-Evaluasi.csv`;
@@ -100,38 +106,68 @@ const LaporanScreen = () => {
     await Sharing.shareAsync(fileUri);
   };
 
-  const renderReportCard = ({ item }) => (
-    <View style={[styles.card, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-      <View style={styles.cardHeader}>
-        <View style={[styles.typeIcon, { backgroundColor: item.type === 'dosen' ? colors.primary + '12' : colors.tertiary + '12' }]}>
-          <MaterialCommunityIcons 
-            name={item.type === 'dosen' ? 'school' : 'office-building'} 
-            size={24} 
-            color={item.type === 'dosen' ? colors.primary : colors.tertiary} 
-          />
+  const getScoreCategory = (score) => {
+    if (score >= 4.5) return { label: 'Sangat Baik', color: '#10B981' };
+    if (score >= 3.5) return { label: 'Baik', color: '#3B82F6' };
+    if (score >= 2.5) return { label: 'Cukup', color: '#F59E0B' };
+    return { label: 'Kurang', color: '#EF4444' };
+  };
+
+  const renderReportCard = ({ item }) => {
+    const category = getScoreCategory(item.rataRata);
+    
+    return (
+      <TouchableOpacity 
+        style={[styles.card, { backgroundColor: colors.surface }, colors.shadowSoft]}
+        onPress={() => {
+          setSelectedItem(item);
+          setShowDetailModal(true);
+        }}
+      >
+        <View style={styles.cardHeader}>
+          <View style={[styles.typeIcon, { backgroundColor: item.type === 'dosen' ? colors.primary + '12' : colors.tertiary + '12' }]}>
+            <MaterialCommunityIcons 
+              name={item.type === 'dosen' ? 'school' : 'office-building'} 
+              size={24} 
+              color={item.type === 'dosen' ? colors.primary : colors.tertiary} 
+            />
+          </View>
+          <View style={styles.cardInfo}>
+            <Text style={[styles.cardNama, { color: colors.textPrimary }]}>{item.nama}</Text>
+            <View style={styles.subInfoRow}>
+              <Text style={[styles.cardSubnama, { color: colors.textSecondary }]}>{item.subnama}</Text>
+              {item.mataKuliah && (
+                <>
+                  <View style={styles.infoDot} />
+                  <Text style={[styles.mkInfo, { color: colors.primary }]}>{item.mataKuliah}</Text>
+                </>
+              )}
+            </View>
+          </View>
+          <View style={styles.ratingSection}>
+            <View style={[styles.ratingBadge, { backgroundColor: category.color + '15' }]}>
+              <Text style={[styles.ratingText, { color: category.color }]}>{item.rataRata}</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.cardInfo}>
-          <Text style={[styles.cardNama, { color: colors.textPrimary }]}>{item.nama}</Text>
-          <Text style={[styles.cardSubnama, { color: colors.textSecondary }]}>{item.subnama}</Text>
+        
+        {item.komentar && (
+          <View style={[styles.komentarBox, { backgroundColor: colors.background, borderLeftColor: category.color }]}>
+            <View style={styles.komentarHeader}>
+              <MaterialCommunityIcons name="message-text-outline" size={12} color={colors.textDisabled} />
+              <Text style={[styles.komentarLabel, { color: colors.textDisabled }]}>KOMENTAR MAHASISWA</Text>
+            </View>
+            <Text style={[styles.komentarText, { color: colors.textPrimary }]}>{item.komentar}</Text>
+          </View>
+        )}
+        <View style={styles.cardFooter}>
+          <Text style={[styles.footerDate, { color: colors.textDisabled }]}>
+            {new Date(item.submittedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </Text>
         </View>
-        <View style={[styles.ratingBadge, { backgroundColor: colors.secondaryLight }]}>
-          <MaterialCommunityIcons name="star" size={14} color={colors.secondaryDark} />
-          <Text style={[styles.ratingText, { color: colors.secondaryDark }]}>{item.rataRata}</Text>
-        </View>
-      </View>
-      {item.komentar && (
-        <View style={[styles.komentarBox, { backgroundColor: colors.background, borderLeftColor: colors.primary }]}>
-          <Text style={[styles.komentarLabel, { color: colors.textDisabled }]}>MASUKAN:</Text>
-          <Text style={[styles.komentarText, { color: colors.textPrimary }]}>{item.komentar}</Text>
-        </View>
-      )}
-      <View style={styles.cardFooter}>
-        <Text style={[styles.footerDate, { color: colors.textDisabled }]}>
-          {new Date(item.submittedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-        </Text>
-      </View>
-    </View>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const DecorativeBackground = () => (
     <View style={StyleSheet.absoluteFill}>
@@ -234,6 +270,64 @@ const LaporanScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Category Detail Modal */}
+      <Modal visible={showDetailModal} transparent animationType="fade" onRequestClose={() => setShowDetailModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeaderHeader, { backgroundColor: selectedItem?.type === 'dosen' ? colors.primary : colors.tertiary }]}>
+              <Text style={styles.modalHeaderTitle}>Analisis Kategori</Text>
+              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
+                <MaterialCommunityIcons name="close" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <Text style={[styles.detailSubjectName, { color: colors.textPrimary }]}>{selectedItem?.nama}</Text>
+              <Text style={[styles.detailSubjectSub, { color: colors.textSecondary }]}>
+                {selectedItem?.type === 'dosen' ? `NIP. ${selectedItem.subnama}` : `KODE. ${selectedItem?.subnama}`}
+              </Text>
+              
+              <View style={[styles.summaryBadge, { backgroundColor: colors.background }]}>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Rata-rata Penilaian</Text>
+                <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{selectedItem?.rataRata || '0.0'}</Text>
+              </View>
+
+              <Text style={[styles.kategoriTitle, { color: colors.textPrimary }]}>Skor Per Kategori</Text>
+              <ScrollView style={{ maxHeight: 300 }}>
+                {selectedItem?.detail_kategori?.map((kat, idx) => (
+                  <View key={idx} style={styles.kategoriRow}>
+                    <View style={styles.kategoriInfo}>
+                      <Text style={[styles.kategoriName, { color: colors.textPrimary }]}>{kat.kategori}</Text>
+                      <Text style={[styles.kategoriScore, { color: kat.rata_rata < 3.5 ? colors.error : colors.success }]}>
+                        {kat.rata_rata || kat.skor}
+                      </Text>
+                    </View>
+                    <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+                      <View 
+                        style={[
+                          styles.progressBarFill, 
+                          { 
+                            width: `${((kat.rata_rata || kat.skor) / 5) * 100}%`,
+                            backgroundColor: (kat.rata_rata || kat.skor) < 3.5 ? colors.error : colors.success 
+                          }
+                        ]} 
+                      />
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.closeDetailBtn, { backgroundColor: selectedItem?.type === 'dosen' ? colors.primary : colors.tertiary }]} 
+              onPress={() => setShowDetailModal(false)}
+            >
+              <Text style={styles.closeDetailBtnText}>Tutup</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -265,6 +359,12 @@ const styles = StyleSheet.create({
   komentarText: { fontSize: 13, lineHeight: 20, fontWeight: '500' },
   cardFooter: { marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.03)', alignItems: 'flex-end' },
   footerDate: { fontSize: 11, fontWeight: '600' },
+  subInfoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  infoDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#CBD5E1', mx: 8, marginHorizontal: 8 },
+  mkInfo: { fontSize: 11, fontWeight: '700' },
+  ratingSection: { alignItems: 'flex-end' },
+  categoryLabel: { fontSize: 9, fontWeight: '900', marginTop: 4 },
+  komentarHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   loadingWrapper: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyState: { alignItems: 'center', marginTop: 100, opacity: 0.8 },
   emptyText: { marginTop: 16, fontSize: 15, fontWeight: '600' },
@@ -277,6 +377,23 @@ const styles = StyleSheet.create({
   activeTagText: { fontSize: 10, fontWeight: 'bold' },
   closeBtn: { marginTop: 24, padding: 18, borderRadius: 20, alignItems: 'center' },
   closeBtnText: { fontWeight: '800', fontSize: 14 },
+
+  modalHeaderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderTopLeftRadius: 32, borderTopRightRadius: 32 },
+  modalHeaderTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  detailSubjectName: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginTop: 10 },
+  detailSubjectSub: { fontSize: 12, textAlign: 'center', marginBottom: 20 },
+  summaryBadge: { padding: 16, borderRadius: 20, alignItems: 'center', marginBottom: 24 },
+  summaryLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  summaryValue: { fontSize: 24, fontWeight: 'bold', marginTop: 4 },
+  kategoriTitle: { fontSize: 13, fontWeight: '900', letterSpacing: 1, marginBottom: 16, marginLeft: 4 },
+  kategoriRow: { marginBottom: 16 },
+  kategoriInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  kategoriName: { fontSize: 14, fontWeight: '600', flex: 1 },
+  kategoriScore: { fontSize: 14, fontWeight: 'bold', marginLeft: 10 },
+  progressBarBg: { height: 8, borderRadius: 4, width: '100%', overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 4 },
+  closeDetailBtn: { margin: 24, marginTop: 0, padding: 16, borderRadius: 16, alignItems: 'center' },
+  closeDetailBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default LaporanScreen;

@@ -9,9 +9,11 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
 import dosenService from '../../services/dosenService';
 
@@ -39,11 +41,11 @@ const PilihDosenScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const data = await dosenService.getAllDosen();
-      setDosen(data);
-      setFilteredDosen(data);
+      setDosen(data || []);
+      setFilteredDosen(data || []);
       
       const allMK = [];
-      data.forEach((d) => {
+      data?.forEach((d) => {
         if (d.mata_kuliah && Array.isArray(d.mata_kuliah)) {
           d.mata_kuliah.forEach((mk) => {
             const mkNama = typeof mk === 'object' ? mk.nama : mk;
@@ -68,7 +70,10 @@ const PilihDosenScreen = ({ navigation }) => {
   const filterDosen = () => {
     let filtered = [...dosen];
     if (searchQuery) {
-      filtered = filtered.filter(d => d.nama.toLowerCase().includes(searchQuery.toLowerCase()));
+      filtered = filtered.filter(d => 
+        (d.nama && d.nama.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (d.nip && d.nip.includes(searchQuery))
+      );
     }
     if (selectedMataKuliah !== 'Semua') {
       filtered = filtered.filter(d => 
@@ -79,34 +84,46 @@ const PilihDosenScreen = ({ navigation }) => {
   };
 
   const renderDosenCard = ({ item }) => {
-    const initials = item.nama.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const initials = item.nama?.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'DS';
     
     return (
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('FormEvaluasiDosen', { dosenId: item.id, namaDosen: item.nama, nip: item.nip })}
-        activeOpacity={0.8}
+        style={[styles.card, { backgroundColor: colors.surface }, styles.shadowSoft]}
+        onPress={() => navigation.navigate('FormEvaluasiDosen', { 
+          dosenId: item.id, 
+          namaDosen: item.nama, 
+          nip: item.nip,
+          mataKuliah: item.mata_kuliah 
+        })}
+        activeOpacity={0.9}
       >
         <View style={styles.cardHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+          <View style={[styles.avatar, { backgroundColor: colors.primary + '10' }]}>
+            <Text style={[styles.avatarText, { color: colors.primary }]}>{initials}</Text>
           </View>
           <View style={styles.cardInfo}>
-            <Text style={styles.dosenName} numberOfLines={1}>{item.nama}</Text>
-            <Text style={styles.nip}>NIP: {item.nip}</Text>
+            <Text style={[styles.dosenName, { color: colors.textPrimary }]} numberOfLines={1}>{item.nama}</Text>
+            <Text style={[styles.nip, { color: colors.textSecondary }]}>NIP: {item.nip || '-'}</Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="#CBD5E1" />
+          <View style={[styles.goCircle, { backgroundColor: colors.primary + '08' }]}>
+             <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
+          </View>
         </View>
+        
+        <View style={[styles.cardDivider, { backgroundColor: colors.border + '50' }]} />
         
         <View style={styles.cardFooter}>
           <View style={styles.mkTags}>
+            <MaterialCommunityIcons name="book-outline" size={14} color={colors.textDisabled} style={{ marginRight: 6 }} />
             {(item.mata_kuliah || []).slice(0, 2).map((mk, idx) => (
-              <View key={idx} style={styles.mkBadge}>
-                <Text style={styles.mkText} numberOfLines={1}>{typeof mk === 'object' ? mk.nama : mk}</Text>
+              <View key={idx} style={[styles.mkBadge, { backgroundColor: colors.background }]}>
+                <Text style={[styles.mkText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {typeof mk === 'object' ? mk.nama : mk}
+                </Text>
               </View>
             ))}
             {(item.mata_kuliah || []).length > 2 && (
-              <Text style={styles.moreText}>+{(item.mata_kuliah || []).length - 2} lagi</Text>
+              <Text style={[styles.moreText, { color: colors.primary }]}>+{(item.mata_kuliah || []).length - 2}</Text>
             )}
           </View>
         </View>
@@ -114,50 +131,59 @@ const PilihDosenScreen = ({ navigation }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text style={styles.loadingText}>Memuat data dosen...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#0F172A" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Dosen Pengampu</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Curved Premium Header */}
+      <View style={[styles.headerArea, { backgroundColor: colors.primaryDark }]}>
+        <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+          <Circle cx={width} cy="0" r="120" fill="rgba(255,255,255,0.05)" />
+          <Circle cx="0" cy="80" r="70" fill="rgba(255,255,255,0.03)" />
+        </Svg>
+        
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleBox}>
+            <Text style={styles.headerTitle}>Pilih Dosen</Text>
+            <Text style={styles.headerSubtitle}>Silakan pilih dosen untuk dievaluasi</Text>
+          </View>
+        </View>
 
-      <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
-          <MaterialCommunityIcons name="magnify" size={22} color="#64748B" />
+        {/* Search Bar inside Header */}
+        <View style={[styles.searchWrapper, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+          <MaterialCommunityIcons name="magnify" size={22} color="rgba(255,255,255,0.7)" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Cari dosen..."
+            placeholder="Cari nama dosen atau NIP..."
+            placeholderTextColor="rgba(255,255,255,0.5)"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#94A3B8"
           />
         </View>
       </View>
 
-      <View style={styles.filterSection}>
+      {/* Filter Chips - Floating slightly over list */}
+      <View style={styles.filterArea}>
         <FlatList
           horizontal
           data={mataKuliahList}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.chip, selectedMataKuliah === item && styles.chipActive]}
+              style={[
+                styles.chip, 
+                { backgroundColor: colors.surface, borderColor: colors.border },
+                selectedMataKuliah === item && { backgroundColor: colors.primary, borderColor: colors.primary }
+              ]}
               onPress={() => setSelectedMataKuliah(item)}
             >
-              <Text style={[styles.chipText, selectedMataKuliah === item && styles.chipTextActive]}>{item}</Text>
+              <Text style={[
+                styles.chipText, 
+                { color: colors.textSecondary },
+                selectedMataKuliah === item && { color: '#FFF' }
+              ]}>{item}</Text>
             </TouchableOpacity>
           )}
           keyExtractor={item => item}
@@ -166,54 +192,77 @@ const PilihDosenScreen = ({ navigation }) => {
         />
       </View>
 
-      <FlatList
-        data={filteredDosen}
-        renderItem={renderDosenCard}
-        keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563EB']} />}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="account-search-outline" size={80} color="#CBD5E1" />
-            <Text style={styles.emptyText}>Dosen tidak ditemukan</Text>
-          </View>
-        }
-      />
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Sinkronisasi data dosen...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredDosen}
+          renderItem={renderDosenCard}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIconBox, { backgroundColor: colors.primary + '05' }]}>
+                <MaterialCommunityIcons name="account-search-outline" size={80} color={colors.textDisabled} />
+              </View>
+              <Text style={[styles.emptyText, { color: colors.textPrimary }]}>Dosen tidak ditemukan</Text>
+              <Text style={[styles.emptySub, { color: colors.textDisabled }]}>Coba gunakan kata kunci lain</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F1F5F9' },
+  container: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, color: '#64748B' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  backButton: { width: 40, height: 40, backgroundColor: '#F8FAFC', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
-  searchSection: { padding: 20, backgroundColor: '#FFF' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 16, paddingHorizontal: 16, height: 50 },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: '#0F172A' },
-  filterSection: { backgroundColor: '#FFF', paddingBottom: 16 },
-  chipList: { paddingHorizontal: 20 },
-  chip: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 99, backgroundColor: '#F1F5F9', marginRight: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  chipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  chipText: { fontSize: 13, color: '#64748B', fontWeight: '600' },
-  chipTextActive: { color: '#FFF' },
-  listContent: { padding: 20, paddingBottom: 40 },
-  card: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  loadingText: { marginTop: 15, fontWeight: '600' },
+  
+  headerArea: { padding: 24, paddingTop: 50, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
+  backBtn: { width: 42, height: 42, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerTitleBox: { marginLeft: 15 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  
+  searchWrapper: { flexDirection: 'row', alignItems: 'center', height: 55, borderRadius: 18, paddingHorizontal: 16, marginTop: 5 },
+  searchInput: { flex: 1, marginLeft: 12, fontSize: 15, color: '#FFF', fontWeight: '500' },
+
+  filterArea: { marginTop: -20, zIndex: 10 },
+  chipList: { paddingHorizontal: 24, paddingVertical: 5 },
+  chip: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 15, marginRight: 10, borderWidth: 1, elevation: 2 },
+  chipText: { fontSize: 13, fontWeight: 'bold' },
+
+  listContent: { padding: 24, paddingTop: 20, paddingBottom: 40 },
+  card: { borderRadius: 30, padding: 20, marginBottom: 18 },
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 56, height: 56, borderRadius: 20, backgroundColor: '#DBECFF', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 18, fontWeight: 'bold', color: '#2563EB' },
+  avatar: { width: 56, height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 18, fontWeight: 'bold' },
   cardInfo: { flex: 1, marginLeft: 16 },
-  dosenName: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
-  nip: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  cardFooter: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  mkTags: { flexDirection: 'row', alignItems: 'center' },
-  mkBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginRight: 8 },
-  mkText: { fontSize: 11, color: '#475569', fontWeight: '500' },
-  moreText: { fontSize: 11, color: '#94A3B8' },
-  emptyState: { alignItems: 'center', marginTop: 100 },
-  emptyText: { marginTop: 16, fontSize: 16, color: '#94A3B8' },
+  dosenName: { fontSize: 16, fontWeight: 'bold' },
+  nip: { fontSize: 12, marginTop: 3, fontWeight: '600' },
+  goCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+
+  cardDivider: { height: 1, marginVertical: 15 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center' },
+  mkTags: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  mkBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, marginRight: 6 },
+  mkText: { fontSize: 10, fontWeight: '700' },
+  moreText: { fontSize: 11, fontWeight: 'bold' },
+
+  emptyState: { alignItems: 'center', marginTop: 80 },
+  emptyIconBox: { width: 140, height: 140, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyText: { fontSize: 18, fontWeight: 'bold' },
+  emptySub: { fontSize: 14, marginTop: 8 },
+
+  shadowSoft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 },
 });
 
 export default PilihDosenScreen;

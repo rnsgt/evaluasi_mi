@@ -98,7 +98,7 @@ const AdminDashboardScreen = ({ navigation }) => {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Sinkronisasi Data Panel...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Sinkronisasi Data Panel UPM...</Text>
         </View>
       </SafeAreaView>
     );
@@ -114,45 +114,46 @@ const AdminDashboardScreen = ({ navigation }) => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Modern Header Area */}
-        <View style={[styles.headerSection, { backgroundColor: colors.primaryDark }]}>
-          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
-            <Defs>
-              <LinearGradient id="gradHeader" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0" stopColor={colors.primary} stopOpacity="1" />
-                <Stop offset="1" stopColor={colors.primaryDark} stopOpacity="1" />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#gradHeader)" />
-            <Circle cx={width} cy="0" r="150" fill="rgba(255,255,255,0.05)" />
-            <Circle cx="0" cy="100" r="80" fill="rgba(255,255,255,0.03)" />
-          </Svg>
-          
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.greetingText}>Selamat Datang,</Text>
-              <Text style={styles.adminNameText}>{user?.nama || 'Administrator'}</Text>
+        {/* Modern Header Area with Building Background */}
+        <View style={styles.headerWrapper}>
+          <ImageBackground 
+            source={require('../../../assets/gedung diklat.jpg')} 
+            style={styles.headerBackground}
+          >
+            <View style={styles.headerOverlay}>
+              <View style={styles.headerTop}>
+                <View>
+                  <Text style={styles.greetingText}>Panel Unit Penjaminan Mutu</Text>
+                  <Text style={styles.adminNameText}>{user?.nama || 'Kepala UPM'}</Text>
+                </View>
+                <View style={[styles.logoBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                  <Image source={require('../../../assets/logomi.png')} style={styles.headerLogo} />
+                </View>
+              </View>
+              
+              {/* Stats at the Top - Moved from below */}
+              <View style={[styles.headerStatsRow, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                <View style={styles.hStatItem}>
+                  <Text style={styles.hStatValue}>{stats.evaluasiDosen}</Text>
+                  <Text style={styles.hStatLabel}>EVAL. DOSEN</Text>
+                </View>
+                <View style={styles.hStatDivider} />
+                <View style={styles.hStatItem}>
+                  <Text style={styles.hStatValue}>{stats.evaluasiFasilitas}</Text>
+                  <Text style={styles.hStatLabel}>EVAL. FASILITAS</Text>
+                </View>
+                <View style={styles.hStatDivider} />
+                <View style={styles.hStatItem}>
+                  <Text style={styles.hStatValue}>{stats.partisipasi.persentase}%</Text>
+                  <Text style={styles.hStatLabel}>PARTISIPASI</Text>
+                </View>
+              </View>
             </View>
-            <View style={[styles.logoBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Image source={require('../../../assets/logomi.png')} style={styles.headerLogo} />
-            </View>
-          </View>
-          
-          <View style={[styles.headerStatsRow, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
-            <View style={styles.hStatItem}>
-              <Text style={styles.hStatValue}>{stats.totalEvaluasi}</Text>
-              <Text style={styles.hStatLabel}>EVALUASI MASUK</Text>
-            </View>
-            <View style={styles.hStatDivider} />
-            <View style={styles.hStatItem}>
-              <Text style={styles.hStatValue}>{stats.partisipasi.persentase}%</Text>
-              <Text style={styles.hStatLabel}>PARTISIPASI</Text>
-            </View>
-          </View>
+          </ImageBackground>
         </View>
 
         <View style={styles.bodyContent}>
-          {/* Quick Stats Grid */}
+          {/* Quick Stats Grid - Total Dosen & Mahasiswa */}
           <View style={styles.statsGrid}>
             <View style={styles.statsRow}>
               <StatItem 
@@ -180,13 +181,13 @@ const AdminDashboardScreen = ({ navigation }) => {
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <Text style={[styles.analysisTitle, { color: colors.textPrimary }]}>Analisis Partisipasi</Text>
-                <Text style={[styles.analysisSubtitle, { color: colors.textDisabled }]}>Data Real-time Periode Aktif</Text>
+                <Text style={[styles.analysisSubtitle, { color: colors.textDisabled }]}>Data Real-time Unit Penjaminan Mutu</Text>
               </View>
               <TouchableOpacity 
                 style={[styles.reportButton, { backgroundColor: colors.primary + '10' }]}
                 onPress={() => navigation.navigate('Laporan')}
               >
-                <Text style={[styles.reportButtonText, { color: colors.primary }]}>Detail</Text>
+                <Text style={[styles.reportButtonText, { color: colors.primary }]}>Laporan</Text>
               </TouchableOpacity>
             </View>
             
@@ -194,39 +195,16 @@ const AdminDashboardScreen = ({ navigation }) => {
               <View style={styles.progressTextRow}>
                 <Text style={[styles.progressPercentage, { color: colors.primary }]}>{stats.partisipasi.persentase}%</Text>
                 <View style={[styles.trendBadge, { backgroundColor: colors.success + '15' }]}>
-                  <MaterialCommunityIcons name="arrow-up" size={14} color={colors.success} />
-                  <Text style={[styles.trendText, { color: colors.success }]}>Aktif</Text>
+                  <MaterialCommunityIcons name="check-decagram" size={14} color={colors.success} />
+                  <Text style={[styles.trendText, { color: colors.success }]}>Online</Text>
                 </View>
               </View>
               <View style={[styles.progressBarBase, { backgroundColor: colors.background }]}>
-                <View style={[styles.progressBarFill, { width: `${stats.partisipasi.persentase}%`, backgroundColor: colors.primary }]}>
-                   <LinearGradient id="gradBar" x1="0" y1="0" x2="1" y2="0">
-                    <Stop offset="0" stopColor={colors.primary} stopOpacity="1" />
-                    <Stop offset="1" stopColor={colors.primaryDark} stopOpacity="1" />
-                  </LinearGradient>
-                </View>
+                <View style={[styles.progressBarFill, { width: `${stats.partisipasi.persentase}%`, backgroundColor: colors.primary }]} />
               </View>
               <Text style={[styles.progressSubText, { color: colors.textSecondary }]}>
-                <Text style={{ fontWeight: 'bold', color: colors.textPrimary }}>{stats.partisipasi.uniqueMahasiswa}</Text> dari {stats.totalMahasiswa} Mahasiswa berpartisipasi
+                <Text style={{ fontWeight: 'bold', color: colors.textPrimary }}>{stats.partisipasi.uniqueMahasiswa}</Text> dari {stats.totalMahasiswa} Mahasiswa sudah mengisi evaluasi
               </Text>
-            </View>
-          </View>
-
-          {/* Composition Card */}
-          <View style={styles.compositionRow}>
-            <View style={[styles.compCard, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-              <View style={[styles.compIcon, { backgroundColor: colors.secondaryDark + '10' }]}>
-                <MaterialCommunityIcons name="school" size={24} color={colors.secondaryDark} />
-              </View>
-              <Text style={[styles.compValue, { color: colors.textPrimary }]}>{stats.evaluasiDosen}</Text>
-              <Text style={[styles.compLabel, { color: colors.textDisabled }]}>Evaluasi Dosen</Text>
-            </View>
-            <View style={[styles.compCard, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-              <View style={[styles.compIcon, { backgroundColor: colors.tertiary + '10' }]}>
-                <MaterialCommunityIcons name="office-building" size={24} color={colors.tertiary} />
-              </View>
-              <Text style={[styles.compValue, { color: colors.textPrimary }]}>{stats.evaluasiFasilitas}</Text>
-              <Text style={[styles.compLabel, { color: colors.textDisabled }]}>Evaluasi Fasilitas</Text>
             </View>
           </View>
 
@@ -234,7 +212,7 @@ const AdminDashboardScreen = ({ navigation }) => {
           <View style={styles.actionSection}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>MANAJEMEN DATA</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>MANAJEMEN UPM</Text>
             </View>
             <View style={styles.actionGrid}>
               {[
@@ -269,58 +247,55 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 16, fontWeight: '700' },
   scrollContent: { paddingBottom: 20 },
   
-  headerSection: { padding: 32, paddingTop: 60, borderBottomLeftRadius: 50, borderBottomRightRadius: 50, overflow: 'hidden' },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-  greetingText: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
-  adminNameText: { fontSize: 24, color: '#FFFFFF', fontWeight: 'bold', marginTop: 4 },
-  logoBadge: { width: 50, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  headerLogo: { width: 32, height: 32, resizeMode: 'contain' },
+  headerWrapper: { borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 15 },
+  headerBackground: { width: '100%', height: 260 },
+  headerOverlay: { flex: 1, backgroundColor: 'rgba(15, 60, 89, 0.85)', padding: 24, paddingTop: 60, justifyContent: 'space-between' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  greetingText: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '600', letterSpacing: 0.5 },
+  adminNameText: { fontSize: 22, color: '#FFFFFF', fontWeight: 'bold', marginTop: 2 },
+  logoBadge: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  headerLogo: { width: 30, height: 30, resizeMode: 'contain' },
   
-  headerStatsRow: { flexDirection: 'row', padding: 20, borderRadius: 24, alignItems: 'center' },
+  headerStatsRow: { flexDirection: 'row', padding: 18, borderRadius: 20, alignItems: 'center', marginTop: 20 },
   hStatItem: { flex: 1, alignItems: 'center' },
-  hStatValue: { fontSize: 22, fontWeight: '900', color: '#FFFFFF' },
-  hStatLabel: { fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: '900', marginTop: 4, letterSpacing: 1 },
-  hStatDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.1)' },
+  hStatValue: { fontSize: 20, fontWeight: '900', color: '#FFFFFF' },
+  hStatLabel: { fontSize: 8, color: 'rgba(255,255,255,0.7)', fontWeight: '900', marginTop: 4, letterSpacing: 0.8 },
+  hStatDivider: { width: 1, height: 25, backgroundColor: 'rgba(255,255,255,0.1)' },
   
-  bodyContent: { padding: 24, marginTop: -20 },
+  bodyContent: { padding: 24, marginTop: 10 },
   statsGrid: { marginBottom: 24 },
   statsRow: { flexDirection: 'row', gap: 16 },
-  statItem: { padding: 20, borderRadius: 28, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  statIconWrapper: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  statLabel: { fontSize: 11, fontWeight: 'bold' },
-  statValue: { fontSize: 22, fontWeight: '900', marginTop: 2 },
+  statItem: { padding: 18, borderRadius: 24, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  statIconWrapper: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  statLabel: { fontSize: 10, fontWeight: 'bold' },
+  statValue: { fontSize: 20, fontWeight: '900', marginTop: 2 },
   
-  analysisCard: { padding: 24, borderRadius: 35, marginBottom: 24 },
+  analysisCard: { padding: 24, borderRadius: 32, marginBottom: 24 },
   analysisHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  iconBox: { width: 50, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  analysisTitle: { fontSize: 17, fontWeight: '900' },
-  analysisSubtitle: { fontSize: 12, fontWeight: '600', marginTop: 2 },
-  reportButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
-  reportButtonText: { fontSize: 12, fontWeight: 'bold' },
+  iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  analysisTitle: { fontSize: 16, fontWeight: '900' },
+  analysisSubtitle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  reportButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 },
+  reportButtonText: { fontSize: 11, fontWeight: 'bold' },
   
   progressContainer: {},
-  progressTextRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  progressPercentage: { fontSize: 36, fontWeight: '900' },
-  trendBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  trendText: { fontSize: 10, fontWeight: 'bold' },
-  progressBarBase: { height: 12, borderRadius: 6, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 6 },
-  progressSubText: { fontSize: 12, marginTop: 14, fontWeight: '600' },
-  
-  compositionRow: { flexDirection: 'row', gap: 16, marginBottom: 32 },
-  compCard: { flex: 1, padding: 20, borderRadius: 30, alignItems: 'center' },
-  compIcon: { width: 50, height: 50, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  compValue: { fontSize: 22, fontWeight: '900' },
-  compLabel: { fontSize: 11, fontWeight: 'bold', marginTop: 4 },
+  progressTextRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  progressPercentage: { fontSize: 32, fontWeight: '900' },
+  trendBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  trendText: { fontSize: 9, fontWeight: 'bold' },
+  progressBarBase: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 5 },
+  progressSubText: { fontSize: 11, marginTop: 12, fontWeight: '600' },
   
   actionSection: {},
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20, marginLeft: 8 },
-  sectionDot: { width: 8, height: 8, borderRadius: 4 },
-  sectionTitle: { fontSize: 13, fontWeight: '900', letterSpacing: 1 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18, marginLeft: 4 },
+  sectionDot: { width: 6, height: 6, borderRadius: 3 },
+  sectionTitle: { fontSize: 12, fontWeight: '900', letterSpacing: 1 },
   actionGrid: { flexDirection: 'row', gap: 12 },
-  actionCard: { flex: 1, padding: 18, borderRadius: 28, alignItems: 'center', gap: 12 },
-  actionIconBox: { width: 50, height: 50, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  actionLabel: { fontSize: 11, fontWeight: '900', textAlign: 'center' },
+  actionCard: { flex: 1, padding: 16, borderRadius: 24, alignItems: 'center', gap: 10 },
+  actionIconBox: { width: 46, height: 46, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  actionLabel: { fontSize: 10, fontWeight: '900', textAlign: 'center' },
 });
+
 
 export default AdminDashboardScreen;

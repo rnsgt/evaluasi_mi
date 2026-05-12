@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Svg, { Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
 import LikertScale from '../../components/LikertScale';
 import ToastNotification from '../../components/ToastNotification';
@@ -25,7 +25,7 @@ import { getActivePeriode } from '../../services/periodeService';
 const { width } = Dimensions.get('window');
 
 const FormEvaluasiDosenScreen = ({ route, navigation }) => {
-  const { dosenId, namaDosen, nip } = route.params;
+  const { dosenId, namaDosen, nip, mataKuliah = [] } = route.params;
   const { colors } = useTheme();
   const scrollViewRef = useRef(null);
 
@@ -34,6 +34,7 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [komentar, setKomentar] = useState('');
+  const [selectedMK, setSelectedMK] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activePeriode, setActivePeriode] = useState(null);
@@ -99,6 +100,12 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     let isValid = true;
+
+    if (!selectedMK) {
+      newErrors.mataKuliah = 'Pilih mata kuliah terlebih dahulu';
+      isValid = false;
+    }
+
     questions.forEach((q) => {
       if (!answers[q.id]) {
         newErrors[q.id] = 'Pertanyaan wajib diisi';
@@ -114,7 +121,11 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
 
   const handleSubmit = () => {
     if (!validateForm()) {
-      Alert.alert('Form Belum Lengkap', 'Mohon lengkapi semua pertanyaan.');
+      if (errors.mataKuliah) {
+        Alert.alert('Mata Kuliah Belum Dipilih', 'Mohon pilih mata kuliah yang diampu dosen ini.');
+      } else {
+        Alert.alert('Form Belum Lengkap', 'Mohon lengkapi semua pertanyaan.');
+      }
       return;
     }
     Alert.alert(
@@ -140,7 +151,7 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
       }));
       const evaluasiData = {
         dosen_id: dosenId,
-        mata_kuliah_nama: 'Umum',
+        mata_kuliah_nama: selectedMK,
         periode_id: activePeriode.id,
         komentar: komentar || null,
         jawaban,
@@ -211,100 +222,130 @@ const FormEvaluasiDosenScreen = ({ route, navigation }) => {
       <StatusBar barStyle="light-content" />
       <ToastNotification visible={toastVisible} message={toastMessage} type={toastType} onHide={hideToast} colors={colors} />
       
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardView}>
-        <View style={[styles.headerArea, { backgroundColor: colors.primaryDark }]}>
-          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
-            <Circle cx={width} cy="0" r="100" fill="rgba(255,255,255,0.05)" />
-            <Circle cx="0" cy="80" r="60" fill="rgba(255,255,255,0.03)" />
-          </Svg>
-          
-          <View style={styles.headerTop}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-              <MaterialCommunityIcons name="chevron-left" size={28} color="#FFF" />
-            </TouchableOpacity>
-            <View style={styles.headerTitleBox}>
-              <Text style={styles.headerTitle}>Formulir Evaluasi</Text>
-              <Text style={styles.headerSubtitle}>Dosen Pengampu</Text>
-            </View>
-            <View style={{ width: 40 }} />
-          </View>
-
-          <View style={[styles.dosenInfoBox, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-            <View style={[styles.avatarCircle, { backgroundColor: colors.surface }]}>
-              <MaterialCommunityIcons name="account-tie" size={32} color={colors.primary} />
-            </View>
-            <View style={styles.dosenTextInfo}>
-              <Text style={styles.namaDosenText}>{namaDosen}</Text>
-              <Text style={styles.nipDosenText}>NIP. {nip || '-'}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={[styles.stickyProgress, { backgroundColor: colors.surface }, colors.shadowLarge]}>
-          <View style={styles.progressTopRow}>
-            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Kelengkapan Jawaban</Text>
-            <Text style={[styles.progressValue, { color: colors.primary }]}>{Math.round(progress)}%</Text>
-          </View>
-          <View style={[styles.barBg, { backgroundColor: colors.background }]}>
-            <View style={[styles.barFill, { width: `${progress}%`, backgroundColor: colors.primary }]}>
-               <LinearGradient id="gradBar" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0" stopColor={colors.primary} stopOpacity="1" />
-                <Stop offset="1" stopColor={colors.primaryDark} stopOpacity="1" />
-              </LinearGradient>
-            </View>
-          </View>
-        </View>
-
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.keyboardView}
+      >
         <ScrollView 
           ref={scrollViewRef} 
           style={styles.scrollView} 
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.noticeBox, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '20' }]}>
-            <MaterialCommunityIcons name="shield-check-outline" size={20} color={colors.primary} />
-            <Text style={[styles.noticeText, { color: colors.textPrimary }]}>
-              Identitas Anda akan disamarkan. Mohon berikan penilaian yang jujur dan objektif.
-            </Text>
-          </View>
-
-          {Object.entries(groupedQuestions).map(([name, list]) => renderKategori(name, list))}
-
-          <View style={[styles.commentSection, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-            <View style={styles.commentHeader}>
-              <MaterialCommunityIcons name="message-draw" size={20} color={colors.primary} />
-              <Text style={[styles.commentTitle, { color: colors.textPrimary }]}>SARAN & MASUKAN</Text>
+          <View style={[styles.headerArea, { backgroundColor: colors.primaryDark }]}>
+            <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+              <Circle cx={width} cy="0" r="100" fill="rgba(255,255,255,0.05)" />
+              <Circle cx="0" cy="80" r="60" fill="rgba(255,255,255,0.03)" />
+            </Svg>
+            
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <MaterialCommunityIcons name="chevron-left" size={28} color="#FFF" />
+              </TouchableOpacity>
+              <View style={styles.headerTitleBox}>
+                <Text style={styles.headerTitle}>Formulir Evaluasi</Text>
+                <Text style={styles.headerSubtitle}>Dosen Pengampu</Text>
+              </View>
+              <View style={{ width: 40 }} />
             </View>
-            <TextInput
-              style={[styles.textInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Tuliskan masukan tambahan untuk dosen ini..."
-              placeholderTextColor={colors.textDisabled}
-              value={komentar}
-              onChangeText={(text) => { setKomentar(text); setHasUnsavedChanges(true); }}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-          </View>
-          <View style={{ height: 120 }} />
-        </ScrollView>
 
-        <View style={[styles.footer, { backgroundColor: colors.surface }, colors.shadowLarge]}>
-          <TouchableOpacity
-            style={[styles.btnKirim, (submitting || progress < 100) && { backgroundColor: colors.textDisabled }]}
-            onPress={handleSubmit}
-            disabled={submitting || progress < 100}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <>
-                <Text style={styles.btnKirimText}>Kirim Evaluasi Sekarang</Text>
-                <MaterialCommunityIcons name="send" size={20} color="#FFF" style={{ marginLeft: 8 }} />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+            <View style={[styles.dosenInfoBox, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+              <View style={[styles.avatarCircle, { backgroundColor: colors.surface }]}>
+                <MaterialCommunityIcons name="account-tie" size={32} color={colors.primary} />
+              </View>
+              <View style={styles.dosenTextInfo}>
+                <Text style={styles.namaDosenText}>{namaDosen}</Text>
+                <Text style={styles.nipDosenText}>NIP. {nip || '-'}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.stickyProgress, { backgroundColor: colors.surface }, colors.shadowLarge]}>
+            <View style={styles.progressTopRow}>
+              <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Kelengkapan Jawaban</Text>
+              <Text style={[styles.progressValue, { color: colors.primary }]}>{Math.round(progress)}%</Text>
+            </View>
+            <View style={[styles.barBg, { backgroundColor: colors.background }]}>
+               <View style={[styles.barFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
+            </View>
+          </View>
+
+          <View style={{ paddingHorizontal: 24, paddingTop: 30 }}>
+            <View style={[styles.noticeBox, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '20' }]}>
+              <MaterialCommunityIcons name="shield-check-outline" size={20} color={colors.primary} />
+              <Text style={[styles.noticeText, { color: colors.textPrimary }]}>
+                Identitas Anda akan disamarkan. Mohon berikan penilaian yang jujur dan objektif.
+              </Text>
+            </View>
+
+            <View style={[styles.mkSection, { backgroundColor: colors.surface }, colors.shadowSoft]}>
+              <View style={styles.mkHeader}>
+                <MaterialCommunityIcons name="book-open-variant" size={20} color={colors.primary} />
+                <Text style={[styles.mkTitle, { color: colors.textPrimary }]}>PILIH MATA KULIAH</Text>
+              </View>
+              <View style={styles.mkGrid}>
+                {mataKuliah.map((mk, idx) => {
+                  const mkNama = typeof mk === 'object' ? mk.nama : mk;
+                  const isSelected = selectedMK === mkNama;
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[
+                        styles.mkChip,
+                        { backgroundColor: isSelected ? colors.primary : colors.background },
+                      ]}
+                      onPress={() => setSelectedMK(mkNama)}
+                    >
+                      <Text style={[styles.mkChipText, { color: isSelected ? '#FFF' : colors.textSecondary }]}>
+                        {mkNama}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {errors.mataKuliah && <Text style={styles.errorText}>{errors.mataKuliah}</Text>}
+            </View>
+
+            {Object.entries(groupedQuestions).map(([name, list]) => renderKategori(name, list))}
+
+            <View style={[styles.commentSection, { backgroundColor: colors.surface }, colors.shadowSoft]}>
+              <View style={styles.commentHeader}>
+                <MaterialCommunityIcons name="message-draw" size={20} color={colors.primary} />
+                <Text style={[styles.commentTitle, { color: colors.textPrimary }]}>SARAN & MASUKAN</Text>
+              </View>
+              <TextInput
+                style={[styles.textInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                placeholder="Tuliskan masukan tambahan untuk dosen ini..."
+                placeholderTextColor={colors.textDisabled}
+                value={komentar}
+                onChangeText={(text) => { setKomentar(text); setHasUnsavedChanges(true); }}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.btnKirim, (submitting || progress < 100) && { backgroundColor: colors.textDisabled }]}
+              onPress={handleSubmit}
+              disabled={submitting || progress < 100}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Text style={styles.btnKirimText}>Kirim Evaluasi Sekarang</Text>
+                  <MaterialCommunityIcons name="send" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -336,10 +377,18 @@ const styles = StyleSheet.create({
   barFill: { height: '100%', borderRadius: 5 },
   
   scrollView: { flex: 1 },
-  scrollContent: { padding: 24, paddingTop: 40 },
+  scrollContent: { paddingTop: 0 },
   noticeBox: { flexDirection: 'row', padding: 20, borderRadius: 20, marginBottom: 32, alignItems: 'center', borderWidth: 1 },
   noticeText: { flex: 1, marginLeft: 16, fontSize: 13, fontWeight: '600', lineHeight: 20 },
   
+  mkSection: { padding: 24, borderRadius: 30, marginBottom: 32 },
+  mkHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+  mkTitle: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+  mkGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  mkChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 15, borderWidth: 1, borderColor: 'transparent' },
+  mkChipText: { fontSize: 13, fontWeight: 'bold' },
+  errorText: { fontSize: 12, color: '#EF4444', marginTop: 12, fontWeight: '600' },
+
   kategoriSection: { marginBottom: 40 },
   kategoriHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20, marginLeft: 8 },
   kategoriDot: { width: 8, height: 8, borderRadius: 4 },
@@ -351,13 +400,13 @@ const styles = StyleSheet.create({
   qNumberText: { fontSize: 14, fontWeight: '900' },
   pertanyaanLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
   
-  commentSection: { padding: 24, borderRadius: 35 },
+  commentSection: { padding: 24, borderRadius: 35, marginBottom: 30 },
   commentHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
   commentTitle: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
-  textInput: { borderRadius: 20, padding: 20, minHeight: 140, borderWidth: 1, fontSize: 15, fontWeight: '500' },
+  textInput: { borderRadius: 20, padding: 20, minHeight: 180, borderWidth: 1, fontSize: 15, fontWeight: '500', width: '100%' },
   
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, borderTopLeftRadius: 35, borderTopRightRadius: 35 },
-  btnKirim: { backgroundColor: '#2563EB', height: 65, borderRadius: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  footer: { paddingHorizontal: 24, paddingBottom: 20 },
+  btnKirim: { backgroundColor: '#2563EB', height: 65, borderRadius: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
   btnKirimText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 },
 });
 

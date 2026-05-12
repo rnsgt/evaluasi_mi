@@ -32,7 +32,7 @@ const AdminTabNavigator = () => {
           if (route.name === 'Beranda') iconName = focused ? 'view-dashboard' : 'view-dashboard-outline';
           else if (route.name === 'Kelola') iconName = focused ? 'layers' : 'layers-outline';
           else if (route.name === 'Laporan') iconName = focused ? 'file-chart' : 'file-chart-outline';
-          else if (route.name === 'Profil') iconName = focused ? 'shield-account' : 'shield-account-outline';
+          else if (route.name === 'Profil UPM') iconName = focused ? 'account-circle' : 'account-circle-outline';
 
           return (
             <MaterialCommunityIcons 
@@ -66,7 +66,7 @@ const AdminTabNavigator = () => {
       <Tab.Screen name="Beranda" component={AdminDashboardScreen} />
       <Tab.Screen name="Kelola" component={KelolaScreen} />
       <Tab.Screen name="Laporan" component={LaporanScreen} />
-      <Tab.Screen name="Profil" component={ProfileAdminScreen} />
+      <Tab.Screen name="Profil UPM" component={ProfileAdminScreen} />
     </Tab.Navigator>
   );
 };

@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Modal,
   Dimensions,
   StatusBar,
 } from 'react-native';
@@ -77,17 +78,91 @@ const RiwayatScreen = () => {
     setRefreshing(false);
   };
 
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleOpenDetail = (item) => {
+    setSelectedItem(item);
+    setModalVisible(true);
+  };
+
+  const renderDetailModal = () => {
+    if (!selectedItem) return null;
+    const isDosen = selectedItem.type === 'DOSEN';
+    
+    return (
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeaderArea, { backgroundColor: isDosen ? colors.primary : colors.tertiary }]}>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+                <MaterialCommunityIcons name="close" size={24} color="#FFF" />
+              </TouchableOpacity>
+              <MaterialCommunityIcons 
+                name={isDosen ? 'account-tie' : 'office-building'} 
+                size={40} 
+                color="#FFF" 
+                style={styles.modalIcon}
+              />
+              <Text style={styles.modalHeaderTitle}>Detail Evaluasi</Text>
+              <Text style={styles.modalHeaderSubtitle}>{selectedItem.type}</Text>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: colors.textDisabled }]}>SUBJEK</Text>
+                <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{selectedItem.subject}</Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: colors.textDisabled }]}>{isDosen ? 'DOSEN' : 'KATEGORI'}</Text>
+                <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{selectedItem.nama}</Text>
+              </View>
+
+              <View style={styles.detailGrid}>
+                <View style={styles.detailGridItem}>
+                  <Text style={[styles.detailLabel, { color: colors.textDisabled }]}>TANGGAL</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{formatDate(selectedItem.tanggal)}</Text>
+                </View>
+                <View style={styles.detailGridItem}>
+                  <Text style={[styles.detailLabel, { color: colors.textDisabled }]}>PERIODE</Text>
+                  <Text style={[styles.detailValue, { color: colors.primary, fontWeight: 'bold' }]}>
+                    {selectedItem.rawData.periode?.nama || 'Genap 2023/2024'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.commentBox, { backgroundColor: colors.background }]}>
+                <Text style={[styles.detailLabel, { color: colors.textDisabled, marginBottom: 8 }]}>KOMENTAR / MASUKAN</Text>
+                <Text style={[styles.commentText, { color: colors.textPrimary }]}>
+                  {selectedItem.rawData.komentar || 'Tidak ada komentar tambahan.'}
+                </Text>
+              </View>
+
+              <TouchableOpacity 
+                style={[styles.modalCloseBtn, { backgroundColor: isDosen ? colors.primary : colors.tertiary }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalCloseBtnText}>Tutup Detail</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderItem = (item) => (
     <TouchableOpacity 
       key={item.id} 
       style={[styles.itemCard, { backgroundColor: colors.surface }, colors.shadowSoft]} 
       activeOpacity={0.8}
-      onPress={() => {
-        Alert.alert('Detail Evaluasi', 
-          `Subjek: ${item.subject}\nOleh: ${item.nama}\nTanggal: ${formatDate(item.tanggal)}\nKomentar: ${item.rawData.komentar || '-'}`,
-          [{ text: 'Tutup' }]
-        );
-      }}
+      onPress={() => handleOpenDetail(item)}
     >
       <View style={[styles.typeIcon, { backgroundColor: item.type === 'DOSEN' ? colors.primary + '12' : colors.tertiary + '12' }]}>
         <MaterialCommunityIcons 
@@ -121,6 +196,7 @@ const RiwayatScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
       <DecorativeBackground />
+      {renderDetailModal()}
       
       <View style={[styles.header, { backgroundColor: colors.primaryDark }]}>
         <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
@@ -226,6 +302,24 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, fontWeight: '900' },
   statLabel: { fontSize: 11, marginTop: 2, fontWeight: '700' },
   statDivider: { width: 1, height: 30 },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContent: { width: '100%', borderRadius: 32, overflow: 'hidden' },
+  modalHeaderArea: { padding: 32, alignItems: 'center' },
+  closeBtn: { position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.1)', justifyContent: 'center', alignItems: 'center' },
+  modalIcon: { marginBottom: 12 },
+  modalHeaderTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  modalHeaderSubtitle: { fontSize: 10, fontWeight: '900', color: 'rgba(255,255,255,0.7)', letterSpacing: 2, marginTop: 4 },
+  modalBody: { padding: 24 },
+  detailRow: { marginBottom: 20 },
+  detailLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 4 },
+  detailValue: { fontSize: 16, fontWeight: 'bold' },
+  detailGrid: { flexDirection: 'row', marginBottom: 24 },
+  detailGridItem: { flex: 1 },
+  commentBox: { padding: 20, borderRadius: 20, marginBottom: 24 },
+  commentText: { fontSize: 14, lineHeight: 22, fontWeight: '500' },
+  modalCloseBtn: { height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  modalCloseBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default RiwayatScreen;

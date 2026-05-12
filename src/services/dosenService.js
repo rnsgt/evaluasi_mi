@@ -13,7 +13,6 @@ const normalizeDosenItem = (item = {}) => ({
   email: item.email || '',
   bio: item.bio || '',
   status: item.status || 'aktif',
-  foto_url: item.foto_url || item.foto || null,
   mata_kuliah: Array.isArray(item.mata_kuliah)
     ? item.mata_kuliah.map((mk) => (typeof mk === 'string' ? mk : mk?.nama || mk?.kode || '')).filter(Boolean)
     : [],
@@ -168,26 +167,8 @@ const INITIAL_DOSEN = [
   },
 ];
 
-/**
- * Initialize dosen data in AsyncStorage (First time only)
- */
-const initializeDosen = async () => {
-  try {
-    const existing = await AsyncStorage.getItem(STORAGE_KEY);
-    console.log('initializeDosen - existing data:', existing ? 'YES' : 'NO');
-    if (!existing) {
-      console.log('initializeDosen - initializing with INITIAL_DOSEN');
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DOSEN));
-    } else {
-      console.log('initializeDosen - data already exists, skipping initialization');
-    }
-  } catch (error) {
-    console.error('Initialize dosen error:', error);
-  }
-};
-
-// Initialize on module load
-initializeDosen();
+// Initialize on module load - No longer using initial dummy data
+// initializeDosen();
 
 const unwrapApiData = (payload) => {
   if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'data')) {
@@ -219,9 +200,7 @@ export const getAllDosen = async (includeInactive = false) => {
     const response = await api.get('/dosen');
     const raw = unwrapApiData(response);
     const apiData = (Array.isArray(raw) ? raw : []).map(normalizeDosenItem);
-    if (apiData.length > 0) {
-      await setStoredDosen(apiData);
-    }
+    await setStoredDosen(apiData);
     console.log('getAllDosen - API SUCCESS, count:', apiData.length);
     if (includeInactive) {
       return apiData;

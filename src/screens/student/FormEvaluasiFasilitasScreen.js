@@ -11,14 +11,18 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
 import LikertScale from '../../components/LikertScale';
 import ToastNotification from '../../components/ToastNotification';
 import evaluasiService from '../../services/evaluasiService';
 import { getActivePeriode } from '../../services/periodeService';
+
+const { width } = Dimensions.get('window');
 
 const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
   const { fasilitasId, namaFasilitas, kodeFasilitas } = route.params;
@@ -172,103 +176,131 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
     return groups;
   }, [questions]);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={colors.statusBarStyle} />
+      <StatusBar barStyle="light-content" />
       <ToastNotification visible={toastVisible} message={toastMessage} type={toastType} onHide={hideToast} colors={colors} />
       
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-            <MaterialCommunityIcons name="chevron-left" size={32} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Evaluasi Layanan</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>{namaFasilitas}</Text>
-          </View>
-          <View style={styles.iconButton} />
-        </View>
-
-        {/* Progress Sticky */}
-        <View style={[styles.stickyProgress, { backgroundColor: colors.surface }]}>
-          <View style={styles.progressTextRow}>
-            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Kelengkapan Data</Text>
-            <Text style={[styles.progressVal, { color: colors.primary }]}>{Math.round(progress)}%</Text>
-          </View>
-          <View style={[styles.progressBase, { backgroundColor: colors.surfaceLight }]}>
-            <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
-          </View>
-        </View>
-
-        <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={[styles.infoCard, { backgroundColor: colors.primaryLight }]}>
-            <MaterialCommunityIcons name="shield-check" size={24} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.primary }]}>Identitas Anda 100% anonim. Berikan penilaian sejujur mungkin.</Text>
-          </View>
-
-          {Object.entries(groupedQuestions).map(([cat, list]) => (
-            <View key={cat} style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionDot, { backgroundColor: colors.primary }]} />
-                <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{cat}</Text>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.keyboardView}
+      >
+        <ScrollView 
+          ref={scrollViewRef} 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.headerArea, { backgroundColor: colors.tertiary }]}>
+            <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+              <Circle cx={width} cy="0" r="100" fill="rgba(255,255,255,0.05)" />
+              <Circle cx="0" cy="80" r="60" fill="rgba(255,255,255,0.03)" />
+            </Svg>
+            
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <MaterialCommunityIcons name="chevron-left" size={28} color="#FFF" />
+              </TouchableOpacity>
+              <View style={styles.headerTitleBox}>
+                <Text style={styles.headerTitle}>Formulir Evaluasi</Text>
+                <Text style={styles.headerSubtitle}>Fasilitas & Layanan</Text>
               </View>
-              {list.map((q, i) => (
-                <View key={q.id} style={[styles.card, { backgroundColor: colors.surface }, colors.shadowSoft]}>
-                  <Text style={[styles.questionNo, { color: colors.textDisabled }]}>PERTANYAAN {questions.indexOf(q) + 1}</Text>
-                  <LikertScale
-                    question={q.pernyataan}
-                    value={answers[q.id]}
-                    onValueChange={(val) => handleAnswerChange(q.id, val)}
-                    required={true}
-                    error={errors[q.id]}
-                  />
-                </View>
-              ))}
+              <View style={{ width: 40 }} />
             </View>
-          ))}
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>Saran Perbaikan</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
-              placeholder="Apa yang perlu diperbaiki dari fasilitas ini?"
-              value={komentar}
-              onChangeText={(text) => { setKomentar(text); setHasUnsavedChanges(true); }}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              placeholderTextColor={colors.textDisabled}
-            />
+            <View style={[styles.dosenInfoBox, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+              <View style={[styles.avatarCircle, { backgroundColor: colors.surface }]}>
+                <MaterialCommunityIcons name="office-building" size={32} color={colors.tertiary} />
+              </View>
+              <View style={styles.dosenTextInfo}>
+                <Text style={styles.namaDosenText}>{namaFasilitas}</Text>
+                <Text style={styles.nipDosenText}>Kode: {kodeFasilitas || '-'}</Text>
+              </View>
+            </View>
           </View>
-          
+
+          <View style={[styles.stickyProgress, { backgroundColor: colors.surface }, colors.shadowLarge]}>
+            <View style={styles.progressTopRow}>
+              <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>Kelengkapan Jawaban</Text>
+              <Text style={[styles.progressValue, { color: colors.tertiary }]}>{Math.round(progress)}%</Text>
+            </View>
+            <View style={[styles.barBg, { backgroundColor: colors.background }]}>
+              <View style={[styles.barFill, { width: `${progress}%`, backgroundColor: colors.tertiary }]} />
+            </View>
+          </View>
+
+          <View style={{ paddingHorizontal: 24, paddingTop: 30 }}>
+            <View style={[styles.noticeBox, { backgroundColor: colors.tertiary + '10', borderColor: colors.tertiary + '20' }]}>
+              <MaterialCommunityIcons name="shield-check-outline" size={20} color={colors.tertiary} />
+              <Text style={[styles.noticeText, { color: colors.textPrimary }]}>
+                Identitas Anda akan disamarkan. Mohon berikan penilaian yang jujur dan objektif.
+              </Text>
+            </View>
+
+            {Object.entries(groupedQuestions).map(([name, list]) => (
+              <View key={name} style={styles.kategoriSection}>
+                <View style={styles.kategoriHeader}>
+                  <View style={[styles.kategoriDot, { backgroundColor: colors.tertiary }]} />
+                  <Text style={[styles.kategoriTitle, { color: colors.textPrimary }]}>{name.toUpperCase()}</Text>
+                </View>
+                {list.map((q, idx) => (
+                  <View key={q.id} style={[styles.pertanyaanCard, { backgroundColor: colors.surface }, colors.shadowSoft]}>
+                    <View style={styles.pertanyaanHeader}>
+                      <View style={[styles.qNumberBadge, { backgroundColor: colors.tertiary + '15' }]}>
+                        <Text style={[styles.qNumberText, { color: colors.tertiary }]}>{questions.indexOf(q) + 1}</Text>
+                      </View>
+                      <Text style={[styles.pertanyaanLabel, { color: colors.textDisabled }]}>PERTANYAAN</Text>
+                    </View>
+                    <LikertScale
+                      question={q.pernyataan}
+                      value={answers[q.id]}
+                      onValueChange={(val) => handleAnswerChange(q.id, val)}
+                      required={true}
+                      error={errors[q.id]}
+                    />
+                  </View>
+                ))}
+              </View>
+            ))}
+
+            <View style={[styles.commentSection, { backgroundColor: colors.surface }, colors.shadowSoft]}>
+              <View style={styles.commentHeader}>
+                <MaterialCommunityIcons name="message-draw" size={20} color={colors.tertiary} />
+                <Text style={[styles.commentTitle, { color: colors.textPrimary }]}>SARAN & MASUKAN</Text>
+              </View>
+              <TextInput
+                style={[styles.textInput, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                placeholder="Tuliskan masukan tambahan untuk fasilitas ini..."
+                placeholderTextColor={colors.textDisabled}
+                value={komentar}
+                onChangeText={(text) => { setKomentar(text); setHasUnsavedChanges(true); }}
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.btnKirim, (submitting || progress < 100) && { backgroundColor: colors.textDisabled }, progress === 100 && { backgroundColor: colors.tertiary }]}
+              onPress={handleSubmit}
+              disabled={submitting || progress < 100}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <>
+                  <Text style={styles.btnKirimText}>Kirim Evaluasi Sekarang</Text>
+                  <MaterialCommunityIcons name="send" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
           <View style={{ height: 40 }} />
         </ScrollView>
-
-        <View style={[styles.footer, { backgroundColor: colors.surface }, colors.shadowLarge]}>
-          <TouchableOpacity
-            style={[styles.btnSubmit, { backgroundColor: colors.primary }, (submitting || progress < 100) && styles.btnDisabled]}
-            onPress={handleSubmit}
-            disabled={submitting || progress < 100}
-          >
-            {submitting ? <ActivityIndicator color="#FFF" /> : (
-              <>
-                <Text style={styles.btnText}>Kirim Penilaian</Text>
-                <MaterialCommunityIcons name="send" size={18} color="#FFF" style={{ marginLeft: 8 }} />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -276,40 +308,50 @@ const FormEvaluasiFasilitasScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingBottom: 20 },
-  iconButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center' },
-  headerInfo: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800' },
-  headerSubtitle: { fontSize: 13, fontWeight: '600', marginTop: 2 },
+  keyboardView: { flex: 1 },
+  headerArea: { padding: 24, paddingTop: 60, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  headerTitleBox: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2, fontWeight: '600' },
+  dosenInfoBox: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 24 },
+  avatarCircle: { width: 60, height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  dosenTextInfo: { flex: 1, marginLeft: 16 },
+  namaDosenText: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  nipDosenText: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   
-  stickyProgress: { padding: 20, paddingTop: 0 },
-  progressTextRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  progressLabel: { fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  progressVal: { fontSize: 14, fontWeight: '900' },
-  progressBase: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
+  stickyProgress: { padding: 20, marginHorizontal: 24, marginTop: -30, borderRadius: 24, zIndex: 10 },
+  progressTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  progressLabel: { fontSize: 12, fontWeight: 'bold', letterSpacing: 0.5 },
+  progressValue: { fontSize: 18, fontWeight: '900' },
+  barBg: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 5 },
   
   scrollView: { flex: 1 },
-  scrollContent: { padding: 20 },
+  scrollContent: { paddingTop: 0 },
+  noticeBox: { flexDirection: 'row', padding: 20, borderRadius: 20, marginBottom: 32, alignItems: 'center', borderWidth: 1 },
+  noticeText: { flex: 1, marginLeft: 16, fontSize: 13, fontWeight: '600', lineHeight: 20 },
   
-  infoCard: { flexDirection: 'row', padding: 16, borderRadius: 20, gap: 12, alignItems: 'center', marginBottom: 32 },
-  infoText: { flex: 1, fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  kategoriSection: { marginBottom: 40 },
+  kategoriHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20, marginLeft: 8 },
+  kategoriDot: { width: 8, height: 8, borderRadius: 4 },
+  kategoriTitle: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
   
-  section: { marginBottom: 32 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  sectionDot: { width: 8, height: 8, borderRadius: 4 },
-  sectionTitle: { fontSize: 16, fontWeight: '800' },
+  pertanyaanCard: { padding: 20, borderRadius: 30, marginBottom: 20 },
+  pertanyaanHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  qNumberBadge: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  qNumberText: { fontSize: 14, fontWeight: '900' },
+  pertanyaanLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
   
-  card: { padding: 20, borderRadius: 24, marginBottom: 16 },
-  questionNo: { fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: 12 },
+  commentSection: { padding: 24, borderRadius: 35, marginBottom: 30 },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+  commentTitle: { fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+  textInput: { borderRadius: 20, padding: 20, minHeight: 180, borderWidth: 1, fontSize: 15, fontWeight: '500', width: '100%' },
   
-  input: { borderWidth: 1, borderRadius: 20, padding: 20, minHeight: 120, fontSize: 15 },
-  
-  footer: { padding: 20, paddingBottom: Platform.OS === 'ios' ? 10 : 20 },
-  btnSubmit: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  footer: { paddingHorizontal: 24, paddingBottom: 20 },
+  btnKirim: { height: 65, borderRadius: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+  btnKirimText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 },
 });
 
 export default FormEvaluasiFasilitasScreen;

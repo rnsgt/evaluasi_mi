@@ -6,16 +6,21 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
+  ImageBackground,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import { validateNIM, validateEmail } from '../../utils/helpers';
+import ToastNotification from '../../components/ToastNotification';
+
+const { width, height } = Dimensions.get('window');
 
 const RegisterScreen = ({ navigation }) => {
   const { register } = useAuth();
@@ -33,56 +38,26 @@ const RegisterScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('error');
+
+  const showToast = (message, type = 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Validate NIM
-    if (!formData.nim) {
-      newErrors.nim = 'NIM wajib diisi';
-    } else if (!validateNIM(formData.nim)) {
-      newErrors.nim = 'Format NIM tidak valid (min. 6 digit)';
-    }
-
-    // Validate Nama
-    if (!formData.nama) {
-      newErrors.nama = 'Nama wajib diisi';
-    } else if (formData.nama.length < 3) {
-      newErrors.nama = 'Nama minimal 3 karakter';
-    }
-
-    // Validate Email
-    if (!formData.email) {
-      newErrors.email = 'Email wajib diisi';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Format email tidak valid';
-    }
-
-    // Validate Prodi
-    if (!formData.prodi) {
-      newErrors.prodi = 'Program Studi wajib diisi';
-    }
-
-    // Validate Angkatan
-    if (!formData.angkatan) {
-      newErrors.angkatan = 'Angkatan wajib diisi';
-    } else if (!/^\d{4}$/.test(formData.angkatan)) {
-      newErrors.angkatan = 'Angkatan harus 4 digit tahun (contoh: 2023)';
-    }
-
-    // Validate Password
-    if (!formData.password) {
-      newErrors.password = 'Password wajib diisi';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password minimal 6 karakter';
-    }
-
-    // Validate Confirm Password
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Konfirmasi password wajib diisi';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Password tidak cocok';
-    }
+    if (!formData.nim) newErrors.nim = 'NIM wajib';
+    if (!formData.nama) newErrors.nama = 'Nama wajib';
+    if (!formData.email) newErrors.email = 'Email wajib';
+    if (!formData.prodi) newErrors.prodi = 'Prodi wajib';
+    if (!formData.angkatan) newErrors.angkatan = 'Angkatan wajib';
+    if (!formData.password) newErrors.password = 'Password minimal 6 karakter';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Password tidak cocok';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -90,19 +65,16 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!validateForm()) {
+      showToast('Lengkapi semua data pendaftaran', 'warning');
       return;
     }
 
     setLoading(true);
     try {
       await register(formData);
-      Alert.alert(
-        'Berhasil',
-        'Registrasi berhasil! Anda akan langsung masuk ke Dashboard.',
-        [{ text: 'OK' }]
-      );
+      showToast('Berhasil mendaftar!', 'success');
     } catch (error) {
-      Alert.alert('Error', error.message || 'Registrasi gagal');
+      showToast(error.message || 'Pendaftaran gagal', 'error');
     } finally {
       setLoading(false);
     }
@@ -110,338 +82,115 @@ const RegisterScreen = ({ navigation }) => {
 
   const updateField = (field, value) => {
     setFormData({ ...formData, [field]: value });
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: null });
-    }
+    if (errors[field]) setErrors({ ...errors, [field]: null });
   };
 
+  const renderInput = (label, field, icon, placeholder, secure = false, keyboard = 'default', showToggle = false, toggleFunc = null, toggleVal = false) => (
+    <View style={styles.inputGroup}>
+      <View style={[styles.inputContainer, errors[field] && styles.inputError]}>
+        <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder}
+          placeholderTextColor="#94A3B8"
+          value={formData[field]}
+          onChangeText={(val) => updateField(field, val)}
+          secureTextEntry={secure}
+          keyboardType={keyboard}
+          editable={!loading}
+          autoCapitalize={field === 'email' ? 'none' : 'words'}
+        />
+        {showToggle && (
+          <TouchableOpacity onPress={toggleFunc}>
+            <MaterialCommunityIcons name={toggleVal ? 'eye-off' : 'eye'} size={20} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <MaterialCommunityIcons name="school" size={64} color={colors.primary} />
-            <Text style={styles.title}>Daftar Akun</Text>
-            <Text style={styles.subtitle}>
-              Buat akun baru untuk mengakses sistem evaluasi
-            </Text>
-          </View>
+    <View style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <ImageBackground source={require('../../../assets/gedung diklat.jpg')} style={styles.background}>
+        <View style={styles.overlay}>
+          <SafeAreaView style={styles.container}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+              <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                
+                <View style={styles.header}>
+                  <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
+                  </TouchableOpacity>
+                  <View style={{ flex: 1, alignItems: 'center', marginRight: 44 }}>
+                     <Text style={styles.title}>Daftar Akun</Text>
+                     <Text style={styles.subtitle}>Sistem Evaluasi Akademik</Text>
+                  </View>
+                </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            {/* NIM Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>NIM</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="card-account-details"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Masukkan NIM"
-                  value={formData.nim}
-                  onChangeText={(value) => updateField('nim', value)}
-                  keyboardType="numeric"
-                  autoCapitalize="none"
-                  editable={!loading}
-                />
-              </View>
-              {errors.nim && <Text style={styles.errorText}>{errors.nim}</Text>}
-            </View>
+                <View style={[styles.card, styles.shadowLarge]}>
+                  {renderInput('NIM', 'nim', 'card-account-outline', 'Nomor Induk Mahasiswa', false, 'numeric')}
+                  {renderInput('Nama', 'nama', 'account-outline', 'Nama Lengkap')}
+                  {renderInput('Email', 'email', 'email-outline', 'Alamat Email', false, 'email-address')}
+                  {renderInput('Prodi', 'prodi', 'book-outline', 'Program Studi (Contoh: MI)')}
+                  {renderInput('Angkatan', 'angkatan', 'calendar-outline', 'Tahun Angkatan (Contoh: 2023)', false, 'numeric')}
+                  {renderInput('Password', 'password', 'lock-outline', 'Password', !showPassword, 'default', true, () => setShowPassword(!showPassword), showPassword)}
+                  {renderInput('Konfirmasi', 'confirmPassword', 'lock-check-outline', 'Konfirmasi Password', !showConfirmPassword, 'default', true, () => setShowConfirmPassword(!showConfirmPassword), showConfirmPassword)}
 
-            {/* Nama Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Nama Lengkap</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="account"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Masukkan nama lengkap"
-                  value={formData.nama}
-                  onChangeText={(value) => updateField('nama', value)}
-                  autoCapitalize="words"
-                  editable={!loading}
-                />
-              </View>
-              {errors.nama && <Text style={styles.errorText}>{errors.nama}</Text>}
-            </View>
+                  <TouchableOpacity
+                    style={[styles.btnAction, { backgroundColor: colors.primary }]}
+                    onPress={handleRegister}
+                    disabled={loading}
+                  >
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>Daftar Sekarang</Text>}
+                  </TouchableOpacity>
 
-            {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="email"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Masukkan email"
-                  value={formData.email}
-                  onChangeText={(value) => updateField('email', value)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={!loading}
-                />
-              </View>
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-            </View>
+                  <View style={styles.loginLinkRow}>
+                    <Text style={styles.linkText}>Sudah punya akun? </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                      <Text style={[styles.linkAction, { color: colors.primary }]}>Login</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-            {/* Prodi Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Program Studi</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="book-education"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Contoh: Manajemen Informatika"
-                  value={formData.prodi}
-                  onChangeText={(value) => updateField('prodi', value)}
-                  autoCapitalize="words"
-                  editable={!loading}
-                />
-              </View>
-              {errors.prodi && <Text style={styles.errorText}>{errors.prodi}</Text>}
-            </View>
+                <View style={{ height: 40 }} />
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </View>
+      </ImageBackground>
 
-            {/* Angkatan Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Angkatan</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="calendar"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Contoh: 2023"
-                  value={formData.angkatan}
-                  onChangeText={(value) => updateField('angkatan', value)}
-                  keyboardType="numeric"
-                  maxLength={4}
-                  editable={!loading}
-                />
-              </View>
-              {errors.angkatan && <Text style={styles.errorText}>{errors.angkatan}</Text>}
-            </View>
-
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="lock"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Masukkan password"
-                  value={formData.password}
-                  onChangeText={(value) => updateField('password', value)}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <MaterialCommunityIcons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-            </View>
-
-            {/* Confirm Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Konfirmasi Password</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons
-                  name="lock-check"
-                  size={20}
-                  color={colors.textSecondary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Masukkan ulang password"
-                  value={formData.confirmPassword}
-                  onChangeText={(value) => updateField('confirmPassword', value)}
-                  secureTextEntry={!showConfirmPassword}
-                  autoCapitalize="none"
-                  editable={!loading}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <MaterialCommunityIcons
-                    name={showConfirmPassword ? 'eye-off' : 'eye'}
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-              {errors.confirmPassword && (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              )}
-            </View>
-
-            {/* Register Button */}
-            <TouchableOpacity
-              style={[styles.registerButton, loading && styles.registerButtonDisabled]}
-              onPress={handleRegister}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.registerButtonText}>
-                {loading ? 'Mendaftar...' : 'Daftar'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Login Link */}
-            <View style={styles.loginLinkContainer}>
-              <Text style={styles.loginLinkText}>Sudah punya akun? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.loginLink}>Login disini</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <ToastNotification visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: spacing.xl,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  title: {
-    fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginTop: spacing.base,
-  },
-  subtitle: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  form: {
-    width: '100%',
-  },
-  inputContainer: {
-    marginBottom: spacing.base,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.medium,
-    color: staticColors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: staticColors.surface,
-    borderRadius: radius.base,
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    paddingHorizontal: spacing.base,
-    height: 48,
-  },
-  inputIcon: {
-    marginRight: spacing.sm,
-  },
-  input: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  eyeIcon: {
-    padding: spacing.xs,
-  },
-  errorText: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.error,
-    marginTop: spacing.xs,
-    marginLeft: spacing.xs,
-  },
-  registerButton: {
-    backgroundColor: staticColors.primary,
-    paddingVertical: spacing.base,
-    borderRadius: radius.base,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    elevation: 2,
-  },
-  registerButtonDisabled: {
-    opacity: 0.6,
-  },
-  registerButtonText: {
-    fontSize: typography.fontSize.md,
-    fontFamily: typography.fontFamily.bold,
-    color: '#FFFFFF',
-  },
-  loginLinkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  loginLinkText: {
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-  },
-  loginLink: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.primary,
-  },
+  background: { flex: 1 },
+  overlay: { flex: 1, backgroundColor: 'rgba(15, 60, 89, 0.75)' },
+  container: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: height * 0.05, paddingBottom: 40 },
+  
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
+  backBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#FFF' },
+  subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
+
+  card: { backgroundColor: '#FFF', borderRadius: 28, padding: 20 },
+  inputGroup: { marginBottom: 12 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, paddingHorizontal: 12, height: 50, borderWidth: 1, borderColor: '#F1F5F9' },
+  inputError: { borderColor: '#FECACA' },
+  input: { flex: 1, marginLeft: 10, fontSize: 14, color: '#1E293B', fontWeight: '600' },
+  
+  btnAction: { height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginTop: 10, elevation: 4 },
+  btnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  loginLinkRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  linkText: { color: '#64748B', fontSize: 14 },
+  linkAction: { fontSize: 14, fontWeight: 'bold' },
+
+  shadowLarge: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
 });
 
 export default RegisterScreen;

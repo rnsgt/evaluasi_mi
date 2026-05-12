@@ -10,13 +10,17 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  StatusBar,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
-import { colors as staticColors, typography, spacing, borderRadius as radius } from '../../utils/theme';
 import periodeService from '../../services/periodeService';
+
+const { width } = Dimensions.get('window');
 
 const FormPeriodeScreen = ({ navigation, route }) => {
   const { colors } = useTheme();
@@ -72,7 +76,6 @@ const FormPeriodeScreen = ({ navigation, route }) => {
     if (Platform.OS === 'android') {
       setShowDatePicker({ mulai: false, akhir: false, batas: false });
     }
-    
     if (selectedDate) {
       handleChange(field, selectedDate);
       if (Platform.OS === 'ios') {
@@ -86,581 +89,239 @@ const FormPeriodeScreen = ({ navigation, route }) => {
       Alert.alert('Validasi', 'Nama periode harus diisi');
       return false;
     }
-
     if (!formData.tahun_ajaran.trim()) {
       Alert.alert('Validasi', 'Tahun ajaran harus diisi');
       return false;
     }
-
-    // Validate date logic
     const mulai = formatDate(formData.tanggal_mulai);
     const akhir = formatDate(formData.tanggal_akhir);
     const batas = formatDate(formData.batas_evaluasi);
-
     const validation = periodeService.validatePeriodeDates(mulai, akhir, batas);
-
     if (!validation.valid) {
       Alert.alert('Validasi', validation.message);
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
     try {
       setLoading(true);
-
       const submitData = {
         ...formData,
         tanggal_mulai: formatDate(formData.tanggal_mulai),
         tanggal_akhir: formatDate(formData.tanggal_akhir),
         batas_evaluasi: formatDate(formData.batas_evaluasi),
       };
-
       if (isEdit) {
         await periodeService.updatePeriode(periode.id, submitData);
-        Alert.alert('Berhasil', 'Periode berhasil diperbarui', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert('Berhasil', 'Periode diperbarui');
       } else {
         await periodeService.createPeriode(submitData);
-        Alert.alert('Berhasil', 'Periode berhasil dibuat', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert('Berhasil', 'Periode dibuat');
       }
+      navigation.goBack();
     } catch (error) {
-      console.error('Submit periode error:', error);
       Alert.alert('Error', 'Gagal menyimpan periode');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = () => {
-    if (!isEdit || !periode) return;
+  const renderInput = (label, field, icon, placeholder) => (
+    <View style={styles.inputWrapper}>
+      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
+        <MaterialCommunityIcons name={icon} size={20} color={colors.primary} style={styles.inputIcon} />
+        <TextInput
+          style={[styles.textInput, { color: colors.textPrimary }]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textDisabled}
+          value={formData[field]}
+          onChangeText={(val) => handleChange(field, val)}
+          editable={!loading}
+        />
+      </View>
+    </View>
+  );
 
-    if (periode.status === 'aktif') {
-      Alert.alert('Tidak Dapat Dihapus', 'Periode yang sedang aktif tidak dapat dihapus');
-      return;
-    }
-
-    Alert.alert(
-      'Hapus Periode',
-      `Hapus periode "${periode.nama}"?\n\nTindakan ini tidak dapat dibatalkan.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const result = await periodeService.deletePeriode(periode.id);
-
-              if (result.success) {
-                Alert.alert('Berhasil', 'Periode berhasil dihapus', [
-                  { text: 'OK', onPress: () => navigation.goBack() },
-                ]);
-              } else {
-                Alert.alert('Error', result.message || 'Gagal menghapus periode');
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Gagal menghapus periode');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderSemesterModal = () => (
-    <Modal
-      visible={showSemesterModal}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setShowSemesterModal(false)}
-    >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={() => setShowSemesterModal(false)}
+  const renderDatePicker = (label, field, icon) => (
+    <View style={styles.inputWrapper}>
+      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{label}</Text>
+      <TouchableOpacity 
+        style={[styles.inputContainer, { backgroundColor: colors.surface }]}
+        onPress={() => setShowDatePicker({ [field.split('_')[1]]: true })}
+        disabled={loading}
       >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Pilih Semester</Text>
-          {semesterOptions.map((option) => (
-            <TouchableOpacity
-              key={option}
-              style={[
-                styles.modalOption,
-                formData.semester === option && styles.modalOptionActive,
-              ]}
-              onPress={() => {
-                handleChange('semester', option);
-                setShowSemesterModal(false);
-              }}
-            >
-              <Text
-                style={[
-                  styles.modalOptionText,
-                  formData.semester === option && styles.modalOptionTextActive,
-                ]}
-              >
-                {option}
-              </Text>
-              {formData.semester === option && (
-                <MaterialCommunityIcons name="check" size={20} color={colors.primary} />
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+        <MaterialCommunityIcons name={icon} size={20} color={colors.primary} style={styles.inputIcon} />
+        <Text style={[styles.textInput, { color: colors.textPrimary }]}>
+          {formatDate(formData[field])}
+        </Text>
+        <MaterialCommunityIcons name="calendar-edit" size={20} color={colors.textDisabled} />
       </TouchableOpacity>
-    </Modal>
+      {showDatePicker[field.split('_')[1]] && (
+        <DateTimePicker
+          value={formData[field]}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(e, date) => handleDateChange(field, e, date)}
+        />
+      )}
+    </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {isEdit ? 'Edit Periode' : 'Buat Periode Baru'}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" />
+      
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={[styles.headerArea, { backgroundColor: colors.primaryDark }]}>
+          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+            <Circle cx={width} cy="0" r="100" fill="rgba(255,255,255,0.05)" />
+            <Circle cx="0" cy="80" r="60" fill="rgba(255,255,255,0.03)" />
+          </Svg>
+          
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={styles.headerTitleBox}>
+              <Text style={styles.headerTitle}>{isEdit ? 'Update Periode' : 'Periode Baru'}</Text>
+              <Text style={styles.headerSubtitle}>Manajemen Kalender Akademik</Text>
+            </View>
+          </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Nama Periode */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Nama Periode <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Contoh: Semester Ganjil 2023/2024"
-            value={formData.nama}
-            onChangeText={(value) => handleChange('nama', value)}
-            editable={!loading}
-          />
-          <Text style={styles.hint}>Nama periode yang akan ditampilkan</Text>
+          <View style={styles.infoPreviewCard}>
+             <View style={[styles.statusCircle, { backgroundColor: colors.surface }]}>
+                <MaterialCommunityIcons name="calendar-clock" size={36} color={colors.primary} />
+             </View>
+             <View style={styles.infoTextContainer}>
+                <Text style={styles.previewName}>{formData.nama || 'Nama Periode'}</Text>
+                <Text style={styles.previewYear}>{formData.tahun_ajaran || '20XX/20XX'} • {formData.semester}</Text>
+             </View>
+          </View>
         </View>
 
-        {/* Tahun Ajaran */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Tahun Ajaran <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Contoh: 2023/2024"
-            value={formData.tahun_ajaran}
-            onChangeText={(value) => handleChange('tahun_ajaran', value)}
-            editable={!loading}
-          />
-          <Text style={styles.hint}>Format: YYYY/YYYY (contoh: 2023/2024)</Text>
-        </View>
+        <View style={{ paddingHorizontal: 24, paddingTop: 30 }}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            {renderInput('Nama Periode', 'nama', 'rename-box', 'Semester Ganjil 2024/2025')}
+            {renderInput('Tahun Ajaran', 'tahun_ajaran', 'calendar-range', '2024/2025')}
 
-        {/* Semester */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Semester <Text style={styles.required}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={styles.pickerButton}
-            onPress={() => setShowSemesterModal(true)}
+            <View style={styles.inputWrapper}>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Semester</Text>
+              <TouchableOpacity 
+                style={[styles.inputContainer, { backgroundColor: colors.surface }]}
+                onPress={() => setShowSemesterModal(true)}
+                disabled={loading}
+              >
+                <MaterialCommunityIcons name="form-select" size={20} color={colors.primary} style={styles.inputIcon} />
+                <Text style={[styles.textInput, { color: colors.textPrimary }]}>{formData.semester}</Text>
+                <MaterialCommunityIcons name="chevron-down" size={20} color={colors.textDisabled} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={[styles.formCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 15 }]}>Pengaturan Tanggal</Text>
+            {renderDatePicker('Tanggal Mulai', 'tanggal_mulai', 'calendar-play')}
+            {renderDatePicker('Tanggal Akhir', 'tanggal_akhir', 'calendar-check')}
+            {renderDatePicker('Batas Evaluasi', 'batas_evaluasi', 'clock-alert-outline')}
+          </View>
+
+          <View style={[styles.formCard, { backgroundColor: colors.surface }, styles.shadowSoft]}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Keterangan Tambahan</Text>
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, alignItems: 'flex-start' }]}>
+              <TextInput
+                style={[styles.textInput, { color: colors.textPrimary, minHeight: 80 }]}
+                placeholder="Catatan tambahan (opsional)"
+                value={formData.keterangan}
+                onChangeText={(val) => handleChange('keterangan', val)}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+            onPress={handleSubmit}
             disabled={loading}
           >
-            <Text style={styles.pickerButtonText}>{formData.semester}</Text>
-            <MaterialCommunityIcons
-              name="chevron-down"
-              size={20}
-              color={colors.textSecondary}
-            />
+            {loading ? <ActivityIndicator color="#FFF" /> : (
+              <>
+                <Text style={styles.saveBtnText}>{isEdit ? 'Update Periode Sekarang' : 'Simpan Periode'}</Text>
+                <MaterialCommunityIcons name="calendar-plus" size={20} color="#FFF" style={{ marginLeft: 8 }} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Tanggal Mulai */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Tanggal Mulai <Text style={styles.required}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker({ mulai: true, akhir: false, batas: false })}
-            disabled={loading}
-          >
-            <MaterialCommunityIcons
-              name="calendar"
-              size={20}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.dateButtonText}>
-              {formatDate(formData.tanggal_mulai)}
-            </Text>
-            <MaterialCommunityIcons
-              name="chevron-down"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-          {showDatePicker.mulai && (
-            <DateTimePicker
-              value={formData.tanggal_mulai}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(e, date) => handleDateChange('tanggal_mulai', e, date)}
-            />
-          )}
-        </View>
-
-        {/* Tanggal Akhir */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Tanggal Akhir <Text style={styles.required}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker({ mulai: false, akhir: true, batas: false })}
-            disabled={loading}
-          >
-            <MaterialCommunityIcons
-              name="calendar"
-              size={20}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.dateButtonText}>
-              {formatDate(formData.tanggal_akhir)}
-            </Text>
-            <MaterialCommunityIcons
-              name="chevron-down"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-          {showDatePicker.akhir && (
-            <DateTimePicker
-              value={formData.tanggal_akhir}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(e, date) => handleDateChange('tanggal_akhir', e, date)}
-            />
-          )}
-        </View>
-
-        {/* Batas Evaluasi */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>
-            Batas Evaluasi <Text style={styles.required}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker({ mulai: false, akhir: false, batas: true })}
-            disabled={loading}
-          >
-            <MaterialCommunityIcons
-              name="clock-alert"
-              size={20}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.dateButtonText}>
-              {formatDate(formData.batas_evaluasi)}
-            </Text>
-            <MaterialCommunityIcons
-              name="chevron-down"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-          {showDatePicker.batas && (
-            <DateTimePicker
-              value={formData.batas_evaluasi}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(e, date) => handleDateChange('batas_evaluasi', e, date)}
-            />
-          )}
-          <Text style={styles.hint}>
-            Batas waktu mahasiswa mengisi evaluasi (antara tanggal mulai dan akhir)
-          </Text>
-        </View>
-
-        {/* Keterangan */}
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Keterangan (Opsional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Catatan atau keterangan tambahan..."
-            value={formData.keterangan}
-            onChangeText={(value) => handleChange('keterangan', value)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-            editable={!loading}
-          />
-        </View>
-
-        {/* Info Card */}
-        <View style={styles.infoCard}>
-          <MaterialCommunityIcons name="information" size={20} color={colors.primary} />
-          <Text style={styles.infoText}>
-            Periode yang baru dibuat akan memiliki status "Tidak Aktif". Anda dapat
-            mengaktifkannya dari halaman Kelola Periode.
-          </Text>
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <MaterialCommunityIcons name="check" size={20} color="#fff" />
-              <Text style={styles.submitButtonText}>
-                {isEdit ? 'Simpan Perubahan' : 'Buat Periode'}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        {isEdit && (
-          <TouchableOpacity
-            style={[
-              styles.deleteButton,
-              (loading || periode?.status === 'aktif') && styles.deleteButtonDisabled,
-            ]}
-            onPress={handleDelete}
-            disabled={loading || periode?.status === 'aktif'}
-          >
-            <MaterialCommunityIcons
-              name="delete"
-              size={20}
-              color={periode?.status === 'aktif' ? staticColors.textDisabled : '#fff'}
-            />
-            <Text
-              style={[
-                styles.deleteButtonText,
-                periode?.status === 'aktif' && styles.deleteButtonTextDisabled,
-              ]}
-            >
-              Hapus Periode
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={{ height: spacing.xl }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
 
-      {renderSemesterModal()}
+      {/* Semester Modal */}
+      <Modal visible={showSemesterModal} transparent animationType="fade">
+        <View style={styles.modalBackdrop}>
+           <View style={[styles.modalBox, { backgroundColor: colors.surface }]}>
+              <Text style={styles.modalTitle}>Pilih Semester</Text>
+              {semesterOptions.map(opt => (
+                <TouchableOpacity 
+                  key={opt} 
+                  style={[styles.modalOption, formData.semester === opt && { backgroundColor: colors.primary + '10' }]}
+                  onPress={() => { handleChange('semester', opt); setShowSemesterModal(false); }}
+                >
+                  <Text style={[styles.optionText, { color: formData.semester === opt ? colors.primary : colors.textPrimary }]}>{opt}</Text>
+                  {formData.semester === opt && <MaterialCommunityIcons name="check" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.closeModal} onPress={() => setShowSemesterModal(false)}>
+                <Text style={{ color: colors.danger, fontWeight: 'bold' }}>BATAL</Text>
+              </TouchableOpacity>
+           </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: staticColors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: staticColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: staticColors.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.base,
-  },
-  formGroup: {
-    marginBottom: spacing.base,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  required: {
-    color: staticColors.danger,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  textArea: {
-    minHeight: 100,
-    paddingTop: spacing.sm,
-  },
-  hint: {
-    fontSize: typography.fontSize.xs,
-    color: staticColors.textSecondary,
-    marginTop: 4,
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-  },
-  pickerButtonText: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: staticColors.border,
-    borderRadius: radius.base,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    gap: spacing.sm,
-  },
-  dateButtonText: {
-    flex: 1,
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: staticColors.primary + '10',
-    padding: spacing.base,
-    borderRadius: radius.base,
-    marginBottom: spacing.base,
-  },
-  infoText: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: typography.fontSize.sm,
-    color: staticColors.textSecondary,
-    lineHeight: 20,
-  },
-  submitButton: {
-    flexDirection: 'row',
-    backgroundColor: staticColors.primary,
-    paddingVertical: spacing.base,
-    borderRadius: radius.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: '#fff',
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    backgroundColor: '#D32F2F',
-    paddingVertical: spacing.base,
-    borderRadius: radius.base,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: '#B71C1C',
-    shadowColor: '#B71C1C',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  deleteButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-    borderColor: '#BDBDBD',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  deleteButtonText: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.semibold,
-    color: '#fff',
-    letterSpacing: 0.2,
-  },
-  deleteButtonTextDisabled: {
-    color: staticColors.textDisabled,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.base,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: radius.base,
-    padding: spacing.base,
-    width: '100%',
-    maxWidth: 300,
-  },
-  modalTitle: {
-    fontSize: typography.fontSize.base,
-    fontFamily: typography.fontFamily.bold,
-    color: staticColors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  modalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-    borderRadius: radius.sm,
-    marginBottom: 4,
-  },
-  modalOptionActive: {
-    backgroundColor: staticColors.primary + '10',
-  },
-  modalOptionText: {
-    fontSize: typography.fontSize.base,
-    color: staticColors.textPrimary,
-  },
-  modalOptionTextActive: {
-    fontFamily: typography.fontFamily.semibold,
-    color: staticColors.primary,
-  },
+  container: { flex: 1 },
+  headerArea: { padding: 24, paddingTop: 50, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 },
+  backBtn: { width: 42, height: 42, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+  headerTitleBox: { flex: 1, marginLeft: 15 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  
+  infoPreviewCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', padding: 15, borderRadius: 25 },
+  statusCircle: { width: 65, height: 65, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  infoTextContainer: { marginLeft: 15, flex: 1 },
+  previewName: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  previewYear: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 40 },
+  
+  formCard: { padding: 24, borderRadius: 30, marginBottom: 20 },
+  inputWrapper: { marginBottom: 18 },
+  inputLabel: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, marginLeft: 4 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, borderWidth: 1, borderColor: '#F3F4F6', paddingHorizontal: 15 },
+  inputIcon: { marginRight: 12 },
+  textInput: { flex: 1, paddingVertical: 14, fontSize: 15, fontWeight: '500' },
+
+  saveBtn: { height: 60, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  saveBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalBox: { borderRadius: 30, padding: 25 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  modalOption: { flexDirection: 'row', justifyContent: 'space-between', padding: 18, borderRadius: 15, marginBottom: 8 },
+  optionText: { fontSize: 16, fontWeight: '600' },
+  closeModal: { marginTop: 15, alignSelf: 'center', padding: 10 },
+
+  shadowSoft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 5 },
 });
 
 export default FormPeriodeScreen;
